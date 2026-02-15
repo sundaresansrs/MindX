@@ -1,0 +1,6 @@
+google-genai
+uvicorn
+fastapi
+pydantic
+python-dotenv
+cohere
