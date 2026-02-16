@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Login | MindX</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#33f20d",
+                        "background-light": "#f6f8f5",
+                        "background-dark": "#050804",
+                        "neutral-dark": "#132210",
+                        "neutral-border": "#294922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header
+        class="w-full px-6 py-6 flex justify-center items-center border-b border-primary/10 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl w-full flex justify-between items-center">
+            <a class="flex items-center gap-2 group no-underline" href="/">
+                <div
+                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(51,242,13,0.3)]">
+                    <span class="material-symbols-outlined text-sm font-bold">query_stats</span>
+                </div>
+                <h1
+                    class="text-2xl font-bold tracking-tighter dark:text-white text-slate-900 group-hover:text-primary transition-colors">
+                    Mind<span class="text-primary">X</span></h1>
+            </a>
+            <nav>
+                <a class="text-sm font-medium hover:text-primary transition-colors" href="/">← Back to home</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center px-4 py-12 relative overflow-hidden">
+        <!-- Background Glow -->
+        <div
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
+        </div>
+
+        <div class="w-full max-w-[440px] z-10">
+            <!-- Login Card -->
+            <div
+                class="bg-white dark:bg-[#0e1f10] border border-slate-200 dark:border-neutral-border rounded-xl shadow-2xl p-8 md:p-10">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold tracking-tight mb-2">Welcome back</h2>
+                    <p class="text-slate-500 dark:text-[#90cb95] text-sm">Log in to your account to continue.</p>
+                </div>
+
+                <!-- Error Message Area -->
+                <div id="error-area"
+                    class="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-red-400 text-xs font-medium hidden">
+                    <span class="material-symbols-outlined text-sm">warning</span>
+                    <span id="error-message">Incorrect login credentials.</span>
+                </div>
+
+                <form id="login-form" class="space-y-5" onsubmit="handleLogin(event)">
+                    <!-- Email Field -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold block px-1" for="email">Email Address</label>
+                        <input
+                            class="w-full h-12 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-neutral-border rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-[#4a7a4e]"
+                            id="email" placeholder="name@example.com" type="email" required />
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center px-1">
+                            <label class="text-sm font-semibold" for="password">Password</label>
+                        </div>
+                        <div class="relative">
+                            <input
+                                class="w-full h-12 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-neutral-border rounded-lg px-4 pr-12 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-[#4a7a4e]"
+                                id="password" placeholder="••••••••" type="password" required />
+                            <button type="button" onclick="togglePassword()"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#90cb95] hover:text-primary transition-colors flex items-center justify-center p-1">
+                                <span id="password-toggle-icon" class="material-symbols-outlined">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Login Button -->
+                    <button id="login-btn"
+                        class="w-full h-12 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="submit">
+                        Login
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer Link -->
+            <p class="text-center mt-8 text-sm text-slate-500 dark:text-[#90cb95]">
+                Don't have an account?
+                <a class="text-primary font-bold hover:underline transition-all" href="/signup.html">Sign Up</a>
+            </p>
+        </div>
+    </main>
+
+    <footer class="w-full px-6 py-8 border-t border-primary/5 bg-background-light dark:bg-background-dark">
+        <div
+            class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400 dark:text-[#4a7a4e]">
+            <p>© 2026 MindX Intelligence Systems. All rights reserved.</p>
+            <div class="flex gap-6">
+                <a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+                <a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon = document.getElementById('password-toggle-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        }
+
+        function showError(msg) {
+            const area = document.getElementById('error-area');
+            document.getElementById('error-message').textContent = msg;
+            area.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('error-area').classList.add('hidden');
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            hideError();
+
+            const btn = document.getElementById('login-btn');
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showError('Please fill in all fields.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+
+            try {
+                // FastAPI OAuth2 expects form-urlencoded with username/password
+                const formData = new URLSearchParams();
+                formData.append('username', email);
+                formData.append('password', password);
+
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString(),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Invalid email or password.');
+                }
+
+                // Store token
+                localStorage.setItem('mindx_token', data.access_token);
+                localStorage.setItem('mindx_user', JSON.stringify({ email: email }));
+
+                // Redirect to dashboard
+                window.location.href = '/dashboard.html';
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        }
+
+        // If already logged in, redirect
+        if (localStorage.getItem('mindx_token')) {
+            window.location.href = '/dashboard.html';
+        }
+    </script>
+</body>
+
+</html>

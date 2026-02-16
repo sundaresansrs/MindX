@@ -1,1 +1,378 @@
-<html><body><h1>loading</h1></body></html>
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>MindX - Search Beyond Answers</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#00FF41",
+                        "neon": "#00FF41",
+                        "matrix": "#00FF00",
+
+                        "background-light": "#f6f8f5",
+                        "background-dark": "#050804",
+                        "neutral-dark": "#132210",
+                        "neutral-border": "#294922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-nav {
+            background: rgba(5, 8, 4, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at center, rgba(0, 255, 65, 0.08) 0%, rgba(5, 8, 4, 1) 70%);
+        }
+
+        .neon-glow:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+            border-color: #00FF41;
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(rgba(41, 73, 34, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(41, 73, 34, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden">
+    <div class="relative min-h-screen flex flex-col">
+        <!-- Grid Background Decor -->
+        <div class="absolute inset-0 grid-bg pointer-events-none opacity-40"></div>
+
+        <!-- Navbar -->
+        <nav class="sticky top-0 z-50 glass-nav border-b border-neutral-border/50">
+            <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <div class="flex items-center gap-2 group cursor-pointer">
+                    <div
+                        class="w-10 h-10 bg-primary flex items-center justify-center rounded-lg shadow-[0_0_15px_rgba(0,255,65,0.4)]">
+                        <span class="material-symbols-outlined text-background-dark font-bold">query_stats</span>
+                    </div>
+                    <span class="text-2xl font-black tracking-tighter text-white">Mind<span
+                            class="text-primary">X</span></span>
+                </div>
+                <div class="hidden md:flex items-center gap-10">
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="#features">Features</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="#how-it-works">How It
+                        Works</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="#cta">Pricing</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="window.location.href='/login.html'"
+                        class="text-sm font-bold px-6 py-2.5 rounded-lg text-white hover:text-primary transition-colors">Login</button>
+                    <button onclick="window.location.href='/signup.html'"
+                        class="text-sm font-bold px-6 py-2.5 rounded-lg bg-primary text-background-dark shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">Sign
+                        Up</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <main class="relative flex-1 hero-gradient">
+            <div class="max-w-7xl mx-auto px-6 pt-24 pb-32 flex flex-col items-center text-center">
+                <div
+                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-bold mb-8 tracking-widest uppercase">
+                    <span class="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+                    Next-Gen AI Intelligence
+                </div>
+                <h1 class="text-5xl md:text-7xl font-black text-white leading-tight tracking-tight max-w-4xl mb-6">
+                    Search Beyond Answers. <br />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">Discover
+                        Truth.</span>
+                </h1>
+                <p class="text-lg md:text-xl text-slate-400 max-w-2xl mb-12">
+                    Experience the next generation of AI-powered search with verified accuracy and real-time deep web
+                    synthesis.
+                </p>
+
+                <!-- Search Interface -->
+                <div class="w-full max-w-3xl group mb-20">
+                    <div
+                        class="relative p-1 rounded-2xl bg-neutral-border/30 border border-neutral-border focus-within:border-primary/50 transition-all">
+                        <div class="flex items-center bg-neutral-dark/80 rounded-xl overflow-hidden px-4 py-2">
+                            <span class="material-symbols-outlined text-primary mr-3">search</span>
+                            <input id="hero-search-input"
+                                class="bg-transparent border-none focus:ring-0 text-white placeholder-slate-500 w-full text-lg py-3"
+                                placeholder="Ask MindX anything..." type="text" />
+                            <button onclick="handleHeroSearch()"
+                                class="bg-primary hover:bg-primary/90 text-background-dark font-black px-8 py-3 rounded-lg flex items-center gap-2 transition-all">
+                                <span>Search</span>
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex justify-center gap-4 mt-4 text-xs font-medium text-slate-500">
+                        <span>Try: "Latest breakthroughs in fusion energy"</span>
+                        <span class="text-neutral-border">|</span>
+                        <span>"Verify current global chip manufacturing market share"</span>
+                    </div>
+                </div>
+
+                <!-- Stats Bar -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+                    <div
+                        class="flex flex-col items-center p-8 rounded-2xl border border-neutral-border/40 bg-neutral-dark/30">
+                        <span class="text-4xl font-black text-white mb-1">50+</span>
+                        <span class="text-primary text-sm font-bold uppercase tracking-widest">Global Sources</span>
+                    </div>
+                    <div
+                        class="flex flex-col items-center p-8 rounded-2xl border border-neutral-border/40 bg-neutral-dark/30">
+                        <span class="text-4xl font-black text-white mb-1">7-Stage</span>
+                        <span class="text-primary text-sm font-bold uppercase tracking-widest">Verification</span>
+                    </div>
+                    <div
+                        class="flex flex-col items-center p-8 rounded-2xl border border-neutral-border/40 bg-neutral-dark/30">
+                        <span class="text-4xl font-black text-white mb-1">99%</span>
+                        <span class="text-primary text-sm font-bold uppercase tracking-widest">Verified Accuracy</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Features Section -->
+        <section id="features" class="py-32 bg-background-dark relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-6 relative z-10">
+                <div class="text-center mb-20">
+                    <h2 class="text-4xl md:text-5xl font-black text-white mb-4">Why MindX?</h2>
+                    <p class="text-slate-400 max-w-xl mx-auto">Advanced RAG architecture combined with multi-step
+                        validation logic for results you can trust.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div
+                        class="p-8 rounded-2xl bg-neutral-dark/20 border border-neutral-border/50 neon-glow transition-all group">
+                        <div
+                            class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-3xl">hub</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">50+ Sources</h3>
+                        <p class="text-slate-400 leading-relaxed">Deep web search across academic journals, news, and
+                            technical databases. We don't just guess; we research.</p>
+                    </div>
+                    <div
+                        class="p-8 rounded-2xl bg-neutral-dark/20 border border-neutral-border/50 neon-glow transition-all group">
+                        <div
+                            class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-3xl">verified_user</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">AI Quality Pipeline</h3>
+                        <p class="text-slate-400 leading-relaxed">A proprietary 7-stage verification process designed to
+                            eliminate hallucinations and prioritize factual consistency.</p>
+                    </div>
+                    <div
+                        class="p-8 rounded-2xl bg-neutral-dark/20 border border-neutral-border/50 neon-glow transition-all group">
+                        <div
+                            class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-3xl">database</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Hybrid RAG</h3>
+                        <p class="text-slate-400 leading-relaxed">Seamlessly integrate your private documentation with
+                            real-time web intelligence for the most contextual insights.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="py-32 bg-background-dark/50 border-t border-neutral-border/30">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-24">
+                    <h2 class="text-4xl md:text-5xl font-black text-white mb-4">How It Works</h2>
+                    <p class="text-slate-400">The engine behind the truth, simplified into four core steps.</p>
+                </div>
+                <div class="relative max-w-4xl mx-auto">
+                    <div
+                        class="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-primary/50 via-neutral-border to-primary/50 -translate-x-1/2 hidden md:block">
+                    </div>
+                    <!-- Step 1 -->
+                    <div class="relative flex flex-col md:flex-row items-center mb-24 group">
+                        <div class="md:w-1/2 md:pr-20 md:text-right mb-6 md:mb-0">
+                            <h4 class="text-2xl font-bold text-white mb-2">Ask a Question</h4>
+                            <p class="text-slate-400">Natural language input optimized for complex, multi-layered
+                                queries.</p>
+                        </div>
+                        <div
+                            class="relative z-10 w-12 h-12 rounded-full bg-background-dark border-4 border-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,242,13,0.3)]">
+                            <span class="text-white font-black">1</span>
+                        </div>
+                        <div class="md:w-1/2 md:pl-20"></div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="relative flex flex-col md:flex-row-reverse items-center mb-24 group">
+                        <div class="md:w-1/2 md:pl-20 mb-6 md:mb-0">
+                            <h4 class="text-2xl font-bold text-white mb-2">We Search 50+ Sources</h4>
+                            <p class="text-slate-400">Our agents crawl real-time web data and private databases
+                                simultaneously.</p>
+                        </div>
+                        <div
+                            class="relative z-10 w-12 h-12 rounded-full bg-background-dark border-4 border-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,242,13,0.3)]">
+                            <span class="text-white font-black">2</span>
+                        </div>
+                        <div class="md:w-1/2 md:pr-20"></div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="relative flex flex-col md:flex-row items-center mb-24 group">
+                        <div class="md:w-1/2 md:pr-20 md:text-right mb-6 md:mb-0">
+                            <h4 class="text-2xl font-bold text-white mb-2">AI Verifies &amp; Cross-Checks</h4>
+                            <p class="text-slate-400">The Quality Pipeline cross-references every claim against multiple
+                                sources.</p>
+                        </div>
+                        <div
+                            class="relative z-10 w-12 h-12 rounded-full bg-background-dark border-4 border-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,242,13,0.3)]">
+                            <span class="text-white font-black">3</span>
+                        </div>
+                        <div class="md:w-1/2 md:pl-20"></div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="relative flex flex-col md:flex-row-reverse items-center group">
+                        <div class="md:w-1/2 md:pl-20 mb-6 md:mb-0">
+                            <h4 class="text-2xl font-bold text-white mb-2">Get a Verified Answer</h4>
+                            <p class="text-slate-400">A clear, citation-backed response delivered in milliseconds.</p>
+                        </div>
+                        <div
+                            class="relative z-10 w-12 h-12 rounded-full bg-background-dark border-4 border-primary flex items-center justify-center shadow-[0_0_15px_rgba(51,242,13,0.3)]">
+                            <span class="text-white font-black">4</span>
+                        </div>
+                        <div class="md:w-1/2 md:pr-20"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section id="cta" class="py-32">
+            <div class="max-w-5xl mx-auto px-6">
+                <div
+                    class="relative rounded-3xl bg-neutral-dark overflow-hidden p-12 md:p-20 text-center border border-primary/20">
+                    <div class="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+                    <div class="relative z-10">
+                        <h2 class="text-4xl md:text-5xl font-black text-white mb-6">Ready to Search Smarter?</h2>
+                        <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-10">Join thousands of researchers and
+                            professionals who rely on MindX for factual accuracy.</p>
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <button onclick="window.location.href='/signup.html'"
+                                class="w-full sm:w-auto px-10 py-4 rounded-xl bg-primary text-background-dark font-black text-lg shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all">Get
+                                Started Free</button>
+                            <button
+                                class="w-full sm:w-auto px-10 py-4 rounded-xl border border-neutral-border text-white font-bold text-lg hover:bg-neutral-border/20 transition-all">Request
+                                Demo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-20 border-t border-neutral-border/30 bg-background-dark">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="flex flex-col md:flex-row items-start justify-between gap-12">
+                    <div class="max-w-sm">
+                        <div class="flex items-center gap-2 mb-6">
+                            <div class="w-8 h-8 bg-primary flex items-center justify-center rounded-lg">
+                                <span
+                                    class="material-symbols-outlined text-background-dark text-sm font-bold">query_stats</span>
+                            </div>
+                            <span class="text-xl font-black tracking-tighter text-white">Mind<span
+                                    class="text-primary">X</span></span>
+                        </div>
+                        <p class="text-slate-500 mb-6">Building the world's most reliable intelligence interface for a
+                            decentralized future of knowledge.</p>
+                        <div class="flex items-center gap-4">
+                            <a class="w-10 h-10 rounded-lg border border-neutral-border/50 flex items-center justify-center hover:border-primary transition-colors"
+                                href="#">
+                                <span class="material-symbols-outlined text-slate-400 text-lg">share</span>
+                            </a>
+                            <a class="w-10 h-10 rounded-lg border border-neutral-border/50 flex items-center justify-center hover:border-primary transition-colors"
+                                href="#">
+                                <span class="material-symbols-outlined text-slate-400 text-lg">public</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-12 md:gap-24">
+                        <div class="flex flex-col gap-4">
+                            <span class="text-white font-bold text-sm uppercase tracking-widest">Platform</span>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm"
+                                href="#features">Features</a>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">Search
+                                Engine</a>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">API
+                                Access</a>
+                        </div>
+                        <div class="flex flex-col gap-4">
+                            <span class="text-white font-bold text-sm uppercase tracking-widest">Company</span>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">About</a>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">Contact</a>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">Careers</a>
+                        </div>
+                        <div class="flex flex-col gap-4">
+                            <span class="text-white font-bold text-sm uppercase tracking-widest">Legal</span>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">Privacy</a>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">Terms</a>
+                            <a class="text-slate-500 hover:text-primary transition-colors text-sm"
+                                href="#">Compliance</a>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="mt-20 pt-8 border-t border-neutral-border/20 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <p class="text-slate-600 text-sm">&copy; 2026 MindX Intelligence Systems. All rights reserved.</p>
+                    <div class="flex items-center gap-6">
+                        <span class="flex items-center gap-2 text-xs text-slate-500">
+                            <span class="h-2 w-2 rounded-full bg-primary"></span>
+                            All Systems Operational
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Hero search → redirect to dashboard if logged in, or signup
+        function handleHeroSearch() {
+            const query = document.getElementById('hero-search-input').value.trim();
+            if (!query) return;
+            const token = localStorage.getItem('mindx_token');
+            if (token) {
+                window.location.href = '/dashboard.html?q=' + encodeURIComponent(query);
+            } else {
+                window.location.href = '/signup.html?q=' + encodeURIComponent(query);
+            }
+        }
+        // Enter key support
+        document.getElementById('hero-search-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleHeroSearch();
+        });
+    </script>
+</body>
+
+</html>

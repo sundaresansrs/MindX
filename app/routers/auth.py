@@ -25,6 +25,9 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         password_hash=hash_password(user.password),
         account_type=user.account_type,
         company_name=user.company_name,
+        full_name=user.full_name,
+
+
     )
 
     db.add(db_user)
@@ -75,3 +78,12 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
+@router.get("/me")
+def read_users_me(current_user: User = Depends(get_current_user)):
+    return {
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "account_type": current_user.account_type,
+    }

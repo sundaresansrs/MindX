@@ -10,10 +10,16 @@ class UserCreate(BaseModel):
     password: str
     account_type: str
     company_name: Optional[str] = None
+    full_name: str
+
 
 class QAInput(BaseModel):
     query: str
+    use_search: bool = True  # Enable/disable web search
+    max_sources: int = 20    # Maximum sources to include
 
 class QAOutput(BaseModel):
     answer: str
-    sources: List[str]
+    sources: List[dict]  # List of {title, url, snippet, source}
+    confidence: float
+    metadata: dict

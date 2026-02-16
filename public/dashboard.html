@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>MindX | AI Search Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#00FF41",
+                        "neon": "#00FF41",
+                        "matrix": "#00FF00",
+
+                        "background-light": "#f6f8f5",
+                        "background-dark": "#050804",
+                        "surface-dark": "#0e1f10",
+                        "border-dark": "#294922",
+                        "neutral-dark": "#132210",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+
+    <!-- Top Navigation Bar -->
+    <header
+        class="sticky top-0 z-50 w-full border-b border-border-dark bg-background-dark/80 backdrop-blur-md px-6 py-3 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-3 no-underline">
+            <div
+                class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(0,255,65,0.3)]">
+                <span class="material-symbols-outlined text-sm font-bold">query_stats</span>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight text-white">Mind<span class="text-primary">X</span></h1>
+        </a>
+        <div class="flex items-center gap-6">
+            <span id="user-greeting" class="text-sm font-medium text-slate-400">Hello, User</span>
+            <button onclick="handleLogout()"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-border-dark hover:bg-white/5 hover:border-primary/50 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar: Recent Searches -->
+        <aside class="w-72 border-r border-border-dark bg-surface-dark/30 hidden lg:flex flex-col">
+            <div class="p-6">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Recent Searches</h2>
+                <nav id="search-history" class="space-y-1">
+                    <p class="text-xs text-slate-600 px-3 py-2">No searches yet</p>
+                </nav>
+            </div>
+            <div class="mt-auto p-6">
+                <div class="rounded-xl border border-border-dark bg-background-dark p-4">
+                    <p class="text-xs text-slate-500 leading-relaxed">Powered by <span
+                            class="text-primary font-bold">Groq AI</span> with 7-stage quality verification.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto no-scrollbar bg-background-dark">
+            <div class="max-w-4xl mx-auto px-6 py-12 space-y-12">
+
+                <!-- Search Section -->
+                <section class="space-y-6">
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                            <span
+                                class="material-symbols-outlined text-slate-500 group-focus-within:text-primary transition-colors">search</span>
+                        </div>
+                        <input id="search-input"
+                            class="w-full bg-surface-dark border border-border-dark rounded-2xl py-5 pl-14 pr-32 text-lg text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all shadow-2xl"
+                            placeholder="Ask anything..." type="text"
+                            onkeydown="if(event.key==='Enter') handleSearch()" />
+                        <div class="absolute inset-y-2 right-2 flex items-center">
+                            <button id="search-btn" onclick="handleSearch()"
+                                class="bg-primary hover:bg-primary/90 text-black font-bold h-full px-8 rounded-xl transition-all active:scale-95 shadow-lg shadow-primary/10">
+                                Search
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search Controls -->
+                    <div class="flex items-center justify-between px-2">
+                        <div class="flex items-center gap-6">
+                            <label class="inline-flex items-center cursor-pointer group">
+                                <span
+                                    class="mr-3 text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors">Web
+                                    Search</span>
+                                <div id="web-toggle" onclick="toggleWebSearch()"
+                                    class="relative w-11 h-6 bg-slate-800 rounded-full border border-slate-700 cursor-pointer">
+                                    <div id="web-toggle-dot"
+                                        class="absolute left-1 top-1 bg-primary w-4 h-4 rounded-full transition-transform transform translate-x-5">
+                                    </div>
+                                </div>
+                            </label>
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm font-medium text-slate-400">Max Sources:</span>
+                                <select id="max-sources"
+                                    class="bg-surface-dark border border-border-dark text-slate-200 text-sm rounded-lg focus:ring-primary focus:border-primary block p-1 px-3">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Example Queries (Chips) -->
+                    <div id="example-chips" class="flex flex-wrap gap-2 pt-2">
+                        <button onclick="searchChip(this)"
+                            class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">What
+                            is quantum computing?</button>
+                        <button onclick="searchChip(this)"
+                            class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest
+                            AI developments 2026</button>
+                        <button onclick="searchChip(this)"
+                            class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">How
+                            does blockchain work?</button>
+                    </div>
+                </section>
+
+                <!-- Empty State -->
+                <section id="empty-state"
+                    class="border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
+                    <span class="material-symbols-outlined text-primary text-5xl opacity-40">search</span>
+                    <p class="text-lg font-semibold text-slate-500">Ask anything...</p>
+                    <p class="text-sm text-slate-600">Your AI-verified answers will appear here</p>
+                </section>
+
+                <!-- Loading State (hidden by default) -->
+                <section id="loading-state"
+                    class="hidden border border-border-dark bg-surface-dark/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-6">
+                    <div class="relative flex items-center justify-center size-16">
+                        <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                        <div
+                            class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin">
+                        </div>
+                        <span class="material-symbols-outlined text-primary text-2xl">neurology</span>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-lg font-semibold text-white">Synthesizing Results</p>
+                        <div id="pipeline-stages" class="flex flex-col gap-1">
+                            <div id="stage-1" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                <span class="material-symbols-outlined text-[16px]">circle</span>
+                                <span>Expanding query...</span>
+                            </div>
+                            <div id="stage-2" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                <span class="material-symbols-outlined text-[16px]">circle</span>
+                                <span>Searching sources...</span>
+                            </div>
+                            <div id="stage-3" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                <span class="material-symbols-outlined text-[16px]">circle</span>
+                                <span>Generating answers...</span>
+                            </div>
+                            <div id="stage-4" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                <span class="material-symbols-outlined text-[16px]">circle</span>
+                                <span>Verifying facts...</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Answer Card (hidden by default) -->
+                <article id="answer-section" class="hidden space-y-6">
+                    <div class="bg-surface-dark border border-border-dark rounded-2xl overflow-hidden shadow-xl">
+                        <div class="p-8 space-y-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="bg-primary/20 p-1.5 rounded-lg">
+                                    <span class="material-symbols-outlined text-primary text-[20px]">magic_button</span>
+                                </div>
+                                <span class="text-sm font-bold tracking-wide text-primary uppercase">AI Answer</span>
+                            </div>
+                            <div id="answer-body"
+                                class="prose prose-invert max-w-none text-slate-300 space-y-4 leading-relaxed">
+                                <!-- Answer content injected here -->
+                            </div>
+                        </div>
+                        <!-- Metadata Bar -->
+                        <div
+                            class="bg-background-dark/50 border-t border-border-dark px-8 py-4 flex flex-wrap gap-4 items-center">
+                            <div
+                                class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
+                                <span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+                                <span id="meta-confidence">--% Confidence</span>
+                            </div>
+                            <div
+                                class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
+                                <span class="material-symbols-outlined text-[14px] text-primary">menu_book</span>
+                                <span id="meta-sources">-- Sources</span>
+                            </div>
+                            <div
+                                class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
+                                <span class="material-symbols-outlined text-[14px] text-primary">timer</span>
+                                <span id="meta-time">--s</span>
+                            </div>
+                            <div
+                                class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full ml-auto">
+                                <span class="material-symbols-outlined text-[14px] text-primary">language</span>
+                                <span id="meta-mode">Web Mode</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Sources Panel (hidden by default) -->
+                <section id="sources-section" class="hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-lg font-bold text-white">Sources</h3>
+                            <span id="sources-count-badge"
+                                class="bg-primary/20 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">0</span>
+                        </div>
+                    </div>
+                    <div id="sources-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Source items injected here -->
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Footer -->
+            <footer class="max-w-4xl mx-auto px-6 py-12 border-t border-border-dark text-center">
+                <p class="text-slate-600 text-xs">MindX AI Search Engine • Powered by Groq • © 2026</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // ─── State ───
+        let webSearchEnabled = true;
+        let searchHistory = [];
+
+        // ─── Auth Check ───
+        const token = localStorage.getItem('mindx_token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        // Load user greeting
+        try {
+            const user = JSON.parse(localStorage.getItem('mindx_user') || '{}');
+            const name = user.full_name || user.email || 'User';
+            document.getElementById('user-greeting').textContent = 'Hello, ' + name;
+        } catch (e) { }
+
+        // ─── Logout ───
+        function handleLogout() {
+            localStorage.removeItem('mindx_token');
+            localStorage.removeItem('mindx_user');
+            window.location.href = '/login.html';
+        }
+
+        // ─── Web Search Toggle ───
+        function toggleWebSearch() {
+            webSearchEnabled = !webSearchEnabled;
+            const dot = document.getElementById('web-toggle-dot');
+            if (webSearchEnabled) {
+                dot.classList.add('translate-x-5');
+                dot.classList.remove('translate-x-0');
+            } else {
+                dot.classList.remove('translate-x-5');
+                dot.classList.add('translate-x-0');
+            }
+        }
+
+        // ─── Example Chip Click ───
+        function searchChip(btn) {
+            document.getElementById('search-input').value = btn.textContent;
+            handleSearch();
+        }
+
+        // ─── Pipeline Stage Animation ───
+        function animateStage(stageNum) {
+            for (let i = 1; i <= 4; i++) {
+                const el = document.getElementById('stage-' + i);
+                const icon = el.querySelector('.material-symbols-outlined');
+                if (i < stageNum) {
+                    el.className = 'flex items-center justify-center gap-2 text-primary/60 text-sm';
+                    icon.textContent = 'check_circle';
+                } else if (i === stageNum) {
+                    el.className = 'flex items-center justify-center gap-2 text-primary text-sm font-medium';
+                    icon.textContent = 'pending';
+                } else {
+                    el.className = 'flex items-center justify-center gap-2 text-slate-600 text-sm';
+                    icon.textContent = 'circle';
+                }
+            }
+        }
+
+        function resetStages() {
+            for (let i = 1; i <= 4; i++) {
+                const el = document.getElementById('stage-' + i);
+                const icon = el.querySelector('.material-symbols-outlined');
+                el.className = 'flex items-center justify-center gap-2 text-slate-600 text-sm';
+                icon.textContent = 'circle';
+            }
+        }
+
+        // ─── Add to Sidebar History ───
+        function addToHistory(query) {
+            searchHistory.unshift(query);
+            if (searchHistory.length > 10) searchHistory.pop();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const nav = document.getElementById('search-history');
+            if (searchHistory.length === 0) {
+                nav.innerHTML = '<p class="text-xs text-slate-600 px-3 py-2">No searches yet</p>';
+                return;
+            }
+            nav.innerHTML = searchHistory.map((q, i) =>
+                `<a href="#" onclick="reSearch('${q.replace(/'/g, "\\'")}'); return false;" class="flex items-center gap-3 px-3 py-2.5 rounded-lg ${i === 0 ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-white hover:bg-white/5'} transition-all">
+                    <span class="material-symbols-outlined text-[20px]">${i === 0 ? 'history' : 'search'}</span>
+                    <span class="text-sm font-medium truncate">${q}</span>
+                </a>`
+            ).join('');
+        }
+
+        function reSearch(query) {
+            document.getElementById('search-input').value = query;
+            handleSearch();
+        }
+
+        // ─── Display Sources ───
+        function renderSources(sources) {
+            const grid = document.getElementById('sources-grid');
+            if (!sources || sources.length === 0) {
+                document.getElementById('sources-section').classList.add('hidden');
+                return;
+            }
+            document.getElementById('sources-section').classList.remove('hidden');
+            document.getElementById('sources-count-badge').textContent = sources.length;
+
+            grid.innerHTML = sources.map(s => {
+                const domain = s.source || (s.url ? new URL(s.url).hostname : 'unknown');
+                return `<div class="p-4 bg-surface-dark border border-border-dark rounded-xl hover:border-primary/40 transition-all group">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="size-5 rounded bg-primary/20 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary text-[14px]">language</span>
+                        </div>
+                        <span class="text-xs font-medium text-slate-500 uppercase">${domain}</span>
+                    </div>
+                    <h4 class="text-sm font-semibold text-white group-hover:text-primary transition-colors mb-1">
+                        <a href="${s.url || '#'}" target="_blank" class="no-underline hover:underline">${s.title || 'Source'}</a>
+                    </h4>
+                    <p class="text-xs text-slate-400 line-clamp-2">${s.snippet || ''}</p>
+                </div>`;
+            }).join('');
+        }
+
+        // ─── Main Search Handler ───
+        async function handleSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) return;
+
+            const maxSources = document.getElementById('max-sources').value;
+
+            // Show loading, hide others
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('answer-section').classList.add('hidden');
+            document.getElementById('sources-section').classList.add('hidden');
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('example-chips').classList.add('hidden');
+
+            // Animate pipeline stages
+            resetStages();
+            const startTime = Date.now();
+
+            animateStage(1);
+            await sleep(600);
+            animateStage(2);
+
+            try {
+                const response = await fetch('/qa/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token,
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        web_search: webSearchEnabled,
+                        max_results: parseInt(maxSources),
+                    }),
+                });
+
+                animateStage(3);
+                await sleep(400);
+
+                const data = await response.json();
+
+                animateStage(4);
+                await sleep(400);
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Search failed');
+                }
+
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                // Hide loading
+                document.getElementById('loading-state').classList.add('hidden');
+
+                // Show answer
+                document.getElementById('answer-section').classList.remove('hidden');
+                const answerBody = document.getElementById('answer-body');
+
+                // Format the answer with paragraphs
+                const answerText = data.answer || data.response || 'No answer available.';
+                answerBody.innerHTML = answerText.split('\n').filter(p => p.trim()).map(p =>
+                    `<p>${p}</p>`
+                ).join('');
+
+                // Update metadata
+                document.getElementById('meta-confidence').textContent = (data.confidence || 85) + '% Confidence';
+                document.getElementById('meta-sources').textContent = (data.sources_count || (data.sources ? data.sources.length : 0)) + ' Sources';
+                document.getElementById('meta-time').textContent = elapsed + 's';
+                document.getElementById('meta-mode').textContent = webSearchEnabled ? 'Web Mode' : 'RAG Mode';
+
+                // Show sources
+                renderSources(data.sources || []);
+
+                // Add to sidebar history
+                addToHistory(query);
+
+            } catch (err) {
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('answer-section').classList.remove('hidden');
+                document.getElementById('answer-body').innerHTML = `
+                    <div class="flex items-center gap-2 text-red-400">
+                        <span class="material-symbols-outlined">error</span>
+                        <p class="text-red-400">${err.message}</p>
+                    </div>`;
+                document.getElementById('meta-confidence').textContent = '-- Confidence';
+                document.getElementById('meta-sources').textContent = '0 Sources';
+                document.getElementById('meta-time').textContent = '--s';
+            }
+        }
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // ─── Check for ?q= parameter (from landing page) ───
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get('q');
+            if (q) {
+                document.getElementById('search-input').value = q;
+                handleSearch();
+            }
+        });
+    </script>
+</body>
+
+</html>
