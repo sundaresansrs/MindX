@@ -7,6 +7,9 @@ from app.services.llm_service import LLMService
 from app.services.search_service import SearchService
 import logging
 import time
+from sqlalchemy.orm import Session
+from app.services.vector_service import VectorService
+
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +28,13 @@ class QualityPipeline:
     7. Fact Verification - Verify facts and attribute sources
     """
     
-    def __init__(self, use_reranking: bool = False):
+    def __init__(self, db: Session, use_reranking: bool = False):
+        self.db = db
         self.llm_service = LLMService()
         self.search_service = SearchService()
+        self.vector_service = VectorService(db)
         self.use_reranking = use_reranking
+
         
         # Initialize re-ranking if enabled
         if use_reranking:
@@ -72,12 +78,24 @@ class QualityPipeline:
             logger.info("Stage 1: Query Enhancement")
             expanded_queries = await self.expand_query(query)
             
-            # Stage 2: Multi-Source Retrieval
+            # Stage 2: Multi-Source Retrieval (Web + Vector)
             logger.info("Stage 2: Multi-Source Retrieval")
-            search_results = self.search_service.search_multiple_queries(
+            
+            # Fetch Web Results
+            web_results = self.search_service.search_multiple_queries(
                 expanded_queries, 
                 max_results_per_query=20
             )
+            
+            # Fetch Vector Results (Hybrid RAG)
+            vector_results = await self.vector_service.search_documents(
+                query, 
+                limit=10
+            )
+            
+            # Combine results
+            search_results = vector_results + web_results
+
             
             if not search_results:
                 # Fallback to LLM-only if no search results
@@ -123,8 +141,11 @@ class QualityPipeline:
             # Add metadata
             verified_result["metadata"] = {
                 "queries_used": len(expanded_queries),
+                "web_sources": len(web_results),
+                "vector_sources": len(vector_results),
                 "sources_retrieved": len(search_results),
                 "sources_used": len(ranked_results[:max_sources]),
+
                 "processing_time": time.time() - start_time,
                 "mode": "full_pipeline"
             }

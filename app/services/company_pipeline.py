@@ -15,7 +15,8 @@ class CompanyPipeline:
         self.user = user
         self.history = ChatHistoryService(db)
         # Enable re-ranking for company accounts (premium feature)
-        self.quality_pipeline = QualityPipeline(use_reranking=True)
+        self.quality_pipeline = QualityPipeline(db=db, use_reranking=True)
+
 
     async def process(self, query: str, use_search: bool = True, max_sources: int = 20):
         """

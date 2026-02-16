@@ -13,7 +13,8 @@ class PersonalPipeline:
         self.db = db
         self.user = user
         self.history = ChatHistoryService(db)
-        self.quality_pipeline = QualityPipeline(use_reranking=False)
+        self.quality_pipeline = QualityPipeline(db=db, use_reranking=False)
+
 
     async def process(self, query: str, use_search: bool = True, max_sources: int = 20):
         """
