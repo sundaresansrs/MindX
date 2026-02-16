@@ -91,7 +91,39 @@
                     <p class="text-xs text-slate-600 px-3 py-2">No searches yet</p>
                 </nav>
             </div>
+
+            <div class="px-6 py-4 border-t border-border-dark mt-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Knowledge Base</h2>
+                <div class="space-y-3">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-slate-500 uppercase font-bold">Ingest URL</label>
+                        <div class="flex gap-2">
+                            <input id="ingest-url"
+                                class="flex-1 bg-background-dark border border-border-dark rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-slate-700 focus:border-primary/50 outline-none"
+                                placeholder="https://..." />
+                            <button onclick="handleIngest('url')"
+                                class="bg-primary/20 text-primary border border-primary/30 p-1.5 rounded-lg hover:bg-primary/30 transition-colors">
+                                <span class="material-symbols-outlined text-[16px]">add_link</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-slate-500 uppercase font-bold">Index Text</label>
+                        <div class="flex gap-2">
+                            <textarea id="ingest-text"
+                                class="flex-1 bg-background-dark border border-border-dark rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-slate-700 focus:border-primary/50 outline-none h-16 resize-none"
+                                placeholder="Paste content..."></textarea>
+                        </div>
+                        <button onclick="handleIngest('text')"
+                            class="w-full bg-primary/20 text-primary border border-primary/30 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/30 transition-colors mt-1">
+                            Index Content
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-auto p-6">
+
                 <div class="rounded-xl border border-border-dark bg-background-dark p-4">
                     <p class="text-xs text-slate-500 leading-relaxed">Powered by <span
                             class="text-primary font-bold">Groq AI</span> with 7-stage quality verification.</p>
@@ -186,21 +218,34 @@
                         <div id="pipeline-stages" class="flex flex-col gap-1">
                             <div id="stage-1" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
                                 <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Expanding query...</span>
+                                <span>Query Enhancement</span>
                             </div>
                             <div id="stage-2" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
                                 <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Searching sources...</span>
+                                <span>Web & Vector Retrieval</span>
                             </div>
                             <div id="stage-3" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
                                 <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Generating answers...</span>
+                                <span>Dynamic Re-ranking</span>
                             </div>
                             <div id="stage-4" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
                                 <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Verifying facts...</span>
+                                <span>Semantic Chunking</span>
+                            </div>
+                            <div id="stage-5" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                <span class="material-symbols-outlined text-[16px]">circle</span>
+                                <span>Answer Generation</span>
+                            </div>
+                            <div id="stage-6" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                <span class="material-symbols-outlined text-[16px]">circle</span>
+                                <span>Consistency Optimization</span>
+                            </div>
+                            <div id="stage-7" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                <span class="material-symbols-outlined text-[16px]">circle</span>
+                                <span>Fact Verification</span>
                             </div>
                         </div>
+
                     </div>
                 </section>
 
@@ -240,7 +285,8 @@
                             <div
                                 class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full ml-auto">
                                 <span class="material-symbols-outlined text-[14px] text-primary">language</span>
-                                <span id="meta-mode">Web Mode</span>
+                                <span id="meta-mode">Hybrid Mode</span>
+
                             </div>
                         </div>
                     </div>
@@ -315,7 +361,7 @@
 
         // ─── Pipeline Stage Animation ───
         function animateStage(stageNum) {
-            for (let i = 1; i <= 4; i++) {
+            for (let i = 1; i <= 7; i++) {
                 const el = document.getElementById('stage-' + i);
                 const icon = el.querySelector('.material-symbols-outlined');
                 if (i < stageNum) {
@@ -332,13 +378,14 @@
         }
 
         function resetStages() {
-            for (let i = 1; i <= 4; i++) {
+            for (let i = 1; i <= 7; i++) {
                 const el = document.getElementById('stage-' + i);
                 const icon = el.querySelector('.material-symbols-outlined');
                 el.className = 'flex items-center justify-center gap-2 text-slate-600 text-sm';
                 icon.textContent = 'circle';
             }
         }
+
 
         // ─── Add to Sidebar History ───
         function addToHistory(query) {
@@ -412,7 +459,7 @@
             const startTime = Date.now();
 
             animateStage(1);
-            await sleep(600);
+            await sleep(400);
             animateStage(2);
 
             try {
@@ -424,18 +471,25 @@
                     },
                     body: JSON.stringify({
                         query: query,
-                        web_search: webSearchEnabled,
-                        max_results: parseInt(maxSources),
+                        use_search: webSearchEnabled,
+                        max_sources: parseInt(maxSources),
                     }),
                 });
 
                 animateStage(3);
                 await sleep(400);
+                animateStage(4);
+                await sleep(400);
+                animateStage(5);
+                await sleep(300);
 
                 const data = await response.json();
 
-                animateStage(4);
-                await sleep(400);
+                animateStage(6);
+                await sleep(300);
+                animateStage(7);
+                await sleep(300);
+
 
                 if (!response.ok) {
                     throw new Error(data.detail || 'Search failed');
@@ -460,7 +514,8 @@
                 document.getElementById('meta-confidence').textContent = (data.confidence || 85) + '% Confidence';
                 document.getElementById('meta-sources').textContent = (data.sources_count || (data.sources ? data.sources.length : 0)) + ' Sources';
                 document.getElementById('meta-time').textContent = elapsed + 's';
-                document.getElementById('meta-mode').textContent = webSearchEnabled ? 'Web Mode' : 'RAG Mode';
+                document.getElementById('meta-mode').textContent = webSearchEnabled ? 'Hybrid Mode' : 'Local RAG Mode';
+
 
                 // Show sources
                 renderSources(data.sources || []);
@@ -482,7 +537,44 @@
             }
         }
 
+        async function handleIngest(type) {
+            const inputEl = document.getElementById(type === 'url' ? 'ingest-url' : 'ingest-text');
+            const content = inputEl.value.trim();
+            if (!content) return;
+
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">sync</span>';
+            btn.disabled = true;
+
+            try {
+                const payload = type === 'url' ? { url: content } : { text: content };
+                const response = await fetch('/documents/ingest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    inputEl.value = '';
+                    alert('Successfully indexed to Knowledge Base!');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.detail || 'Failed to ingest'));
+                }
+            } catch (err) {
+                alert('Connection error');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 
         // ─── Check for ?q= parameter (from landing page) ───
         window.addEventListener('DOMContentLoaded', () => {
