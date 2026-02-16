@@ -1,22 +1,19 @@
-
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
-class TokenData(BaseModel):
-    username: Optional[str] = None
-
-class User(BaseModel):
-    username: str
-
-class UserCreate(User):
+class UserCreate(BaseModel):
+    email: str
     password: str
+    account_type: str
+    company_name: Optional[str] = None
 
 class QAInput(BaseModel):
     query: str
 
 class QAOutput(BaseModel):
     answer: str
+    sources: List[str]

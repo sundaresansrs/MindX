@@ -1,18 +1,23 @@
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+
+from app.schemas import QAInput
 from app.database import get_db
-from app.services.quality_pipeline import QualityPipeline
-from app.schemas import QAInput, QAOutput
+from app.routers.auth import get_current_user
+from app.services.pipeline_factory import PipelineFactory
 
-router = APIRouter()
+router = APIRouter(prefix="/qa", tags=["qa"])
 
-pipeline = QualityPipeline()
 
-@router.post("/qa/", response_model=QAOutput)
-def answer_question(qa_input: QAInput, db: Session = Depends(get_db)):
-    try:
-        answer = pipeline.run(qa_input.query)
-        return QAOutput(answer=answer)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@router.post("/")
+async def ask_question(
+    payload: QAInput,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    pipeline = PipelineFactory.get_pipeline(
+        user=current_user,
+        db=db,
+    )
+
+    return await pipeline.process(payload.query)

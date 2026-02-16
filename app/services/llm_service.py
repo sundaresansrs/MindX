@@ -1,19 +1,44 @@
 import os
 from groq import Groq
-from app.config import settings
+
 
 class LLMService:
     def __init__(self):
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-    
-    def generate_text(self, prompt: str) -> str:
-        try:
-            response = self.client.chat.completions.create(
-                model="llama-3.1-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=1000
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"Error: {str(e)}"
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError("GROQ_API_KEY is not set")
+
+        self.client = Groq(api_key=api_key)
+
+        # ✅ CURRENTLY SUPPORTED MODEL
+        self.model = "llama-3.1-8b-instant"
+
+    async def generate_response(
+        self,
+        prompt: str,
+        context: str | None = None,
+    ) -> str:
+        messages = []
+
+        if context:
+            messages.append({
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant. "
+                    "Use the following context if relevant:\n\n"
+                    f"{context}"
+                )
+            })
+
+        messages.append({
+            "role": "user",
+            "content": prompt,
+        })
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=0.3,
+        )
+
+        return response.choices[0].message.content

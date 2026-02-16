@@ -1,30 +1,77 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app import models, schemas
+from jose import JWTError, jwt
+from datetime import datetime
+import os
+
 from app.database import get_db
-from app.utils import security
+from app.models.user import User
+from app.schemas import UserCreate, Token
+from app.utils.security import hash_password, verify_password
+from app.utils.jwt import create_access_token, oauth2_scheme, SECRET_KEY, ALGORITHM
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/token", response_model=schemas.Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = security.authenticate_user(db, form_data.username, form_data.password)
-    if not user:
+
+@router.post("/signup", response_model=Token)
+def signup(user: UserCreate, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == user.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    db_user = User(
+        email=user.email,
+        password_hash=hash_password(user.password),
+        account_type=user.account_type,
+        company_name=user.company_name,
+    )
+
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    token = create_access_token({"sub": db_user.email})
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/login", response_model=Token)
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.email == form_data.username).first()
+
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Incorrect email or password",
         )
-    access_token = security.create_access_token(
-        data={"sub": user.username}
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/users/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = security.get_user(db, username=user.username)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    return security.create_user(db=db, user=user)
+    token = create_access_token({"sub": user.email})
+    return {"access_token": token, "token_type": "bearer"}
+
+
+# ✅ USED BY QA ROUTER
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str | None = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise credentials_exception
+
+    return user
