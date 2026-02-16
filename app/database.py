@@ -4,19 +4,22 @@ import os
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# If it's a cloud database (like Supabase/Aiven), it often requires SSL
-if DATABASE_URL and "postgresql" in DATABASE_URL and "sslmode" not in DATABASE_URL:
-    if "?" in DATABASE_URL:
-        DATABASE_URL += "&sslmode=require"
-    else:
-        DATABASE_URL += "?sslmode=require"
-
-# Default to local if no URL provided (for safety)
+# Default to local if no URL provided
 if not DATABASE_URL:
     DATABASE_URL = "postgresql://postgres:mindx_password_2026@localhost:5432/mindx"
 
-print(f"Connecting to database: {DATABASE_URL.split('@')[-1]}") # Log host only for security
+# SQLAlchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Ensure SSL for cloud databases (Supabase, Vercel Postgres, Neon)
+if "localhost" not in DATABASE_URL and "sslmode" not in DATABASE_URL:
+    separator = "&" if "?" in DATABASE_URL else "?"
+    DATABASE_URL += f"{separator}sslmode=require"
+
+print(f"Connecting to database: {DATABASE_URL.split('@')[-1]}")
 engine = create_engine(DATABASE_URL)
+
 
 
 SessionLocal = sessionmaker(
