@@ -6,6 +6,8 @@ from app.routers import auth, qa, documents
 from app.database import engine, Base
 import app.models.user
 import app.models.chat_history
+import app.models.document
+
 
 
 import os
