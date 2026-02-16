@@ -11,5 +11,5 @@ test_*.py
 check_db_schema.py
 migrate_schema.py
 docker-compose.yml
-requirements.txt
 README.md
+
