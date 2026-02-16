@@ -1,8 +1,9 @@
 {
   "source_directories": [
-    "."
+    "C:\\MindX"
   ],
   "search_path": [
     "C:\\MindX\\.venv\\Lib\\site-packages"
   ]
+
 }
