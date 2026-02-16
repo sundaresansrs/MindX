@@ -32,9 +32,14 @@ app.include_router(documents.router)
 
 @app.on_event("startup")
 def on_startup():
-    print("Creating database tables...")
-    Base.metadata.create_all(bind=engine)
-    print("Database ready.")
+    try:
+        print("Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("Database ready.")
+    except Exception as e:
+        print(f"Database initialization failed: {e}")
+        # We don't raise here so the app can at least serve static pages
+
 
 
 @app.get("/health")
