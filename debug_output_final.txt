@@ -1,0 +1,94 @@
+C:\MindX\app\services\search_service.py:18: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  self.ddgs = DDGS()
+Vector search failed: (psycopg2.errors.UndefinedFunction) operator does not exist: uuid = integer
+LINE 3: WHERE documents.user_id = 1 ORDER BY documents.embedding <=>...
+                                ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: SELECT documents.id, documents.content, documents.source_url, documents.user_id, documents.created_at, documents.embedding 
+FROM documents 
+WHERE documents.user_id = %(user_id_1)s ORDER BY documents.embedding <=> %(embedding_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'user_id_1': 1, 'embedding_1': '[0.008979439735412598,-0.0033776999916881323,0.03938715159893036,-0.03334302827715874,-0.025883600115776062,-0.008772360160946846,0.00337487994693219 ... (15921 characters truncated) ... 5,0.04546055942773819,-0.020407719537615776,-0.007808910217136145,0.025210479274392128,0.02298763021826744,0.000718679977580905,-0.03875664994120598]', 'param_1': 10}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MindX\reproduce_error_full.py", line 35, in test_search
+    result = await pipeline.search(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\services\personal_pipeline.py", line 42, in search
+    self.history.save(
+  File "C:\MindX\app\services\chat_history_service.py", line 27, in save
+    self.db.commit()
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2030, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1311, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1286, in _prepare_impl
+    self.session.flush()
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4331, in flush
+    self._flush(objects)
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4466, in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4427, in _flush
+    flush_context.execute()
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 1233, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.InternalError: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+
+[SQL: INSERT INTO chat_history (user_id, session_id, query, answer, source) VALUES (%(user_id)s, %(session_id)s::UUID, %(query)s, %(answer)s, %(source)s) RETURNING chat_history.id, chat_history.created_at]
+[parameters: {'user_id': 1, 'session_id': UUID('550e8400-e29b-41d4-a716-446655440000'), 'query': 'who is the founder of zepto', 'answer': 'Unfortunately, the provided information does not mention "zepto" or any related context, making it impossible to provide an accurate answer to the question about its founder.', 'source': '10'}]
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+Connecting to database: localhost:5432/mindx
+Testing PersonalPipeline.search with 'Founder of Zepto'...
+SEARCH FAILED!
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\asyncio\proactor_events.py:116: ResourceWarning: unclosed transport <_ProactorSocketTransport fd=2096 read=<_OverlappedFuture cancelled>>
+  _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback

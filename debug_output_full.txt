@@ -1,0 +1,71 @@
+C:\MindX\app\services\search_service.py:18: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  self.ddgs = DDGS()
+Traceback (most recent call last):
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column chat_history.session_id does not exist
+LINE 1: ...id, chat_history.user_id AS chat_history_user_id, chat_histo...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MindX\reproduce_error_full.py", line 35, in test_search
+    result = await pipeline.search(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\services\personal_pipeline.py", line 26, in search
+    history_records = self.history.get_by_session(self.user.id, session_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\services\chat_history_service.py", line 49, in get_by_session
+    .all()
+     ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column chat_history.session_id does not exist
+LINE 1: ...id, chat_history.user_id AS chat_history_user_id, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.created_at AS chat_history_created_at 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id = %(session_id_1)s::UUID ORDER BY chat_history.created_at ASC]
+[parameters: {'user_id_1': 1, 'session_id_1': UUID('550e8400-e29b-41d4-a716-446655440000')}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Connecting to database: localhost:5432/mindx
+Testing PersonalPipeline.search with 'Founder of Zepto'...
+SEARCH FAILED!

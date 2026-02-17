@@ -1,40 +1,60 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import Optional
 
-from app.schemas import QAInput
 from app.database import get_db
 from app.routers.auth import get_current_user
 from app.services.pipeline_factory import PipelineFactory
 
 router = APIRouter(prefix="/qa", tags=["qa"])
 
+class SearchRequest(BaseModel):
+    query: str
+    session_id: Optional[str] = None
+    use_search: Optional[bool] = True
+    max_sources: Optional[int] = 10
+    fast_mode: Optional[bool] = False
+
+
+from fastapi.responses import StreamingResponse
+import json
 
 @router.post("/search")
-async def ask_question(
-    payload: QAInput,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    Ask a question and get an AI-generated answer
-    """
-    try:
-        pipeline = PipelineFactory.get_pipeline(
-            user=current_user,
-            db=db,
-        )
+async def search(request: SearchRequest, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    # Factory expects (user, db)
+    pipeline = PipelineFactory.get_pipeline(current_user, db)
+    result = await pipeline.search(
+        query=request.query, 
+        session_id=request.session_id,
+        use_search=request.use_search,
+        max_sources=request.max_sources,
+        fast_mode=request.fast_mode
+    )
+    return result
 
-        return await pipeline.process(
-            query=payload.query,
-            use_search=payload.use_search,
-            max_sources=payload.max_sources
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@router.post("/stream")
+async def stream_search(request: SearchRequest, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    pipeline = PipelineFactory.get_pipeline(current_user, db)
+    
+    async def event_generator():
+        async for chunk in pipeline.stream(
+            query=request.query,
+            session_id=request.session_id,
+            use_search=request.use_search,
+            max_sources=request.max_sources,
+            fast_mode=request.fast_mode
+        ):
+            yield f"data: {json.dumps(chunk)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
 
 
 @router.get("/history")
 def get_history(
+    session_id: Optional[str] = None,
     limit: int = 10,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -44,7 +64,12 @@ def get_history(
     """
     from app.services.chat_history_service import ChatHistoryService
     service = ChatHistoryService(db)
-    history = service.get_recent(user_id=current_user.id, limit=limit)
+    
+    if session_id:
+        history = service.get_by_session(user_id=current_user.id, session_id=session_id)
+    else:
+        history = service.get_recent(user_id=current_user.id, limit=limit)
+    
     return history
 
 

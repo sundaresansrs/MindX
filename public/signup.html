@@ -239,8 +239,16 @@
 
         // Show error
         function showError(msg) {
+            console.error('Signup Error:', msg);
             const area = document.getElementById('error-area');
-            document.getElementById('error-message').textContent = msg;
+            const messageEl = document.getElementById('error-message');
+
+            if (msg && typeof msg === 'object') {
+                messageEl.textContent = JSON.stringify(msg);
+            } else {
+                messageEl.textContent = msg || 'An unknown error occurred';
+            }
+
             area.classList.remove('hidden');
             area.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
@@ -254,6 +262,7 @@
         async function handleSignup(e) {
             e.preventDefault();
             hideError();
+            console.log('Signup attempt started');
 
             const btn = document.getElementById('signup-btn');
             const email = document.getElementById('email').value.trim();
@@ -261,6 +270,8 @@
             const fullName = document.getElementById('full-name').value.trim();
             const accountType = document.querySelector('input[name="account_type"]:checked').value;
             const companyName = document.getElementById('company-name').value.trim();
+
+            console.log('Form data:', { email, fullName, accountType, hasPassword: !!password });
 
             // Validation
             if (!email || !password || !fullName) {
@@ -285,21 +296,53 @@
                     email: email,
                     password: password,
                     account_type: accountType,
+                    full_name: fullName
                 };
                 if (companyName) body.company_name = companyName;
 
+                console.log('Sending request to /auth/signup');
                 const response = await fetch('/auth/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
                 });
 
-                const data = await response.json();
+                console.log('Response status:', response.status);
+                let data;
+                const text = await response.text();
+                console.log('Raw response text:', text);
 
-                if (!response.ok) {
-                    throw new Error(data.detail || 'Signup failed. Please try again.');
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                    if (!response.ok) {
+                        throw new Error(`Server Error (${response.status}): ${text.substring(0, 100)}`);
+                    }
+                    throw new Error('Server returned invalid JSON data');
                 }
 
+                if (!response.ok) {
+                    console.error('API Error details:', data);
+                    let msg = 'Signup failed.';
+                    if (data && data.detail) {
+                        if (typeof data.detail === 'string') {
+                            msg = data.detail;
+                        } else if (Array.isArray(data.detail)) {
+                            msg = data.detail.map(err => {
+                                const loc = Array.isArray(err.loc) ? err.loc.join('.') : 'input';
+                                return `${loc}: ${err.msg}`;
+                            }).join(' | ');
+                        } else {
+                            msg = JSON.stringify(data.detail);
+                        }
+                    } else if (data && data.error) {
+                        msg = data.error;
+                    }
+                    throw new Error(msg);
+                }
+
+                console.log('Signup success! Token received.');
                 // Store token and user info
                 localStorage.setItem('mindx_token', data.access_token);
                 localStorage.setItem('mindx_user', JSON.stringify({
@@ -308,21 +351,16 @@
                     account_type: accountType,
                 }));
 
-                // Check if there was a pending search query
-                const params = new URLSearchParams(window.location.search);
-                const pendingQuery = params.get('q');
-                if (pendingQuery) {
-                    window.location.href = '/dashboard.html?q=' + encodeURIComponent(pendingQuery);
-                } else {
-                    window.location.href = '/dashboard.html';
-                }
+                window.location.href = '/dashboard.html';
             } catch (err) {
-                showError(err.message);
+                console.error('Caught error in handleSignup:', err);
+                showError(err.message || 'An unexpected error occurred');
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Sign Up';
             }
         }
+
 
         // If already logged in, redirect to dashboard
         if (localStorage.getItem('mindx_token')) {

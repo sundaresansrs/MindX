@@ -14,38 +14,42 @@
             "use": "@vercel/static"
         }
     ],
-    "routes": [
+    "rewrites": [
         {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
+            "source": "/static/(.*)",
+            "destination": "/static/$1"
         },
         {
-            "src": "/(login.html|signup.html|dashboard.html)",
-            "dest": "/public/$1"
+            "source": "/auth/(.*)",
+            "destination": "main.py"
         },
         {
-            "src": "/api/(.*)",
-            "dest": "main.py"
+            "source": "/qa/(.*)",
+            "destination": "main.py"
         },
         {
-            "src": "/auth/(.*)",
-            "dest": "main.py"
+            "source": "/documents/(.*)",
+            "destination": "main.py"
         },
         {
-            "src": "/qa/(.*)",
-            "dest": "main.py"
+            "source": "/health",
+            "destination": "main.py"
         },
         {
-            "src": "/documents/(.*)",
-            "dest": "main.py"
+            "source": "/api/(.*)",
+            "destination": "main.py"
         },
         {
-            "src": "/health",
-            "dest": "main.py"
+            "source": "/(login.html|signup.html|dashboard.html)",
+            "destination": "/public/$1"
         },
         {
-            "src": "/(.*)",
-            "dest": "main.py"
+            "source": "/",
+            "destination": "/public/index.html"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "main.py"
         }
     ]
 }

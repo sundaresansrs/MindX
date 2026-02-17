@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
 
 from app.models.document import Document
@@ -16,9 +16,9 @@ class VectorService:
         self.db = db
         self.embeddings_service = EmbeddingsService()
 
-    async def search_documents(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    async def search_documents(self, query: str, user_id: Any, session_id: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
         """
-        Search for documents similar to the query string
+        Search for documents similar to the query string, filtered by user
         
         Returns:
             List of dicts with content, source_url, and distance score
@@ -28,12 +28,21 @@ class VectorService:
             query_vec = self.embeddings_service.get_embeddings([query])[0]
             
             # Perform similarity search using pgvector
-            # We use cosine distance (<=>) as it's best for Jina embeddings
-            stmt = select(Document).order_by(
+            # Filter by user AND session if session_id is provided
+            filters = [Document.user_id == user_id]
+            if session_id:
+                filters.append(Document.session_id == session_id)
+            else:
+                filters.append(Document.session_id == None) # Default to global/no-session
+                
+            stmt = select(Document).where(
+                *filters
+            ).order_by(
                 Document.embedding.cosine_distance(query_vec)
             ).limit(limit)
             
             results = self.db.scalars(stmt).all()
+
             
             # Format results for the pipeline
             formatted_results = []
@@ -50,3 +59,28 @@ class VectorService:
         except Exception as e:
             logger.error(f"Vector search failed: {e}")
             return []
+
+    async def ingest_document(self, content: str, user_id: Any, source_url: Optional[str] = None, session_id: Optional[str] = None) -> Document:
+        """
+        Integrate a document into the vector store: embed and save.
+        """
+        try:
+            # Generate embedding
+            embedding = self.embeddings_service.get_embeddings([content])[0]
+            
+            # Save to DB
+            new_doc = Document(
+                content=content,
+                source_url=source_url,
+                embedding=embedding,
+                user_id=user_id,
+                session_id=session_id
+            )
+            self.db.add(new_doc)
+            self.db.commit()
+            self.db.refresh(new_doc)
+            return new_doc
+        except Exception as e:
+            logger.error(f"Ingestion failed: {e}")
+            self.db.rollback()
+            raise e

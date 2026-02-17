@@ -1,5 +1,5 @@
 import os
-from groq import Groq
+from groq import AsyncGroq
 
 
 class LLMService:
@@ -8,7 +8,7 @@ class LLMService:
         if not api_key:
             raise RuntimeError("GROQ_API_KEY is not set")
 
-        self.client = Groq(api_key=api_key)
+        self.client = AsyncGroq(api_key=api_key)
 
         # ✅ CURRENTLY SUPPORTED MODEL
         self.model = "llama-3.1-8b-instant"
@@ -35,10 +35,36 @@ class LLMService:
             "content": prompt,
         })
 
-        response = self.client.chat.completions.create(
+        response = await self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=0.3,
         )
 
         return response.choices[0].message.content
+
+    async def stream_response(
+        self,
+        prompt: str,
+        context: str | None = None,
+    ):
+        messages = []
+        if context:
+            messages.append({
+                "role": "system",
+                "content": f"You are a helpful assistant. Use this context if relevant:\n\n{context}"
+            })
+        
+        messages.append({"role": "user", "content": prompt})
+
+        stream = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=0.3,
+            stream=True,
+        )
+
+        async for chunk in stream:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+

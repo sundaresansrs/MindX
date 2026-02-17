@@ -11,6 +11,11 @@ import app.models.document
 
 
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 import logging
 import traceback
 from pathlib import Path
@@ -61,11 +66,16 @@ app.include_router(documents.router)
 @app.on_event("startup")
 def on_startup():
     try:
-        print("Creating database tables...")
+        from sqlalchemy import text
+        print("Creating database tables and enabling vector extension...")
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            conn.commit()
         Base.metadata.create_all(bind=engine)
         print("Database ready.")
     except Exception as e:
         print(f"Database initialization failed: {e}")
+
 
 @app.get("/health")
 def health():
@@ -80,15 +90,22 @@ def landing_page():
     index_path = BASE_DIR / "public" / "index.html"
     if index_path.exists():
         return FileResponse(index_path)
-    
-    # Diagnostic logging if file is missing
-    logger.error(f"Static file missing at: {index_path}")
-    logger.info(f"Current working directory: {os.getcwd()}")
-    logger.info(f"Files in BASE_DIR: {os.listdir(BASE_DIR)}")
-    
-    return JSONResponse(
-        status_code=404,
-        content={"error": "Frontend assets not found", "path": str(index_path)}
-    )
+    return JSONResponse(status_code=404, content={"error": "index.html not found"})
+
+@app.get("/login.html")
+def login_page():
+    return FileResponse(BASE_DIR / "public" / "login.html")
+
+@app.get("/signup.html")
+def signup_page():
+    return FileResponse(BASE_DIR / "public" / "signup.html")
+
+@app.get("/dashboard.html")
+def dashboard_page():
+    return FileResponse(BASE_DIR / "public" / "dashboard.html")
+
+# Serve static assets (CSS, JS, images)
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
 
 

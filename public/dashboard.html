@@ -10,7 +10,15 @@
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
     <script>
+
+
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -40,8 +48,27 @@
         }
     </script>
     <style>
+        :root {
+            --primary: #00FF41;
+            --primary-soft: rgba(0, 255, 65, 0.1);
+            --primary-border: rgba(0, 255, 65, 0.2);
+            --background-dark: #0a0c0a;
+            --surface-dark: rgba(20, 24, 20, 0.6);
+            --border-dark: rgba(255, 255, 255, 0.08);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
+            background-color: var(--background-dark);
+            color: var(--text-main);
+        }
+
+        .glass {
+            background: var(--surface-dark);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-dark);
         }
 
         .no-scrollbar::-webkit-scrollbar {
@@ -53,8 +80,185 @@
             scrollbar-width: none;
         }
 
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        /* Message Bubbles - Softer Claude style */
+        .message-bubble {
+            max-width: 90%;
+            padding: 1.25rem;
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            position: relative;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 1.5rem;
+            border: 1px solid var(--border-dark);
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: transparent;
+            border-radius: 1.5rem;
+        }
+
+        .markdown-body {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .markdown-body pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-dark);
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        /* Citations - Cleaner style */
+        .citation {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.1rem;
+            height: 1.1rem;
+            padding: 0 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            background: var(--primary-soft);
+            color: var(--primary);
+            border-radius: 4px;
+            vertical-align: top;
+            margin-top: 2px;
+            margin-left: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--primary-border);
+        }
+
+        .citation:hover {
+            background: var(--primary);
+            color: var(--background-dark);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* Copy Button */
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-dark);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary-soft);
+            color: var(--primary);
+            border-color: var(--primary-border);
+        }
+
+        .copy-btn.copied {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Input Area Fixes */
+        .chat-input-container {
+            border-radius: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-dark);
+            transition: all 0.3s;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .chat-input-container:focus-within {
+            border-color: var(--primary-border);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px rgba(0, 255, 65, 0.05);
+        }
+
+        #file-list-preview::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #file-list-preview::-webkit-scrollbar-thumb {
+            background: var(--border-dark);
+            border-radius: 10px;
+        }
+
+        /* Upload Menu Popup */
+        .upload-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 0.75rem;
+            min-width: 180px;
+            background: #1a1d1a;
+            border: 1px solid var(--border-dark);
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+            display: none;
+            overflow: hidden;
+            animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .upload-menu.active {
+            display: block;
+        }
+
+        .upload-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-menu-item:hover {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .upload-menu-item span {
+            font-size: 18px;
         }
     </style>
 </head>
@@ -83,236 +287,265 @@
     </header>
 
     <div class="flex flex-1 overflow-hidden">
-        <!-- Sidebar: Recent Searches -->
-        <aside class="w-72 border-r border-border-dark bg-surface-dark/30 hidden lg:flex flex-col">
-            <div class="p-6">
-                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Recent Searches</h2>
-                <nav id="search-history" class="space-y-1">
-                    <p class="text-xs text-slate-600 px-3 py-2">No searches yet</p>
+        <!-- Sidebar: Recent Conversations -->
+        <aside class="w-72 border-r border-border-dark glass hidden lg:flex flex-col">
+            <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div class="p-6 pb-2">
+                    <!-- New Chat Button at the very top -->
+                    <button id="btn-new-chat"
+                        class="w-full flex items-center px-4 py-3 mb-6 text-sm font-medium text-slate-100 hover:text-white bg-white/5 hover:bg-white/10 border border-border-dark rounded-xl transition-all group">
+                        <span
+                            class="material-symbols-outlined mr-3 text-primary group-hover:rotate-90 transition-transform">add</span>
+                        New Chat
+                    </button>
+
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Chat History</h2>
+                </div>
+
+                <!-- Scrollable history area -->
+                <nav id="search-history" class="flex-1 overflow-y-auto px-4 space-y-1 no-scrollbar pb-6">
+                    <p class="text-xs text-slate-600 px-3 py-2">No history</p>
                 </nav>
             </div>
 
-            <div class="px-6 py-4 border-t border-border-dark mt-4">
-                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Knowledge Base</h2>
-                <div class="space-y-3">
-                    <div class="space-y-1">
-                        <label class="text-[10px] text-slate-500 uppercase font-bold">Ingest URL</label>
-                        <div class="flex gap-2">
-                            <input id="ingest-url"
-                                class="flex-1 bg-background-dark border border-border-dark rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-slate-700 focus:border-primary/50 outline-none"
-                                placeholder="https://..." />
-                            <button onclick="handleIngest('url')"
-                                class="bg-primary/20 text-primary border border-primary/30 p-1.5 rounded-lg hover:bg-primary/30 transition-colors">
-                                <span class="material-symbols-outlined text-[16px]">add_link</span>
-                            </button>
-                        </div>
+            <div class="p-6 mt-auto">
+                <div class="rounded-xl border border-border-dark bg-white/5 p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span id="storage-status" class="size-2 rounded-full bg-primary/40 animate-pulse"></span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Cloud Sync</span>
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] text-slate-500 uppercase font-bold">Index Text</label>
-                        <div class="flex gap-2">
-                            <textarea id="ingest-text"
-                                class="flex-1 bg-background-dark border border-border-dark rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-slate-700 focus:border-primary/50 outline-none h-16 resize-none"
-                                placeholder="Paste content..."></textarea>
-                        </div>
-                        <button onclick="handleIngest('text')"
-                            class="w-full bg-primary/20 text-primary border border-primary/30 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/30 transition-colors mt-1">
-                            Index Content
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-auto p-6">
-
-                <div class="rounded-xl border border-border-dark bg-background-dark p-4">
-                    <p class="text-xs text-slate-500 leading-relaxed">Powered by <span
-                            class="text-primary font-bold">Groq AI</span> with 7-stage quality verification.</p>
+                    <p class="text-[10px] text-slate-500">Enhanced by Hybrid RAG & Fast Mode.</p>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto no-scrollbar bg-background-dark">
-            <div class="max-w-4xl mx-auto px-6 py-12 space-y-12">
 
-                <!-- Search Section -->
-                <section class="space-y-6">
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                            <span
-                                class="material-symbols-outlined text-slate-500 group-focus-within:text-primary transition-colors">search</span>
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col bg-background-dark overflow-hidden">
+            <!-- Chat Container (Scrollable) -->
+            <div id="chat-scroller" class="flex-1 overflow-y-auto no-scrollbar pt-8 px-6">
+                <div id="chat-container" class="max-w-4xl mx-auto flex flex-col">
+                    <!-- Empty State -->
+                    <div id="empty-state"
+                        class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
+                        <span class="material-symbols-outlined text-primary text-5xl opacity-40">neurology</span>
+                        <p class="text-lg font-semibold text-slate-500">How can MindX help you today?</p>
+                        <p class="text-sm text-slate-600">Secure, AI-powered research at your fingertips.</p>
+
+                        <!-- Example Chips inside container -->
+                        <div class="flex flex-wrap justify-center gap-2 pt-8 max-w-lg">
+                            <button onclick="searchChip(this)"
+                                class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Who
+                                founded Netflix?</button>
+                            <button onclick="searchChip(this)"
+                                class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Explain
+                                quantum physics</button>
+                            <button onclick="searchChip(this)"
+                                class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest
+                                Zepto news</button>
                         </div>
-                        <input id="search-input"
-                            class="w-full bg-surface-dark border border-border-dark rounded-2xl py-5 pl-14 pr-32 text-lg text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all shadow-2xl"
-                            placeholder="Ask anything..." type="text"
-                            onkeydown="if(event.key==='Enter') handleSearch()" />
-                        <div class="absolute inset-y-2 right-2 flex items-center">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Section (Fixed at bottom) -->
+            <div class="p-6 bg-transparent pb-10">
+                <div class="max-w-4xl mx-auto">
+                    <!-- File Preview Zone (Above Input) -->
+                    <div id="file-list-preview" class="flex flex-wrap gap-2 mb-3"></div>
+
+                    <div class="chat-input-container p-2 flex flex-col">
+                        <div class="flex items-end gap-2 px-2">
+                            <!-- File Upload Trigger & Menu -->
+                            <div class="relative mb-1">
+                                <button onclick="toggleUploadMenu(event)"
+                                    class="p-2 text-slate-400 hover:text-primary cursor-pointer transition-colors flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[24px]">attach_file</span>
+                                </button>
+
+                                <div id="upload-menu" class="upload-menu">
+                                    <div class="upload-menu-item" onclick="triggerFileUpload('.docx,.pdf')">
+                                        <span class="material-symbols-outlined">description</span> Documents
+                                    </div>
+                                    <div class="upload-menu-item" onclick="triggerFileUpload('.xlsx,.xls')">
+                                        <span class="material-symbols-outlined">table_chart</span> Spreadsheets
+                                    </div>
+                                    <div class="upload-menu-item" onclick="triggerFileUpload('.png,.jpg,.jpeg')">
+                                        <span class="material-symbols-outlined">image</span> Images
+                                    </div>
+                                    <div class="upload-menu-item" onclick="triggerFileUpload('.txt,.md')">
+                                        <span class="material-symbols-outlined">text_snippet</span> Text Files
+                                    </div>
+                                </div>
+                                <input type="file" id="chat-file-upload" class="hidden" multiple
+                                    onchange="handleFileUpload(event)" />
+                            </div>
+
+                            <textarea id="search-input"
+                                class="flex-1 bg-transparent border-none text-white placeholder:text-slate-500 focus:ring-0 py-3 text-base resize-none no-scrollbar max-h-[200px]"
+                                placeholder="Message MindX..." rows="1"
+                                oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                                onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); handleSearch(); }"></textarea>
+
                             <button id="search-btn" onclick="handleSearch()"
-                                class="bg-primary hover:bg-primary/90 text-black font-bold h-full px-8 rounded-xl transition-all active:scale-95 shadow-lg shadow-primary/10">
-                                Search
+                                class="bg-primary hover:bg-primary/90 text-background-dark size-10 rounded-xl flex items-center justify-center transition-all active:scale-90 mb-1">
+                                <span class="material-symbols-outlined font-bold">arrow_upward</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Search Controls -->
-                    <div class="flex items-center justify-between px-2">
+                    <!-- Bottom Controls -->
+                    <div class="flex items-center justify-between mt-3 px-4">
                         <div class="flex items-center gap-6">
-                            <label class="inline-flex items-center cursor-pointer group">
-                                <span
-                                    class="mr-3 text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors">Web
-                                    Search</span>
-                                <div id="web-toggle" onclick="toggleWebSearch()"
-                                    class="relative w-11 h-6 bg-slate-800 rounded-full border border-slate-700 cursor-pointer">
-                                    <div id="web-toggle-dot"
-                                        class="absolute left-1 top-1 bg-primary w-4 h-4 rounded-full transition-transform transform translate-x-5">
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <div class="relative">
+                                    <input type="checkbox" id="fast-mode-toggle" class="sr-only peer"
+                                        onchange="toggleModeLabel()">
+                                    <div
+                                        class="w-8 h-4 bg-white/10 rounded-full peer peer-checked:bg-primary/30 transition-all border border-white/5">
+                                    </div>
+                                    <div
+                                        class="absolute left-0.5 top-0.5 w-3 h-3 bg-slate-500 rounded-full peer-checked:translate-x-4 peer-checked:bg-primary transition-all">
                                     </div>
                                 </div>
+                                <span id="mode-label"
+                                    class="text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-tight">Deep
+                                    Search</span>
                             </label>
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm font-medium text-slate-400">Max Sources:</span>
-                                <select id="max-sources"
-                                    class="bg-surface-dark border border-border-dark text-slate-200 text-sm rounded-lg focus:ring-primary focus:border-primary block p-1 px-3">
-                                    <option value="5">5</option>
-                                    <option value="10" selected>10</option>
-                                    <option value="20">20</option>
-                                    <option value="50">50</option>
-                                </select>
+
+                            <div class="h-3 w-[1px] bg-white/10"></div>
+
+                            <div id="ai-status"
+                                class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
+                                <span class="size-1.5 bg-primary/40 rounded-full"></span>
+                                MindX Intelligent
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Example Queries (Chips) -->
-                    <div id="example-chips" class="flex flex-wrap gap-2 pt-2">
-                        <button onclick="searchChip(this)"
-                            class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">What
-                            is quantum computing?</button>
-                        <button onclick="searchChip(this)"
-                            class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest
-                            AI developments 2026</button>
-                        <button onclick="searchChip(this)"
-                            class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">How
-                            does blockchain work?</button>
-                    </div>
-                </section>
-
-                <!-- Empty State -->
-                <section id="empty-state"
-                    class="border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
-                    <span class="material-symbols-outlined text-primary text-5xl opacity-40">search</span>
-                    <p class="text-lg font-semibold text-slate-500">Ask anything...</p>
-                    <p class="text-sm text-slate-600">Your AI-verified answers will appear here</p>
-                </section>
-
-                <!-- Loading State (hidden by default) -->
-                <section id="loading-state"
-                    class="hidden border border-border-dark bg-surface-dark/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-6">
-                    <div class="relative flex items-center justify-center size-16">
-                        <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
                         <div
-                            class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin">
+                            class="flex items-center gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
+                            <select id="max-sources"
+                                class="bg-transparent border-none p-0 text-[11px] text-slate-500 focus:ring-0 cursor-pointer hover:text-primary transition-colors uppercase tracking-tight">
+                                <option value="5" class="bg-background-dark">5 Sources</option>
+                                <option value="10" selected class="bg-background-dark">10 Sources</option>
+                                <option value="20" class="bg-background-dark">20 Sources</option>
+                            </select>
+                            <span id="time-meta"></span>
                         </div>
-                        <span class="material-symbols-outlined text-primary text-2xl">neurology</span>
                     </div>
-                    <div class="space-y-2">
-                        <p class="text-lg font-semibold text-white">Synthesizing Results</p>
-                        <div id="pipeline-stages" class="flex flex-col gap-1">
-                            <div id="stage-1" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                                <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Query Enhancement</span>
-                            </div>
-                            <div id="stage-2" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                                <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Web & Vector Retrieval</span>
-                            </div>
-                            <div id="stage-3" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                                <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Dynamic Re-ranking</span>
-                            </div>
-                            <div id="stage-4" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                                <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Semantic Chunking</span>
-                            </div>
-                            <div id="stage-5" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                                <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Answer Generation</span>
-                            </div>
-                            <div id="stage-6" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                                <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Consistency Optimization</span>
-                            </div>
-                            <div id="stage-7" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                                <span class="material-symbols-outlined text-[16px]">circle</span>
-                                <span>Fact Verification</span>
-                            </div>
-                        </div>
+                </div>
+            </div>
+        </main>
 
+        <!-- Loading State (hidden by default) -->
+        <section id="loading-state"
+            class="hidden border border-border-dark bg-surface-dark/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-6">
+            <div class="relative flex items-center justify-center size-16">
+                <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin">
+                </div>
+                <span class="material-symbols-outlined text-primary text-2xl">neurology</span>
+            </div>
+            <div class="space-y-2">
+                <p class="text-lg font-semibold text-white">Synthesizing Results</p>
+                <div id="pipeline-stages" class="flex flex-col gap-1">
+                    <div id="stage-1" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <span>Query Enhancement</span>
                     </div>
-                </section>
-
-                <!-- AI Answer Card (hidden by default) -->
-                <article id="answer-section" class="hidden space-y-6">
-                    <div class="bg-surface-dark border border-border-dark rounded-2xl overflow-hidden shadow-xl">
-                        <div class="p-8 space-y-4">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="bg-primary/20 p-1.5 rounded-lg">
-                                    <span class="material-symbols-outlined text-primary text-[20px]">magic_button</span>
-                                </div>
-                                <span class="text-sm font-bold tracking-wide text-primary uppercase">AI Answer</span>
-                            </div>
-                            <div id="answer-body"
-                                class="prose prose-invert max-w-none text-slate-300 space-y-4 leading-relaxed">
-                                <!-- Answer content injected here -->
-                            </div>
-                        </div>
-                        <!-- Metadata Bar -->
-                        <div
-                            class="bg-background-dark/50 border-t border-border-dark px-8 py-4 flex flex-wrap gap-4 items-center">
-                            <div
-                                class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                                <span class="material-symbols-outlined text-[14px] text-primary">verified</span>
-                                <span id="meta-confidence">--% Confidence</span>
-                            </div>
-                            <div
-                                class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                                <span class="material-symbols-outlined text-[14px] text-primary">menu_book</span>
-                                <span id="meta-sources">-- Sources</span>
-                            </div>
-                            <div
-                                class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                                <span class="material-symbols-outlined text-[14px] text-primary">timer</span>
-                                <span id="meta-time">--s</span>
-                            </div>
-                            <div
-                                class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full ml-auto">
-                                <span class="material-symbols-outlined text-[14px] text-primary">language</span>
-                                <span id="meta-mode">Hybrid Mode</span>
-
-                            </div>
-                        </div>
+                    <div id="stage-2" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <span>Web & Vector Retrieval</span>
                     </div>
-                </article>
-
-                <!-- Sources Panel (hidden by default) -->
-                <section id="sources-section" class="hidden space-y-6">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <h3 class="text-lg font-bold text-white">Sources</h3>
-                            <span id="sources-count-badge"
-                                class="bg-primary/20 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">0</span>
-                        </div>
+                    <div id="stage-3" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <span>Dynamic Re-ranking</span>
                     </div>
-                    <div id="sources-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Source items injected here -->
+                    <div id="stage-4" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <span>Semantic Chunking</span>
                     </div>
-                </section>
+                    <div id="stage-5" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <span>Answer Generation</span>
+                    </div>
+                    <div id="stage-6" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <span>Consistency Optimization</span>
+                    </div>
+                    <div id="stage-7" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <span>Fact Verification</span>
+                    </div>
+                </div>
 
             </div>
+        </section>
 
-            <!-- Footer -->
-            <footer class="max-w-4xl mx-auto px-6 py-12 border-t border-border-dark text-center">
-                <p class="text-slate-600 text-xs">MindX AI Search Engine • Powered by Groq • © 2026</p>
-            </footer>
-        </main>
+        <!-- AI Answer Card (hidden by default) -->
+        <article id="answer-section" class="hidden space-y-6">
+            <div class="bg-surface-dark border border-border-dark rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-8 space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="bg-primary/20 p-1.5 rounded-lg">
+                            <span class="material-symbols-outlined text-primary text-[20px]">magic_button</span>
+                        </div>
+                        <span class="text-sm font-bold tracking-wide text-primary uppercase">AI Answer</span>
+                    </div>
+                    <div id="answer-body"
+                        class="prose prose-invert max-w-none text-slate-300 space-y-4 leading-relaxed">
+                        <!-- Answer content injected here -->
+                    </div>
+                </div>
+                <!-- Metadata Bar -->
+                <div
+                    class="bg-background-dark/50 border-t border-border-dark px-8 py-4 flex flex-wrap gap-4 items-center">
+                    <div
+                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
+                        <span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+                        <span id="meta-confidence">--% Confidence</span>
+                    </div>
+                    <div
+                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
+                        <span class="material-symbols-outlined text-[14px] text-primary">menu_book</span>
+                        <span id="meta-sources">-- Sources</span>
+                    </div>
+                    <div
+                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
+                        <span class="material-symbols-outlined text-[14px] text-primary">timer</span>
+                        <span id="meta-time">--s</span>
+                    </div>
+                    <div
+                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full ml-auto">
+                        <span class="material-symbols-outlined text-[14px] text-primary">language</span>
+                        <span id="meta-mode">Hybrid Mode</span>
+
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Sources Panel (hidden by default) -->
+        <section id="sources-section" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-lg font-bold text-white">Sources</h3>
+                    <span id="sources-count-badge"
+                        class="bg-primary/20 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">0</span>
+                </div>
+            </div>
+            <div id="sources-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Source items injected here -->
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="max-w-4xl mx-auto px-6 py-12 border-t border-border-dark text-center">
+        <p class="text-slate-600 text-xs">MindX AI Search Engine • Powered by Groq • © 2026</p>
+    </footer>
+    </main>
     </div>
 
     <script>
@@ -394,19 +627,74 @@
             renderHistory();
         }
 
+        // Session Management
+        let currentSessionId = localStorage.getItem('currentSessionId') || uuid.v4();
+        localStorage.setItem('currentSessionId', currentSessionId);
+
+        function startNewChat() {
+            currentSessionId = uuid.v4();
+            localStorage.setItem('currentSessionId', currentSessionId);
+
+            // Clear UI
+            document.getElementById('answer-section').classList.add('hidden');
+            document.getElementById('sources-section').classList.add('hidden');
+            document.getElementById('search-input').value = '';
+
+            // Optional: Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            console.log('Started new chat session:', currentSessionId);
+        }
+
+        document.getElementById('btn-new-chat')?.addEventListener('click', startNewChat);
+
+        async function fetchHistory() {
+            try {
+                const token = localStorage.getItem('mindx_token'); // Changed from 'token' to 'mindx_token' to match existing code
+                const response = await fetch('/qa/history?limit=50', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const history = await response.json();
+
+                    // Group by session_id
+                    const sessions = {};
+                    history.forEach(item => {
+                        const sid = item.session_id || 'legacy';
+                        if (!sessions[sid]) {
+                            sessions[sid] = {
+                                id: sid,
+                                title: item.query.substring(0, 30) + (item.query.length > 30 ? '...' : ''),
+                                timestamp: new Date(item.created_at)
+                            };
+                        }
+                    });
+
+                    searchHistory = Object.values(sessions).sort((a, b) => b.timestamp - a.timestamp);
+                    renderHistory();
+                }
+            } catch (err) {
+                console.error('Failed to fetch history:', err);
+            }
+        }
+
         function renderHistory() {
             const nav = document.getElementById('search-history');
             if (searchHistory.length === 0) {
-                nav.innerHTML = '<p class="text-xs text-slate-600 px-3 py-2">No searches yet</p>';
+                nav.innerHTML = '<p class="text-[11px] text-slate-600 px-3 py-4 text-center border border-dashed border-white/5 rounded-xl">No chat history yet</p>';
                 return;
             }
-            nav.innerHTML = searchHistory.map((q, i) =>
-                `<a href="#" onclick="reSearch('${q.replace(/'/g, "\\'")}'); return false;" class="flex items-center gap-3 px-3 py-2.5 rounded-lg ${i === 0 ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-400 hover:text-white hover:bg-white/5'} transition-all">
-                    <span class="material-symbols-outlined text-[20px]">${i === 0 ? 'history' : 'search'}</span>
-                    <span class="text-sm font-medium truncate">${q}</span>
-                </a>`
-            ).join('');
+
+            nav.innerHTML = searchHistory.map(session => `
+                <button onclick="loadSession('${session.id}')" class="w-full flex items-center px-4 py-3 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group mb-1">
+                    <span class="material-symbols-outlined text-[18px] mr-3 text-slate-600 group-hover:text-primary transition-colors">chat_bubble</span>
+                    <span class="truncate">${session.title}</span>
+                </button>
+            `).join('');
         }
+
+
+
 
         function reSearch(query) {
             document.getElementById('search-input').value = query;
@@ -417,53 +705,72 @@
         function renderSources(sources) {
             const grid = document.getElementById('sources-grid');
             if (!sources || sources.length === 0) {
-                document.getElementById('sources-section').classList.add('hidden');
+                document.getElementById('sources-section')?.classList.add('hidden');
                 return;
             }
-            document.getElementById('sources-section').classList.remove('hidden');
-            document.getElementById('sources-count-badge').textContent = sources.length;
 
-            grid.innerHTML = sources.map(s => {
-                const domain = s.source || (s.url ? new URL(s.url).hostname : 'unknown');
-                return `<div class="p-4 bg-surface-dark border border-border-dark rounded-xl hover:border-primary/40 transition-all group">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="size-5 rounded bg-primary/20 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-primary text-[14px]">language</span>
+            // Also check if we need to reveal the section
+            const section = document.getElementById('sources-section');
+            if (section) section.classList.remove('hidden');
+
+            const badge = document.getElementById('sources-count-badge');
+            if (badge) badge.textContent = sources.length;
+
+            grid.innerHTML = sources.map((s, i) => {
+                const domain = s.source || (s.url ? new URL(s.url).hostname : 'Source');
+                const idx = i + 1;
+                return `
+                    <div class="p-4 bg-white/5 border border-white/5 rounded-2xl hover:border-primary/30 transition-all group relative">
+                        <div class="absolute -top-2 -left-1 bg-primary text-background-dark text-[10px] font-bold px-2 py-0.5 rounded shadow-xl z-10">
+                            ${idx}
                         </div>
-                        <span class="text-xs font-medium text-slate-500 uppercase">${domain}</span>
-                    </div>
-                    <h4 class="text-sm font-semibold text-white group-hover:text-primary transition-colors mb-1">
-                        <a href="${s.url || '#'}" target="_blank" class="no-underline hover:underline">${s.title || 'Source'}</a>
-                    </h4>
-                    <p class="text-xs text-slate-400 line-clamp-2">${s.snippet || ''}</p>
-                </div>`;
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[150px]">${domain}</span>
+                        </div>
+                        <h4 class="text-sm font-semibold text-slate-200 group-hover:text-primary transition-colors mb-2 line-clamp-1">
+                            <a href="${s.url || '#'}" target="_blank" class="hover:underline">${s.title || 'Referenced Document'}</a>
+                        </h4>
+                        <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed opacity-70">${s.snippet || 'Click to view details for this reference.'}</p>
+                    </div>`;
             }).join('');
         }
 
-        // ─── Main Search Handler ───
+        // ─── Main Search Handler (Streaming Version) ───
         async function handleSearch() {
-            const query = document.getElementById('search-input').value.trim();
+            const input = document.getElementById('search-input');
+            const query = input.value.trim();
             if (!query) return;
 
+            // Clear input immediately
+            input.value = '';
+
             const maxSources = document.getElementById('max-sources').value;
+            const container = document.getElementById('chat-container');
+            const emptyState = document.getElementById('empty-state');
 
-            // Show loading, hide others
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('answer-section').classList.add('hidden');
-            document.getElementById('sources-section').classList.add('hidden');
-            document.getElementById('loading-state').classList.remove('hidden');
-            document.getElementById('example-chips').classList.add('hidden');
+            if (emptyState) emptyState.remove();
 
-            // Animate pipeline stages
-            resetStages();
+            // Append User Message Bubble
+            const userDiv = document.createElement('div');
+            userDiv.className = 'message-bubble user-message';
+            userDiv.textContent = query;
+            container.appendChild(userDiv);
+
+            // Append AI Loading Bubble
+            const aiDiv = document.createElement('div');
+            aiDiv.className = 'message-bubble ai-message';
+            aiDiv.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined animate-spin text-primary">sync</span>
+                    <span class="text-sm italic text-slate-400">Thinking...</span>
+                </div>`;
+            container.appendChild(aiDiv);
+            scrollToBottom();
+
             const startTime = Date.now();
 
-            animateStage(1);
-            await sleep(400);
-            animateStage(2);
-
             try {
-                const response = await fetch('/qa/search', {
+                const response = await fetch('/qa/stream', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -471,113 +778,293 @@
                     },
                     body: JSON.stringify({
                         query: query,
-                        use_search: webSearchEnabled,
+                        session_id: currentSessionId,
+                        use_search: true,
                         max_sources: parseInt(maxSources),
+                        fast_mode: document.getElementById('fast-mode-toggle').checked
                     }),
                 });
 
-                animateStage(3);
-                await sleep(400);
-                animateStage(4);
-                await sleep(400);
-                animateStage(5);
-                await sleep(300);
+                if (!response.ok) throw new Error('Streaming failed');
 
-                const data = await response.json();
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullAnswer = "";
 
-                animateStage(6);
-                await sleep(300);
-                animateStage(7);
-                await sleep(300);
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
 
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
 
-                if (!response.ok) {
-                    throw new Error(data.detail || 'Search failed');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const raw = line.substring(6);
+                            if (raw === '[DONE]') break;
+                            try {
+                                const data = JSON.parse(raw);
+                                if (data.type === 'token') {
+                                    fullAnswer += data.content;
+                                    // Fix citation rendering: Ensure [1] is converted to a link
+                                    const processedAnswer = fullAnswer.replace(/\[(\d+)\]/g, (match, n) => {
+                                        return `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`;
+                                    });
+                                    aiDiv.innerHTML = `<div class="markdown-body">${marked.parse(processedAnswer)}</div>`;
+                                } else if (data.type === 'status') {
+                                    aiDiv.innerHTML = `
+                                        <div class="flex items-center gap-3">
+                                            <span class="material-symbols-outlined animate-spin text-primary">sync</span>
+                                            <span class="text-xs font-bold uppercase tracking-tight text-slate-500">${data.content}</span>
+                                        </div>`;
+                                } else if (data.type === 'metadata') {
+                                    // Update metadata display
+                                    document.getElementById('ai-status').innerHTML = `
+                                        <span class="material-symbols-outlined text-primary text-[14px]">verified</span>
+                                        ${data.confidence || 85}% Confirmed
+                                    `;
+                                    renderSources(data.sources);
+                                }
+                            } catch (e) {
+                                console.warn('JSON parse error in stream:', e);
+                            }
+                        }
+                    }
+                    scrollToBottom();
                 }
 
-                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                // Finalize UI
+                if (searchHistory.length === 0 || !searchHistory.find(s => s.id === currentSessionId)) {
+                    updateSessionTitle(currentSessionId, query);
+                }
 
-                // Hide loading
-                document.getElementById('loading-state').classList.add('hidden');
-
-                // Show answer
-                document.getElementById('answer-section').classList.remove('hidden');
-                const answerBody = document.getElementById('answer-body');
-
-                // Format the answer with paragraphs
-                const answerText = data.answer || data.response || 'No answer available.';
-                answerBody.innerHTML = answerText.split('\n').filter(p => p.trim()).map(p =>
-                    `<p>${p}</p>`
-                ).join('');
-
-                // Update metadata
-                document.getElementById('meta-confidence').textContent = (data.confidence || 85) + '% Confidence';
-                document.getElementById('meta-sources').textContent = (data.sources_count || (data.sources ? data.sources.length : 0)) + ' Sources';
-                document.getElementById('meta-time').textContent = elapsed + 's';
-                document.getElementById('meta-mode').textContent = webSearchEnabled ? 'Hybrid Mode' : 'Local RAG Mode';
-
-
-                // Show sources
-                renderSources(data.sources || []);
-
-                // Add to sidebar history
-                addToHistory(query);
+                // Highlight code blocks and add copy buttons
+                setTimeout(() => {
+                    Prism.highlightAllUnder(aiDiv);
+                    addCopyButtons(aiDiv);
+                }, 100);
 
             } catch (err) {
-                document.getElementById('loading-state').classList.add('hidden');
-                document.getElementById('answer-section').classList.remove('hidden');
-                document.getElementById('answer-body').innerHTML = `
+                aiDiv.innerHTML = `
                     <div class="flex items-center gap-2 text-red-400">
                         <span class="material-symbols-outlined">error</span>
-                        <p class="text-red-400">${err.message}</p>
+                        <p>${err.message}</p>
                     </div>`;
-                document.getElementById('meta-confidence').textContent = '-- Confidence';
-                document.getElementById('meta-sources').textContent = '0 Sources';
-                document.getElementById('meta-time').textContent = '--s';
             }
         }
 
-        async function handleIngest(type) {
-            const inputEl = document.getElementById(type === 'url' ? 'ingest-url' : 'ingest-text');
-            const content = inputEl.value.trim();
-            if (!content) return;
+        function addCopyButtons(container) {
+            const lastMessage = container.lastElementChild;
+            if (!lastMessage || !lastMessage.classList.contains('ai-message')) return;
 
-            const btn = event.currentTarget;
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">sync</span>';
-            btn.disabled = true;
+            // Remove existing footer if any
+            const existingFooter = lastMessage.querySelector('.ai-footer');
+            if (existingFooter) existingFooter.remove();
+
+            const footer = document.createElement('div');
+            footer.className = 'ai-footer flex items-center gap-4 mt-4 pt-4 border-t border-white/5';
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">content_copy</span> Copy';
+            copyBtn.onclick = () => {
+                const text = lastMessage.querySelector('.markdown-body').innerText;
+                navigator.clipboard.writeText(text);
+                copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">check</span> Copied!';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">content_copy</span> Copy';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            };
+
+            footer.appendChild(copyBtn);
+            lastMessage.appendChild(footer);
+        }
+
+        function scrollToSource(n) {
+            const grid = document.getElementById('sources-grid');
+            const target = grid.children[n - 1];
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('ring-2', 'ring-primary', 'border-primary');
+                setTimeout(() => target.classList.remove('ring-2', 'ring-primary', 'border-primary'), 2000);
+            }
+        }
+
+        function updateSessionTitle(sid, query) {
+            const title = query.substring(0, 30) + (query.length > 30 ? '...' : '');
+            const existing = searchHistory.find(s => s.id === sid);
+            if (existing) {
+                existing.title = title;
+            } else {
+                searchHistory.unshift({ id: sid, title: title, timestamp: new Date() });
+            }
+            renderHistory();
+        }
+
+        async function loadSession(sid) {
+            currentSessionId = (sid === 'legacy' || !sid) ? null : sid;
+            localStorage.setItem('currentSessionId', currentSessionId);
+
+            const container = document.getElementById('chat-container');
+            container.innerHTML = `
+                <div class="flex items-center justify-center p-8">
+                    <span class="material-symbols-outlined animate-spin text-primary">sync</span>
+                </div>`;
 
             try {
-                const payload = type === 'url' ? { url: content } : { text: content };
-                const response = await fetch('/documents/ingest', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify(payload)
+                const url = currentSessionId ? `/qa/history?session_id=${currentSessionId}` : '/qa/history?limit=20';
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (response.ok) {
-                    inputEl.value = '';
-                    alert('Successfully indexed to Knowledge Base!');
-                } else {
-                    const error = await response.json();
-                    alert('Error: ' + (error.detail || 'Failed to ingest'));
+                    const messages = await response.json();
+                    container.innerHTML = '';
+
+                    if (messages.length === 0) {
+                        startNewChat();
+                        return;
+                    }
+
+                    messages.forEach(msg => {
+                        // User Bubble
+                        const uDiv = document.createElement('div');
+                        uDiv.className = 'message-bubble user-message';
+                        uDiv.textContent = msg.query;
+                        container.appendChild(uDiv);
+
+                        // AI Bubble
+                        const aDiv = document.createElement('div');
+                        aDiv.className = 'message-bubble ai-message';
+                        const processedAnswer = msg.answer.replace(/\[(\d+)\]/g, (match, n) => {
+                            return `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`;
+                        });
+                        aDiv.innerHTML = `<div class="markdown-body">${marked.parse(processedAnswer)}</div>`;
+                        container.appendChild(aDiv);
+                    });
+
+                    // Apply code tools to loaded history
+                    setTimeout(() => {
+                        Prism.highlightAllUnder(container);
+                        addCopyButtons(container);
+                        scrollToBottom();
+                    }, 50);
                 }
-            } catch (err) {
-                alert('Connection error');
-            } finally {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
+            } catch (e) {
+                console.error('Failed to load session:', e);
+                container.innerHTML = '<p class="text-red-400 p-8 text-center">Failed to restore conversation.</p>';
+            }
+        }
+
+        function startNewChat() {
+            currentSessionId = uuid.v4();
+            localStorage.setItem('currentSessionId', currentSessionId);
+            document.getElementById('chat-container').innerHTML = `
+                <div id="empty-state" class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
+                    <span class="material-symbols-outlined text-primary text-5xl opacity-40">neurology</span>
+                    <p class="text-lg font-semibold text-slate-500">New Conversation</p>
+                    <p class="text-sm text-slate-600">Ask a question to begin.</p>
+                </div>`;
+            document.getElementById('search-input').focus();
+        }
+
+        async function handleIngest(type) {
+            // Retired legacy ingest, but keeping function for partial compatibility if needed elsewhere
+        }
+
+        async function handleFileUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const previewZone = document.getElementById('file-list-preview');
+
+            for (const file of Array.from(files)) {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'flex items-center gap-2 bg-white/5 border border-white/5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-400';
+                fileItem.innerHTML = `
+                    <span class="material-symbols-outlined text-[14px]">description</span>
+                    <span>${file.name}</span>
+                    <span class="status-icon material-symbols-outlined text-[14px] animate-spin text-primary">sync</span>
+                `;
+                previewZone.appendChild(fileItem);
+
+                const formData = new FormData();
+                formData.append('file', file);
+                if (currentSessionId) formData.append('session_id', currentSessionId);
+
+                try {
+                    const resp = await fetch('/documents/upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    if (resp.ok) {
+                        const statusIcon = fileItem.querySelector('.status-icon');
+                        statusIcon.textContent = 'check_circle';
+                        statusIcon.classList.remove('animate-spin');
+                        statusIcon.classList.add('text-primary');
+                    } else {
+                        throw new Error('Upload failed');
+                    }
+                } catch (err) {
+                    const statusIcon = fileItem.querySelector('.status-icon');
+                    statusIcon.textContent = 'error';
+                    statusIcon.classList.remove('animate-spin');
+                    statusIcon.classList.add('text-red-500');
+                }
+            }
+            event.target.value = '';
+        }
+
+        function toggleModeLabel() {
+            const isFast = document.getElementById('fast-mode-toggle').checked;
+            const label = document.getElementById('mode-label');
+            const aiStatus = document.getElementById('ai-status');
+            const boltIcon = document.querySelector('.material-symbols-outlined.text-slate-500');
+
+            if (isFast) {
+                label.innerText = 'Fast Mode';
+                aiStatus.innerHTML = '<span class="size-1.5 bg-yellow-500 rounded-full animate-pulse"></span> MindX Fast Mode';
+                if (boltIcon) boltIcon.innerText = 'electric_bolt';
+            } else {
+                label.innerText = 'Deep Search';
+                aiStatus.innerHTML = '<span class="size-1.5 bg-primary rounded-full animate-pulse"></span> MindX Intelligent Mode';
+                if (boltIcon) boltIcon.innerText = 'bolt';
             }
         }
 
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 
+        // ─── Categorized Upload Menu ───
+        function toggleUploadMenu(e) {
+            e.stopPropagation();
+            document.getElementById('upload-menu').classList.toggle('active');
+        }
+
+        function triggerFileUpload(accept) {
+            const input = document.getElementById('chat-file-upload');
+            input.accept = accept;
+            input.click();
+            document.getElementById('upload-menu').classList.remove('active');
+        }
+
+        // Close menu on outside click
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('upload-menu');
+            if (menu && !menu.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
         // ─── Check for ?q= parameter (from landing page) ───
         window.addEventListener('DOMContentLoaded', () => {
+            // Initial history fetch
+            fetchHistory();
+
             const params = new URLSearchParams(window.location.search);
             const q = params.get('q');
             if (q) {
@@ -585,6 +1072,7 @@
                 handleSearch();
             }
         });
+
     </script>
 </body>
 
