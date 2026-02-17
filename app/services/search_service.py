@@ -89,9 +89,11 @@ class SearchService:
             if len(parts) >= 3:
                 domain = parts[2]
                 # Remove www. prefix if present
-                if domain.startswith("www."):
-                    domain = domain[4:]
-                return domain
+                domain_str = str(domain)
+                if domain_str.startswith("www."):
+                    domain_str = domain_str[4:]
+                return domain_str
+
             return url
         except:
             return url

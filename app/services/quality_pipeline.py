@@ -181,11 +181,13 @@ Provide ONLY the 3 alternative queries, one per line, without numbering or expla
         try:
             response = await self.llm_service.generate_response(prompt)
             # Parse response into list of queries
-            queries = [q.strip() for q in response.split('\n') if q.strip()]
+            queries = [q.strip() for q in str(response).split('\n') if q.strip()]
             # Include original query
-            all_queries = [query] + queries[:3]
+            all_queries: List[str] = [query]
+            all_queries.extend(queries[:3])
             logger.info(f"Expanded to {len(all_queries)} queries")
             return all_queries
+
         except Exception as e:
             logger.error(f"Query expansion failed: {e}")
             return [query]  # Fallback to original query
@@ -220,10 +222,16 @@ Provide ONLY the 3 alternative queries, one per line, without numbering or expla
         answers = []
         
         # Divide chunks into groups for different perspectives
-        chunk_groups = [chunks[i::num_candidates] for i in range(num_candidates)]
+        chunk_groups = []
+        for i in range(num_candidates):
+            # Use basic slicing to avoid linter confusion
+            group = chunks[i::num_candidates]
+            chunk_groups.append(group)
         
-        for i, chunk_group in enumerate(chunk_groups[:num_candidates]):
+        for i in range(min(len(chunk_groups), num_candidates)):
+            chunk_group = chunk_groups[i]
             context = "\n\n".join(chunk_group[:5])  # Use top 5 chunks per candidate
+
             
             prompt = f"""Based on the following information, answer the question accurately and concisely.
 
@@ -279,12 +287,13 @@ Consensus Answer:"""
         """
         Stage 7: Verify facts and calculate confidence
         """
+        # Stage 7: Fact Verification
         # Calculate confidence based on number of sources and answer quality
         num_sources = len(sources)
-        confidence = min(0.9, 0.5 + (num_sources / 40))  # Cap at 0.9
+        conf_val = float(min(0.9, 0.5 + (num_sources / 40)))  # Cap at 0.9
         
         return {
             "answer": answer,
             "sources": sources,
-            "confidence": round(confidence, 2)
+            "confidence": round(conf_val, 2)
         }

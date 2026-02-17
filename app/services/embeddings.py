@@ -38,5 +38,6 @@ class EmbeddingsService:
 
     def rerank(self, query: str, documents: List[str]) -> List[Dict[str, Any]]:
         """Rerank documents using Jina Reranker or Cohere"""
-        # Placeholder implementation or specific implementation if key exists
-        pass
+        # Placeholder implementation
+        return [{"content": doc, "score": 1.0} for doc in documents]
+
