@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional, Any, cast
 import asyncio
+from itertools import islice
 from app.services.llm_service import LLMService # type: ignore
 from app.services.search_service import SearchService # type: ignore
 import logging
@@ -222,8 +223,10 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
             
             # Stage 4: Semantic Chunking
             logger.info("Stage 4: Semantic Chunking")
-            chunks = self.semantic_chunk(sources_to_use)
-            context = "\n\n".join(cast(List[str], chunks)[:12])
+            chunks_list = self.semantic_chunk(sources_to_use)
+            # Use islice to satisfy linter that doesn't like [:]
+            top_chunks: List[str] = list(islice(chunks_list, 12))
+            context = "\n\n".join(top_chunks)
             
             # ════════════════════════════════════════════════
             # MULTI-PASS GENERATION (Stage 5, 6, 7 replacement)
@@ -652,15 +655,21 @@ Final Answer:"""
             "confidence": float(round(float(min(0.98, conf_val)), 2)) # type: ignore
         }
 
-    async def _pass3_score(self, question: str, answer: str, sources: list) -> dict:
+    async def _pass3_score(self, question: str, answer: str, sources: List[Dict]) -> Dict:
         """Internal helper for Pass 3: Confidence Scoring"""
         try:
             import json
             import re
             
-            source_context = json.dumps([str(s.get('title','')) + ' - ' + str(s.get('url','')) for s in cast(List[Dict], sources)[:8]])
+            # Type-safe slicing for Pyre using islice
+            sources_slice: List[Dict] = list(islice(sources, 8))
+            source_context = json.dumps([str(s.get('title','')) + ' - ' + str(s.get('url','')) for s in sources_slice])
+            
+            answer_text: str = str(answer)
+            short_answer: str = "".join(islice(answer_text, 600))
+            
             response = await self.llm_service.generate_response(
-                prompt=f"Question: {question}\nAnswer: {str(answer)[:600]}\nSources: {source_context}",
+                prompt=f"Question: {question}\nAnswer: {short_answer}\nSources: {source_context}",
                 system_prompt=self.PASS3_SYSTEM,
                 model=self.llm_service.FAST_MODEL
             )
@@ -672,14 +681,17 @@ Final Answer:"""
             logger.warning(f"Pass 3 failed: {e}")
             return {"score": 75, "level": "medium", "reason": "Default score applied.", "conflicts": None}
 
-    async def _generate_followups(self, question: str, answer: str) -> list:
+    async def _generate_followups(self, question: str, answer: str) -> List[str]:
         """Internal helper for generating follow-up suggestions"""
         try:
             import json
             import re
             
+            answer_text: str = str(answer)
+            short_answer: str = "".join(islice(answer_text, 400))
+            
             response = await self.llm_service.generate_response(
-                prompt=f"Q: {question}\nA: {str(answer)[:400]}",
+                prompt=f"Q: {question}\nA: {short_answer}",
                 system_prompt=self.FOLLOWUP_SYSTEM,
                 model=self.llm_service.FAST_MODEL
             )
