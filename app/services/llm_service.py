@@ -10,17 +10,23 @@ class LLMService:
 
         self.client = AsyncGroq(api_key=api_key, timeout=30.0)
 
-        # ✅ CURRENTLY SUPPORTED MODEL
-        self.model = "llama-3.1-8b-instant"
+        # ✅ NEW MULTI-MODEL SETUP
+        self.FAST_MODEL = "llama-3.1-8b-instant"    # For expansion & scoring
+        self.SMART_MODEL = "llama-3.3-70b-versatile" # For reasoning & formatting
+        self.model = self.FAST_MODEL # default
 
     async def generate_response(
         self,
         prompt: str,
         context: str | None = None,
+        model: str | None = None,
+        system_prompt: str | None = None, # New parameter
     ) -> str:
         messages = []
 
-        if context:
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        elif context:
             messages.append({
                 "role": "system",
                 "content": (
@@ -36,7 +42,7 @@ class LLMService:
         })
 
         response = await self.client.chat.completions.create(
-            model=self.model,
+            model=model or self.model,
             messages=messages,
             temperature=0.3,
         )
@@ -47,9 +53,13 @@ class LLMService:
         self,
         prompt: str,
         context: str | None = None,
+        model: str | None = None,
+        system_prompt: str | None = None,
     ):
         messages = []
-        if context:
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        elif context:
             messages.append({
                 "role": "system",
                 "content": f"You are a helpful assistant. Use this context if relevant:\n\n{context}"
@@ -58,7 +68,7 @@ class LLMService:
         messages.append({"role": "user", "content": prompt})
 
         stream = await self.client.chat.completions.create(
-            model=self.model,
+            model=model or self.model,
             messages=messages,
             temperature=0.3,
             stream=True,

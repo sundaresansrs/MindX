@@ -22,8 +22,66 @@ class QualityPipeline:
     4. Semantic Chunking - Break results into meaningful chunks
     5. Multi-Answer Generation - Generate multiple answer candidates
     6. Self-Consistency - Check consistency across answers
-    7. Fact Verification - Verify facts and attribute sources
+    Fact Verification - Verify facts and attribute sources
     """
+
+    # ════════════════════════════════════════════════
+    # PASS 1 — RAW ANSWER GENERATION (SMART MODEL)
+    # ════════════════════════════════════════════════
+    PASS1_SYSTEM = """
+You are a research analyst for MindX AI.
+Your ONLY job in this step is to extract accurate facts from the search context and write a complete answer.
+
+STRICT RULES:
+- Write raw prose — do NOT format, do NOT use markdown
+- Cite every single fact immediately after it using [1], [2], [3]
+- If sources conflict, mention both and cite both
+- Write in English only — ignore any foreign language sources
+- Be thorough — cover all important aspects of the question
+- Never say "based on the search results" or "according to source X" — just state facts and cite them inline
+- Do not list references at the end
+"""
+
+    # ════════════════════════════════════════════════
+    # PASS 2 — STRUCTURE & DISPLAY FORMATTING (SMART MODEL)
+    # ════════════════════════════════════════════════
+    PASS2_SYSTEM = """
+You are the display formatter for MindX AI.
+You receive a raw factual answer and your ONLY job is to make it display beautifully — exactly like Claude or Perplexity AI.
+
+FORMATTING RULES:
+1. TLDR LINE: Start with one italic summary sentence. Then add a blank line.
+2. PROSE PARAGRAPHS: Conversational prose, max 3-4 sentences per paragraph. Blank line between.
+3. BOLD: Bold only proper nouns and key technical terms (e.g. **Linus Torvalds**).
+4. CITATIONS: Keep [1][2][3] exactly where they appear in the raw answer.
+5. HEADERS: Use ## headers ONLY if 2+ distinct sections. Never for under 200 words.
+6. LISTS: Numbered for steps, bullets for features/comparisons. Default to prose.
+7. NEVER: list sources at end, use __1__, say "In conclusion", or repeat the question.
+
+Return ONLY the formatted answer.
+"""
+
+    # ════════════════════════════════════════════════
+    # PASS 3 — CONFIDENCE SCORING (FAST MODEL)
+    # ════════════════════════════════════════════════
+    PASS3_SYSTEM = """
+Return ONLY a JSON logic object for the answer confidence.
+{
+  "score": 92,
+  "level": "high",
+  "reason": "4 authoritative sources agree on all key facts.",
+  "conflicts": null
+}
+Rules: score (0-100), level (high/medium/low based on score). Deduct for foreign sources, conflicts, or <3 sources.
+"""
+
+    # ════════════════════════════════════════════════
+    # FOLLOW-UP SUGGESTIONS (FAST MODEL)
+    # ════════════════════════════════════════════════
+    FOLLOWUP_SYSTEM = """
+Generate exactly 3 smart follow-up questions. Return ONLY a JSON array of 3 strings.
+Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"]
+"""
     
     def __init__(self, db: Session, use_reranking: bool = False):
         self.db = db
@@ -159,40 +217,51 @@ class QualityPipeline:
             # Stage 4: Semantic Chunking
             logger.info("Stage 4: Semantic Chunking")
             chunks = self.semantic_chunk(sources_to_use)
+            context = "\n\n".join(chunks[:12])
             
-            if fast_mode:
-                 # Skip Stage 5 & 6 in Fast Mode
-                  prompt = f"Answer the user's question accurately using ONLY the provided sources. Use inline citations [1], [2].\n\nContext:\n{chunks[:5]}\n\nQuestion: {query}\n\nAnswer:" # type: ignore
-                  fast_response = await self.llm_service.generate_response(prompt)
-                  consensus_answer = str(fast_response)
-            else:
-                # Stage 5: Multi-Answer Generation
-                logger.info("Stage 5: Multi-Answer Generation")
-                answer_candidates = await self.generate_multiple_answers(query, chunks)
-                
-                # Stage 6: Self-Consistency Check
-                logger.info("Stage 6: Self-Consistency")
-                consensus_answer = await self.check_consistency(answer_candidates)
+            # ════════════════════════════════════════════════
+            # MULTI-PASS GENERATION (Stage 5, 6, 7 replacement)
+            # ════════════════════════════════════════════════
             
-            # Stage 7: Fact Verification
-            logger.info("Stage 7: Fact Verification")
-            verified_result = await self.verify_facts(
-                consensus_answer, 
-                sources_to_use
+            # Pass 1: Accuracy (Silent)
+            logger.info("Pipeline Pass 1: Fact Extraction")
+            raw_answer = await self.llm_service.generate_response(
+                prompt=f"Context:\n{context}\n\nQuestion: {query}",
+                system_prompt=self.PASS1_SYSTEM,
+                model=self.llm_service.SMART_MODEL
             )
-            
-            # Add metadata
-            verified_result["metadata"] = {
-                "queries_used": len(expanded_queries),
-                "web_sources": len(web_results),
-                "vector_sources": len(vector_results),
-                "sources_retrieved": len(vector_results) + len(web_results),
-                "sources_used": len(sources_to_use),
-                "processing_time": time.time() - start_time,
-                "mode": "full_pipeline_rrf"
+
+            # Pass 2 & 3 & Followups (Parallel)
+            logger.info("Pipeline Pass 2 & 3: Formatting & Scoring")
+            formatted_answer_task = self.llm_service.generate_response(
+                prompt=f"Raw answer to format:\n\n{raw_answer}",
+                system_prompt=self.PASS2_SYSTEM,
+                model=self.llm_service.SMART_MODEL
+            )
+            confidence_task = self._pass3_score(query, raw_answer, sources_to_use)
+            followups_task = self._generate_followups(query, raw_answer)
+
+            formatted_answer, confidence, followups = await asyncio.gather(
+                formatted_answer_task,
+                confidence_task,
+                followups_task
+            )
+
+            result = {
+                "answer": formatted_answer,
+                "sources": sources_to_use,
+                "confidence": confidence.get("score", 0.7) / 100.0,
+                "confidence_details": confidence,
+                "followups": followups,
+                "metadata": {
+                    "queries_used": len(expanded_queries),
+                    "sources_used": len(sources_to_use),
+                    "processing_time": time.time() - start_time,
+                    "mode": "multi_pass_v2"
+                }
             }
             
-            return verified_result
+            return result
             
         except Exception as e:
             logger.error(f"Pipeline error: {e}")
@@ -307,78 +376,47 @@ class QualityPipeline:
             }
             yield initial_metadata
 
-            # Stage 5: Streaming Generation
-            # Use chunks (already formatted as Source [N] with title + snippet)
-            context = "\n\n".join(chunks[:10])
+            # Stage 5: Multi-Pass Streaming (Accuracy -> Format)
+            yield {"type": "status", "stage": 5, "content": "Analyzing and citing sources..."}
             
-            # Log context to verify web results are being passed
-            logger.info(f"Context length for LLM: {len(context)} chars, sources: {len(sources_to_use)}")
-            if chunks:
-                logger.info(f"First chunk preview: {chunks[0][:200]}")
+            # Pass 1: Silent Accuracy Generation
+            context = "\n\n".join(chunks[:12])
+            raw_answer = await self.llm_service.generate_response(
+                prompt=f"Context:\n{context}\n\nQuestion: {query}",
+                system_prompt=self.PASS1_SYSTEM,
+                model=self.llm_service.SMART_MODEL
+            )
             
-            is_personal = user.account_type == "personal"
-            has_documents = len(vector_results) > 0
+            # Pass 2: Streamed Formatting
+            yield {"type": "status", "stage": 6, "content": "Polishing presentation..."}
             
-            if is_personal and not has_documents:
-                # Personal account, no uploaded docs - pure web search like Perplexity
-                prompt = f"""You are MindX, a real-time AI search engine. Answer the question using the web search results below.
+            # Start gathering Pass 3 and Followups in background while Pass 2 streams
+            confidence_task = self._pass3_score(query, raw_answer, sources_to_use)
+            followups_task = self._generate_followups(query, raw_answer)
 
-RULES:
-- Answer in clear, flowing prose. Minimum 3-4 paragraphs (150+ words) for factual queries.
-- Cite sources using superscript-style [1], [2], [3] immediately after the fact.
-- STRICTLY LINK citations to the provided sources. Do not hallucinate citations.
-- DO NOT Include a "References" or "Sources" section at the end. Sources are handled by the UI.
-- Use English language only.
-- If web results are insufficient, answer from your knowledge but note it.
-
-WEB SEARCH RESULTS:
-{context}
-
-Question: {query}
-
-Answer:"""
-            elif is_personal and has_documents:
-                prompt = f"""You are MindX, a real-time AI search engine. Answer using the web search results and uploaded documents below.
-
-RULES:
-- Answer in clear, flowing prose. Minimum 3-4 paragraphs (150+ words).
-- Cite sources using superscript-style [1], [2] immediately after the fact.
-- STRICTLY LINK citations to the provided sources.
-- DO NOT Include a "References" or "Sources" section.
-- Use English language only.
-
-SOURCES:
-{context}
-
-Question: {query}
-
-Answer:"""
-            else:
-                # Company account - hybrid RAG
-                prompt = f"""You are MindX, an enterprise AI search assistant. Answer using the provided sources.
-
-RULES:
-- Answer in clear, flowing prose. Minimum 3-4 paragraphs.
-- Prioritize company documents, use web sources as supplementary.
-- Cite sources using [1], [2] immediately after the fact.
-- DO NOT Include a "References" or "Sources" section.
-- Use English language only.
-
-SOURCES:
-{context}
-
-Question: {query}
-
-Answer:"""
-            
-            async for token in self.llm_service.stream_response(prompt):
+            full_formatted = ""
+            async for token in self.llm_service.stream_response(
+                prompt=f"Raw answer:\n\n{raw_answer}",
+                system_prompt=self.PASS2_SYSTEM,
+                model=self.llm_service.SMART_MODEL
+            ):
+                full_formatted += token
                 yield {"type": "token", "content": token}
 
-            # Final metadata
+            # Wait for parallel tasks
+            confidence, followups = await asyncio.gather(confidence_task, followups_task)
+
+            # Final metadata yield
             yield {
-                "type": "final",
+                "type": "metadata",
+                "sources": sources_to_use,
+                "confidence": confidence.get("score", 70) / 100.0,
+                "confidence_details": confidence,
+                "followups": followups,
                 "processing_time": time.time() - start_time
             }
+
+            yield {"type": "final", "content": "Complete"}
 
         except Exception as e:
             logger.error(f"Streaming pipeline error: {e}")
@@ -552,8 +590,8 @@ Final Answer:"""
 
         except Exception as e:
             logger.error(f"Consistency check failed: {e}")
-            return answers[0]  # Return first answer as fallback
-    
+            return answers[0] if answers else ""
+
     async def verify_facts(self, answer: str, sources: List[Dict]) -> Dict:
         """
         Stage 7: Verify facts and calculate confidence using a smarter heuristic
@@ -580,4 +618,49 @@ Final Answer:"""
             "sources": sources,
             "confidence": float(round(float(min(0.98, conf_val)), 2)) # type: ignore
         }
+
+    async def _pass3_score(self, question: str, answer: str, sources: list) -> dict:
+        """Internal helper for Pass 3: Confidence Scoring"""
+        try:
+            import json
+            import re
+            
+            source_context = json.dumps([s.get('title','') + ' - ' + s.get('url','') for s in sources[:8]])
+            response = await self.llm_service.generate_response(
+                prompt=f"Question: {question}\nAnswer: {answer[:600]}\nSources: {source_context}",
+                system_prompt=self.PASS3_SYSTEM,
+                model=self.llm_service.FAST_MODEL
+            )
+            raw = response.strip()
+            # Strip markdown formatting if LLM adds it
+            raw = re.sub(r'```json|```', '', raw).strip()
+            return json.loads(raw)
+        except Exception as e:
+            logger.warning(f"Pass 3 failed: {e}")
+            return {"score": 75, "level": "medium", "reason": "Default score applied.", "conflicts": None}
+
+    async def _generate_followups(self, question: str, answer: str) -> list:
+        """Internal helper for generating follow-up suggestions"""
+        try:
+            import json
+            import re
+            
+            response = await self.llm_service.generate_response(
+                prompt=f"Q: {question}\nA: {answer[:400]}",
+                system_prompt=self.FOLLOWUP_SYSTEM,
+                model=self.llm_service.FAST_MODEL
+            )
+            raw = response.strip()
+            raw = re.sub(r'```json|```', '', raw).strip()
+            return json.loads(raw)
+        except Exception as e:
+            logger.warning(f"Followups failed: {e}")
+            return [
+                "Tell me more about this.",
+                "What are the key implications?",
+                "How has this changed over time?"
+            ]
+
+    # Legacy methods for compatibility (if needed) or cleanup
+    async def generate_multiple_answers(self, query: str, chunks: List[str], num_candidates: int = 3): return []
 
