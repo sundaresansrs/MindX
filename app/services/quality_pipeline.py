@@ -324,10 +324,12 @@ class QualityPipeline:
                 prompt = f"""You are MindX, a real-time AI search engine. Answer the question using the web search results below.
 
 RULES:
-- Prioritize information from the web search results
-- Cite sources using [1], [2], [3] etc. after each fact
-- DO NOT mention knowledge cutoff dates
-- If the web results have relevant info, use it. If not, answer from your knowledge but note it may not be current.
+- Answer in clear, flowing prose. Minimum 3-4 paragraphs (150+ words) for factual queries.
+- Cite sources using superscript-style [1], [2], [3] immediately after the fact.
+- STRICTLY LINK citations to the provided sources. Do not hallucinate citations.
+- DO NOT Include a "References" or "Sources" section at the end. Sources are handled by the UI.
+- Use English language only.
+- If web results are insufficient, answer from your knowledge but note it.
 
 WEB SEARCH RESULTS:
 {context}
@@ -339,9 +341,11 @@ Answer:"""
                 prompt = f"""You are MindX, a real-time AI search engine. Answer using the web search results and uploaded documents below.
 
 RULES:
-- Prioritize information from the web search results and documents
-- Cite sources using [1], [2], [3] etc. after each fact
-- DO NOT mention knowledge cutoff dates
+- Answer in clear, flowing prose. Minimum 3-4 paragraphs (150+ words).
+- Cite sources using superscript-style [1], [2] immediately after the fact.
+- STRICTLY LINK citations to the provided sources.
+- DO NOT Include a "References" or "Sources" section.
+- Use English language only.
 
 SOURCES:
 {context}
@@ -354,9 +358,11 @@ Answer:"""
                 prompt = f"""You are MindX, an enterprise AI search assistant. Answer using the provided sources.
 
 RULES:
-- Prioritize company documents, use web sources as supplementary
-- Cite sources using [1], [2], [3] etc. after each fact
-- DO NOT mention knowledge cutoff dates
+- Answer in clear, flowing prose. Minimum 3-4 paragraphs.
+- Prioritize company documents, use web sources as supplementary.
+- Cite sources using [1], [2] immediately after the fact.
+- DO NOT Include a "References" or "Sources" section.
+- Use English language only.
 
 SOURCES:
 {context}

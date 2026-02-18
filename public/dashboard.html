@@ -33,9 +33,9 @@
                         "matrix": "#00FF00",
 
                         "background-light": "#f6f8f5",
-                        "background-dark": "#050804",
-                        "surface-dark": "#0e1f10",
-                        "border-dark": "#294922",
+                        "background-dark": "rgb(var(--background-rgb) / <alpha-value>)",
+                        "surface-dark": "rgb(var(--surface-rgb) / <alpha-value>)",
+                        "border-dark": "rgb(var(--border-rgb) / <alpha-value>)",
                         "neutral-dark": "#132210",
                     },
                     fontFamily: {
@@ -56,20 +56,39 @@
             --primary: #00FF41;
             --primary-soft: rgba(0, 255, 65, 0.1);
             --primary-border: rgba(0, 255, 65, 0.2);
-            --background-dark: #0a0c0a;
+
+            /* RGB Components for Tailwind opacity */
+            --background-rgb: 10 12 10;
+            /* #0a0c0a */
+            --surface-rgb: 20 24 20;
+            /* #141814 */
+            --border-rgb: 255 255 255;
+            /* #ffffff */
+
+            /* Legacy/Direct Usage (with default opacities for dark mode) */
+            --background-dark: rgb(10, 12, 10);
             --surface-dark: rgba(20, 24, 20, 0.6);
             --border-dark: rgba(255, 255, 255, 0.08);
+
             --text-main: #e2e8f0;
             --text-muted: #94a3b8;
         }
 
         /* Light mode overrides */
         body.light-mode {
-            --background-dark: #f5f7f5;
-            --surface-dark: rgba(255, 255, 255, 0.85);
-            --border-dark: rgba(0, 0, 0, 0.08);
+            --background-rgb: 245 247 245;
+            /* #f5f7f5 */
+            --surface-rgb: 255 255 255;
+            /* #ffffff */
+            --border-rgb: 0 0 0;
+            /* #000000 */
             --text-main: #1a1a1a;
             --text-muted: #555;
+
+            /* Update legacy vars if used directly in CSS */
+            --background-dark: rgb(245, 247, 245);
+            --surface-dark: rgb(255, 255, 255);
+            --border-dark: rgba(0, 0, 0, 0.1);
         }
 
         body.light-mode .glass {
@@ -224,7 +243,7 @@
         }
 
         .markdown-body strong {
-            color: #fff;
+            color: inherit;
         }
 
         .markdown-body a {
@@ -548,6 +567,104 @@
             color: var(--primary);
         }
 
+        /* Citations & Chips */
+        .citation {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid var(--primary-border);
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--primary);
+            vertical-align: super;
+            line-height: 1;
+            margin: 0 2px;
+            cursor: pointer;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.15s;
+        }
+
+        .citation:hover {
+            background: rgba(0, 255, 65, 0.2);
+            transform: scale(1.1);
+        }
+
+        .followup-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border-dark);
+            border-radius: 24px;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            text-align: left;
+        }
+
+        .followup-chip::before {
+            content: '→';
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .followup-chip:hover {
+            background: var(--primary-soft);
+            border-color: var(--primary-border);
+            color: var(--text-main);
+            transform: translateX(3px);
+        }
+
+        /* Tooltip Logic */
+        [data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111;
+            border: 1px solid #333;
+            color: #ccc;
+            padding: 6px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            white-space: nowrap;
+            z-index: 50;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeIn 0.2s forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Icon fixes for Light/Dark mode */
+        .msg-action-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
         .chip-num {
             width: 15px;
             height: 15px;
@@ -743,8 +860,8 @@
     </style>
 </head>
 
-<body
-    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+<body class="bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display"
+    style="background-color: var(--background-dark); color: var(--text-main);">
 
     <!-- Mobile overlay -->
     <div id="mobile-overlay" onclick="closeMobileSidebar()"></div>
@@ -763,24 +880,26 @@
                     class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(0,255,65,0.3)]">
                     <span class="material-symbols-outlined text-sm font-bold">query_stats</span>
                 </div>
-                <h1 class="text-xl font-bold tracking-tight text-white">Mind<span class="text-primary">X</span></h1>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Mind<span
+                        class="text-primary">X</span></h1>
             </a>
         </div>
         <div class="flex items-center gap-2">
-            <span id="user-greeting" class="text-sm font-medium text-slate-400 hidden sm:block">Hello, User</span>
+            <span id="user-greeting"
+                class="text-sm font-medium text-slate-500 dark:text-slate-400 hidden sm:block">Hello, User</span>
             <!-- Theme Toggle -->
             <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark"
-                class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
+                class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
                 <span class="material-symbols-outlined text-[20px]" id="theme-icon">light_mode</span>
             </button>
             <!-- Export Chat -->
             <button onclick="exportChat()" title="Export chat as Markdown"
-                class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
+                class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
                 <span class="material-symbols-outlined text-[20px]">download</span>
             </button>
             <!-- Shortcuts hint -->
             <button onclick="showShortcutsModal()" title="Keyboard shortcuts (?)"
-                class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-white/5 transition-colors hidden sm:flex">
+                class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-white/5 transition-colors hidden sm:flex">
                 <span class="material-symbols-outlined text-[20px]">keyboard</span>
             </button>
             <button onclick="handleLogout()"
@@ -854,7 +973,7 @@
 
 
         <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col bg-background-dark overflow-hidden">
+        <main class="flex-1 flex flex-col overflow-hidden" style="background-color: var(--background-dark);">
             <!-- Chat Container (Scrollable) -->
             <div id="chat-scroller" class="flex-1 overflow-y-auto no-scrollbar pt-8 px-6">
                 <div id="chat-container" class="max-w-4xl mx-auto flex flex-col">
@@ -1062,62 +1181,7 @@
             </div>
         </section>
 
-        <!-- AI Answer Card (hidden by default) -->
-        <article id="answer-section" class="hidden space-y-6">
-            <div class="bg-surface-dark border border-border-dark rounded-2xl overflow-hidden shadow-xl">
-                <div class="p-8 space-y-4">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="bg-primary/20 p-1.5 rounded-lg">
-                            <span class="material-symbols-outlined text-primary text-[20px]">magic_button</span>
-                        </div>
-                        <span class="text-sm font-bold tracking-wide text-primary uppercase">AI Answer</span>
-                    </div>
-                    <div id="answer-body"
-                        class="prose prose-invert max-w-none text-slate-300 space-y-4 leading-relaxed">
-                        <!-- Answer content injected here -->
-                    </div>
-                </div>
-                <!-- Metadata Bar -->
-                <div
-                    class="bg-background-dark/50 border-t border-border-dark px-8 py-4 flex flex-wrap gap-4 items-center">
-                    <div
-                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                        <span class="material-symbols-outlined text-[14px] text-primary">verified</span>
-                        <span id="meta-confidence">--% Confidence</span>
-                    </div>
-                    <div
-                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                        <span class="material-symbols-outlined text-[14px] text-primary">menu_book</span>
-                        <span id="meta-sources">-- Sources</span>
-                    </div>
-                    <div
-                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                        <span class="material-symbols-outlined text-[14px] text-primary">timer</span>
-                        <span id="meta-time">--s</span>
-                    </div>
-                    <div
-                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full ml-auto">
-                        <span class="material-symbols-outlined text-[14px] text-primary">language</span>
-                        <span id="meta-mode">Hybrid Mode</span>
-
-                    </div>
-                </div>
-            </div>
-        </article>
-
-        <!-- Sources Panel (hidden by default) -->
-        <section id="sources-section" class="hidden space-y-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <h3 class="text-lg font-bold text-white">Sources</h3>
-                    <span id="sources-count-badge"
-                        class="bg-primary/20 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">0</span>
-                </div>
-            </div>
-            <div id="sources-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Source items injected here -->
-            </div>
-        </section>
+    </div>
 
     </div>
 
@@ -1207,10 +1271,72 @@
             renderHistory();
         }
 
+        // ─── Storage Layer (Persistence) ───
+        const STORAGE_KEY = 'mindx_chats';
+
+        function loadChatsFromLocal() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) { return []; }
+        }
+
+        function saveChatsToLocal(chats) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+        }
+
+        function saveMessage(chatId, message) {
+            const chats = loadChatsFromLocal();
+            const chat = chats.find(c => c.id === chatId);
+
+            if (chat) {
+                chat.messages.push(message);
+                chat.updated_at = new Date().toISOString();
+                chat.message_count = chat.messages.length;
+            } else {
+                // New chat
+                chats.unshift({
+                    id: chatId, // use id for consistency with local
+                    session_id: chatId, // keep backend compatibility
+                    title: message.content.slice(0, 45),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    messages: [message],
+                    message_count: 1,
+                    _bucket: 'Today'
+                });
+            }
+            saveChatsToLocal(chats);
+            // Update in-memory for immediate UI reflect
+            allSessions = chats;
+            renderHistory(allSessions);
+        }
+
+        function updateLastMessage(chatId, content) {
+            const chats = loadChatsFromLocal();
+            const chat = chats.find(c => c.id === chatId);
+            if (chat && chat.messages.length > 0) {
+                // Last message is the assistant stream
+                chat.messages[chat.messages.length - 1].content = content;
+                // Also update session title if it's the first exchange? 
+                // We do that in updateSessionTitle separately.
+                saveChatsToLocal(chats);
+            }
+        }
+
+        function setActiveChat(chatId) {
+            activeSessionId = chatId;
+            localStorage.setItem('mindx_active_chat', chatId);
+        }
+
         // Session Management - always start fresh on page load (new login = new chat)
-        let currentSessionId = uuid.v4();
-        let allSessions = []; // full list for filtering
-        let activeSessionId = null; // tracks which session is highlighted
+        // INITIALIZATION: Load from local storage immediately
+        let allSessions = loadChatsFromLocal();
+        // Try to restore last active session
+        let lastActive = localStorage.getItem('mindx_active_chat');
+        let currentSessionId = lastActive || uuid.v4();
+        let activeSessionId = lastActive;
+
         let currentChatMessages = []; // for export
         let abortController = null; // for stop generating
 
@@ -1328,7 +1454,8 @@
 
         function startNewChat() {
             currentSessionId = uuid.v4();
-            localStorage.setItem('currentSessionId', currentSessionId);
+            setActiveChat(currentSessionId); // Update storage
+            // localStorage.setItem('currentSessionId', currentSessionId); // Remove legacy
             currentChatMessages = [];
 
             // Clear UI
@@ -1389,10 +1516,10 @@
 
         async function fetchHistory() {
             try {
-                // Try localStorage cache first for instant render
-                const cached = localStorage.getItem('mindx_sessions_cache');
-                if (cached) {
-                    allSessions = JSON.parse(cached);
+                // Try from local storage FIRST (Layer 1)
+                const cached = loadChatsFromLocal();
+                if (cached && cached.length > 0) {
+                    allSessions = cached;
                     renderHistory(allSessions);
                 }
 
@@ -1402,9 +1529,48 @@
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    // Flatten groups into flat list for filtering
-                    allSessions = data.groups.flatMap(g => g.sessions.map(s => ({ ...s, _bucket: g.label })));
-                    localStorage.setItem('mindx_sessions_cache', JSON.stringify(allSessions));
+
+                    // MERGE STRATEGY (Layer 1): Keep local if backend missing
+                    const localMap = new Map();
+                    allSessions.forEach(s => localMap.set(s.id || s.session_id, s));
+
+                    // Parse server sessions
+                    const flatSessions = data.groups.flatMap(g => g.sessions.map(s => {
+                        return { ...s, _bucket: g.label };
+                    }));
+
+                    // Iterate server sessions and update local map
+                    flatSessions.forEach(serverSes => {
+                        const sid = serverSes.session_id;
+                        const local = localMap.get(sid);
+
+                        // Create merged object
+                        const merged = { ...serverSes, id: sid };
+
+                        // Preserve local messages if backend lacks them (which it usually does)
+                        if (local && local.messages && local.messages.length > 0) {
+                            merged.messages = local.messages;
+                            merged.message_count = Math.max(serverSes.message_count || 0, local.messages.length);
+                        }
+
+                        localMap.set(sid, merged);
+                    });
+
+                    // If current session is actively being used but not yet on server, keep it
+                    if (currentSessionId && !localMap.has(currentSessionId)) {
+                        // It should be in localMap if it was in allSessions?
+                        // If allSessions was empty, then localMap is empty.
+                        // But saveMessage adds to allSessions.
+                    }
+
+                    // Convert map back to array
+                    const mergedList = Array.from(localMap.values());
+
+                    // Sort by updated_at (most recent first)
+                    mergedList.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
+
+                    allSessions = mergedList;
+                    saveChatsToLocal(allSessions); // Unified storage
                     renderHistory(allSessions);
                 }
             } catch (err) {
@@ -1510,58 +1676,34 @@
         }
 
         // ─── Display Sources ───
-        function renderSources(sources) {
-            const grid = document.getElementById('sources-grid');
-            if (!sources || sources.length === 0) {
-                document.getElementById('sources-section')?.classList.add('hidden');
-                return;
-            }
 
-            // Also check if we need to reveal the section
-            const section = document.getElementById('sources-section');
-            if (section) section.classList.remove('hidden');
-
-            const badge = document.getElementById('sources-count-badge');
-            if (badge) badge.textContent = sources.length;
-
-            grid.innerHTML = sources.map((s, i) => {
-                let domain = '';
-                try {
-                    domain = s.source || (s.url ? new URL(s.url).hostname.replace('www.', '') : 'Source');
-                } catch (e) {
-                    domain = s.source || 'Source';
-                }
-                const idx = i + 1;
-                const faviconUrl = s.url ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
-                const credScore = s.credibility_score || 0.5;
-                const credLabel = s.source || 'Web';
-                const credColor = credScore >= 0.8 ? 'text-green-400' : credScore >= 0.6 ? 'text-yellow-400' : 'text-slate-400';
-                return `
-                    <div class="p-3 bg-white/5 border border-white/5 rounded-2xl hover:border-primary/30 transition-all group relative">
-                        <div class="absolute -top-2 -left-1 bg-primary text-background-dark text-[10px] font-bold px-2 py-0.5 rounded shadow-xl z-10">
-                            ${idx}
-                        </div>
-                        <div class="flex items-center gap-2 mb-2">
-                            ${faviconUrl ? `<img src="${faviconUrl}" class="w-4 h-4 rounded" onerror="this.style.display='none'">` : ''}
-                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[100px]">${domain}</span>
-                            <span class="ml-auto text-[8px] font-semibold ${credColor} shrink-0">${credLabel}</span>
-                        </div>
-                        <h4 class="text-xs font-semibold text-slate-200 group-hover:text-primary transition-colors mb-1 line-clamp-2">
-                            <a href="${s.url || '#'}" target="_blank" rel="noopener noreferrer" class="hover:underline">${s.title || 'Referenced Source'}</a>
-                        </h4>
-                        <p class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">${s.snippet || ''}</p>
-                        ${s.url ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="mt-2 flex items-center gap-1 text-[9px] text-primary/60 hover:text-primary truncate">
-                            <span class="material-symbols-outlined text-[10px]">open_in_new</span>
-                            <span class="truncate">${s.url}</span>
-                        </a>` : ''}
-                    </div>`;
-            }).join('');
-        }
 
         // ─── Main Search Handler (Streaming Version) ───
-        async function handleSearch() {
+        // Helper to format content with citations and clean source blocks
+        function formatContent(text) {
+            // 1. Strip Source/References blocks
+            let clean = text.replace(/Source:[\s\S]*?$/, '').trim();
+            clean = clean.replace(/Sources:[\s\S]*?$/, '').trim();
+            clean = clean.replace(/References:[\s\S]*?$/, '').trim();
+
+            // 2. Parse Markdown first
+            let html = marked.parse(clean);
+
+            // 3. Replace citations [1], __1__ with superscript chips
+            // We do this on HTML to handle cases where marked might have touched them (unlikely for simple [1])
+            html = html.replace(/\[(\d+)\]/g, (match, n) =>
+                `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`
+            );
+            html = html.replace(/__(\d+)__/g, (match, n) =>
+                `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`
+            );
+
+            return html;
+        }
+
+        async function handleSearch(initialQuery = null) {
             const input = document.getElementById('search-input');
-            const query = input.value.trim();
+            const query = initialQuery || input.value.trim();
             if (!query) return;
 
             // Clear input immediately
@@ -1569,14 +1711,21 @@
             updateCharCounter(input);
             input.style.height = '';
 
-            const maxSources = document.getElementById('max-sources').value;
+            console.log('🚀 MindX Dashboard v2.0 - Stream Fix Active');
+
+            const maxSources = 10; // Hardcoded default
             const container = document.getElementById('chat-container');
             const emptyState = document.getElementById('empty-state');
 
             if (emptyState) emptyState.remove();
 
-            // Track for export
-            currentChatMessages.push({ role: 'user', content: query });
+            if (emptyState) emptyState.remove();
+
+            // Track for export & Persistence
+            const userMsg = { role: 'user', content: query };
+            currentChatMessages.push(userMsg);
+            saveMessage(currentSessionId, userMsg);
+            setActiveChat(currentSessionId);
 
             // Append User Message Bubble (optimistic)
             const userDiv = document.createElement('div');
@@ -1664,10 +1813,17 @@
                                     }
 
                                     // Render with citations
-                                    const processedAnswer = fullAnswer.replace(/\[(\d+)\]/g, (match, n) => {
-                                        return `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`;
-                                    });
-                                    aiDiv.innerHTML = `<div class="markdown-body">${marked.parse(processedAnswer)}</div><span class="text-primary animate-pulse">▋</span>`;
+                                    // Render with citations
+                                    aiDiv.innerHTML = `<div class="markdown-body">${formatContent(fullAnswer)}</div><span class="text-primary animate-pulse">▋</span>`;
+
+                                    // Auto-save during stream (throttled)
+                                    // We'll just save chunks occasionally or update a global buffer?
+                                    // User asked for "saveWhileStreaming" with timer.
+                                    // We can implement simple throttle here or just update last message every ~10 tokens?
+                                    // Let's do it every 20 chars for performance or check modulo.
+                                    if (fullAnswer.length % 50 === 0) {
+                                        updateLastMessage(currentSessionId, fullAnswer);
+                                    }
 
                                 } else if (data.type === 'status') {
                                     if (data.stage) animateStage(data.stage);
@@ -1681,10 +1837,13 @@
                                 } else if (data.type === 'metadata') {
                                     currentSources = data.sources || [];
                                     document.getElementById('ai-status').innerHTML = `
-                                        <span class="material-symbols-outlined text-primary text-[14px]">verified</span>
-                                        ${Math.round((data.confidence || 0.85) * 100)}% Confirmed
+                                        <div class="flex items-center gap-1" data-tooltip="${Math.round((data.confidence || 0.85) * 100)}% verified based on source credibility & consensus">
+                                            <span class="material-symbols-outlined text-primary text-[14px]">verified</span>
+                                            ${Math.round((data.confidence || 0.85) * 100)}% Confirmed
+                                            <span class="material-symbols-outlined text-[12px] opacity-50 ml-1">info</span>
+                                        </div>
                                     `;
-                                    renderSources(currentSources);
+                                    // Removed renderSources call to prevent blocking UI
                                 } else if (data.type === 'error') {
                                     aiDiv.innerHTML = `
                                         <div class="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
@@ -1707,8 +1866,7 @@
 
                 // ─── Finalize AI bubble ───
                 // Remove cursor
-                aiDiv.innerHTML = `<div class="markdown-body" data-raw="${encodeURIComponent(fullAnswer)}">${marked.parse(fullAnswer.replace(/\[(\d+)\]/g, (m, n) => `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`))
-                    }</div>`;
+                aiDiv.innerHTML = `<div class="markdown-body" data-raw="${encodeURIComponent(fullAnswer)}">${formatContent(fullAnswer)}</div>`;
 
                 // Add inline source chips
                 if (currentSources.length > 0) {
@@ -1719,8 +1877,11 @@
                 // Add message action buttons
                 addMessageActions(aiDiv, fullAnswer);
 
-                // Track for export
-                currentChatMessages.push({ role: 'assistant', content: fullAnswer });
+                // Track for export & Persistence
+                const assistantMsg = { role: 'assistant', content: fullAnswer };
+                currentChatMessages.push(assistantMsg);
+                // Ensure final update is saved
+                saveMessage(currentSessionId, assistantMsg);
 
                 // Highlight code blocks
                 setTimeout(() => {
@@ -1785,13 +1946,22 @@
             // Copy
             const copyBtn = document.createElement('button');
             copyBtn.className = 'msg-action-btn copy-btn';
-            copyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">content_copy</span> Copy';
+            copyBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg> Copy`;
             copyBtn.onclick = async () => {
                 await navigator.clipboard.writeText(rawText);
-                copyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">check</span> Copied!';
+                copyBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg> Copied!`;
                 copyBtn.classList.add('active');
                 setTimeout(() => {
-                    copyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">content_copy</span> Copy';
+                    copyBtn.innerHTML = `
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg> Copy`;
                     copyBtn.classList.remove('active');
                 }, 2000);
             };
@@ -1799,7 +1969,10 @@
             // Retry
             const retryBtn = document.createElement('button');
             retryBtn.className = 'msg-action-btn';
-            retryBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">refresh</span> Retry';
+            retryBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+                </svg> Retry`;
             retryBtn.onclick = () => {
                 // Find the user message before this AI message
                 const prev = aiDiv.previousElementSibling;
@@ -1983,15 +2156,17 @@
             const existing = allSessions.find(s => s.session_id === sid);
             if (!existing) {
                 const newSession = {
+                    id: sid, // Ensure ID consistency
                     session_id: sid,
                     title: query.substring(0, 40) + (query.length > 40 ? '…' : ''),
                     message_count: 1,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
-                    _bucket: 'Today'
+                    _bucket: 'Today',
+                    messages: [] // Init empty messages array
                 };
                 allSessions.unshift(newSession);
-                localStorage.setItem('mindx_sessions_cache', JSON.stringify(allSessions));
+                saveChatsToLocal(allSessions);
                 renderHistory(allSessions);
             }
             // Refresh from server after 3s (auto-title will be ready)
@@ -2011,7 +2186,7 @@
                 });
                 if (resp.ok) {
                     if (session) session.title = newTitle.trim();
-                    localStorage.setItem('mindx_sessions_cache', JSON.stringify(allSessions));
+                    saveChatsToLocal(allSessions);
                     renderHistory(allSessions);
                 }
             } catch (err) { console.error('Rename failed:', err); }
@@ -2027,7 +2202,7 @@
                 });
                 if (resp.ok) {
                     allSessions = allSessions.filter(s => s.session_id !== sid);
-                    localStorage.setItem('mindx_sessions_cache', JSON.stringify(allSessions));
+                    saveChatsToLocal(allSessions);
                     renderHistory(allSessions);
                     if (sid === activeSessionId) startNewChat();
                 }
@@ -2048,6 +2223,43 @@
                 </div>`;
 
             try {
+                // Try from local storage FIRST (Layer 1)
+                const localChats = loadChatsFromLocal();
+                const session = localChats.find(s => s.id === sid || s.session_id === sid);
+
+                if (session && session.messages && session.messages.length > 0) {
+                    // Render from local
+                    container.innerHTML = '';
+                    session.messages.forEach(msg => {
+                        const isUser = msg.role === 'user';
+                        const div = document.createElement('div');
+                        div.className = `message-bubble ${isUser ? 'user-message' : 'ai-message'}`;
+                        if (isUser) {
+                            div.textContent = msg.content;
+                        } else {
+                            // Assistant
+                            div.innerHTML = `<div class="markdown-body" data-raw="${encodeURIComponent(msg.content || '')}">${formatContent(msg.content || '')}</div>`;
+                            // Add actions
+                            if (!div.querySelector('.msg-actions')) {
+                                setTimeout(() => addMessageActions(div, msg.content), 0);
+                            }
+                        }
+                        container.appendChild(div);
+                    });
+
+                    // Restore currentChatMessages for context
+                    currentChatMessages = session.messages;
+                    activeSessionId = sid;
+                    currentSessionId = sid;
+
+                    setTimeout(() => {
+                        Prism.highlightAllUnder(container);
+                        scrollToBottom();
+                    }, 50);
+                    return; // Skip fetch if local successful
+                }
+
+                // If not in local, try fetch (Layer 2 backup)
                 const response = await fetch(`/chats/${sid}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -2071,10 +2283,8 @@
                         // AI Bubble
                         const aDiv = document.createElement('div');
                         aDiv.className = 'message-bubble ai-message';
-                        const processedAnswer = (msg.role_assistant || '').replace(/\[(\d+)\]/g, (match, n) => {
-                            return `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`;
-                        });
-                        aDiv.innerHTML = `<div class="markdown-body">${marked.parse(processedAnswer)}</div>`;
+
+                        aDiv.innerHTML = `<div class="markdown-body" data-raw="${encodeURIComponent(msg.role_assistant || '')}">${formatContent(msg.role_assistant || '')}</div>`;
                         container.appendChild(aDiv);
                     });
 
@@ -2095,14 +2305,14 @@
             activeSessionId = null;
             renderHistory(allSessions); // clear active highlight
             document.getElementById('chat-container').innerHTML = `
-                <div id="empty-state" class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
+                <div id="empty-state" class="mt-20 border border-border-dark bg-white/80 dark:bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4 shadow-sm">
                     <span class="material-symbols-outlined text-primary text-5xl opacity-40">neurology</span>
                     <p class="text-lg font-semibold text-slate-500">New Conversation</p>
                     <p class="text-sm text-slate-600">Ask a question to begin.</p>
                     <div class="flex flex-wrap justify-center gap-2 pt-4 max-w-lg">
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Who founded Netflix?</button>
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Explain quantum physics</button>
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest AI news</button>
+                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-slate-100 dark:bg-surface-dark/50 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Who founded Netflix?</button>
+                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-slate-100 dark:bg-surface-dark/50 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Explain quantum physics</button>
+                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-slate-100 dark:bg-surface-dark/50 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest AI news</button>
                     </div>
                 </div>`;
             document.getElementById('search-input').focus();
@@ -2120,7 +2330,7 @@
 
             for (const file of Array.from(files)) {
                 const fileItem = document.createElement('div');
-                fileItem.className = 'flex items-center gap-2 bg-white/5 border border-white/5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-400';
+                fileItem.className = 'flex items-center gap-2 bg-slate-100 dark:bg-white/5 border border-border-dark px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-slate-400';
                 fileItem.innerHTML = `
                     <span class="material-symbols-outlined text-[14px]">description</span>
                     <span>${file.name}</span>

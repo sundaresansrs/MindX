@@ -89,8 +89,8 @@ class SearchService:
         params = {
             "q": query,
             "format": "json",
-            "engines": "google,bing,duckduckgo,brave",
-            "language": "en",
+            "engines": "google,bing,duckduckgo",
+            "language": "en-US",
             "safesearch": "0",
             "pageno": 1
         }
@@ -130,9 +130,9 @@ class SearchService:
                 with DDGS() as ddgs:  # type: ignore
                     return list(ddgs.text(  # type: ignore
                         query,
-                        max_results=max_results,
-                        region='wt-wt',      # Worldwide English - prevents Chinese/regional results
+                        region='us-en',      # Force US English results
                         safesearch='off',
+                        max_results=max_results,
                     ))
 
             fn: Callable[[], List[Dict]] = sync_search
@@ -224,6 +224,22 @@ class SearchService:
                 deduplicated.append(result)
         return deduplicated  # type: ignore
 
+    def filter_chinese_results(self, results: List[Dict]) -> List[Dict]:
+        """Strictly remove results with Chinese characters or .cn domains."""
+        filtered = []
+        for r in results:
+            url = r.get("url", "").lower()
+            if ".cn/" in url or url.endswith(".cn"):
+                continue
+            
+            # Check for Chinese characters in title/snippet
+            text = (r.get("title", "") + " " + r.get("snippet", ""))
+            if re.search(r'[\u4e00-\u9fff]', text):
+                continue
+                
+            filtered.append(r)
+        return filtered
+
     # ─── Main Search Entry Point ─────────────────────────────────────────────
 
     async def search_web(self, query: str, max_results: int = MAX_RESULTS, deep_fetch: bool = True) -> List[Dict]:
@@ -251,6 +267,7 @@ class SearchService:
             all_results.extend(wiki_results)
 
             # Deduplicate and sort by credibility
+            all_results = self.filter_chinese_results(all_results)
             unique = self.deduplicate_sources(all_results)
             unique.sort(key=lambda x: x.get("credibility_score", 0.5), reverse=True)
 
