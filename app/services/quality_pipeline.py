@@ -1,14 +1,11 @@
-"""
-Quality Pipeline - 7-Stage Verification System
-Implements multi-stage processing for high-quality, factual answers
-"""
 from typing import List, Dict, Optional, Any
-from app.services.llm_service import LLMService
-from app.services.search_service import SearchService
+import asyncio
+from app.services.llm_service import LLMService # type: ignore
+from app.services.search_service import SearchService # type: ignore
 import logging
 import time
-from sqlalchemy.orm import Session
-from app.services.vector_service import VectorService
+from sqlalchemy.orm import Session # type: ignore
+from app.services.vector_service import VectorService # type: ignore
 
 
 logger = logging.getLogger(__name__)
@@ -39,14 +36,14 @@ class QualityPipeline:
         # Initialize re-ranking if enabled
         if use_reranking:
             try:
-                from app.services.rerank_service import RerankService
+                from app.services.rerank_service import RerankService # type: ignore
                 self.rerank_service = RerankService()
                 logger.info("Re-ranking service initialized")
             except Exception as e:
                 logger.warning(f"Re-ranking disabled: {e}")
                 self.use_reranking = False
 
-    async def process_query(self, query: str, user: Any, session_id: str = None, history: List[Dict] = None, use_search: bool = True, max_sources: int = 20, fast_mode: bool = False) -> Dict:
+    async def process_query(self, query: str, user: Any, session_id: Optional[str] = None, history: Optional[List[Any]] = None, use_search: bool = True, max_sources: int = 20, fast_mode: bool = False) -> Dict:
         """
         Process query through the 7-stage quality pipeline
         
@@ -64,17 +61,25 @@ class QualityPipeline:
         # If there's history, rewrite the query to be standalone
         enhanced_query = query
         if history:
+            # Truncate history answers to keep the prompt lean and prevent hangs
+            slim_history = []
+            for h in history[-3:]: # type: ignore
+                slim_history.append({
+                    "query": h.get("query", ""),
+                    "answer": (h.get("answer", "")[:200] + "...") if len(h.get("answer", "")) > 200 else h.get("answer", "")
+                })
+
             enhance_prompt = f"""Given the following conversation history and a follow-up question, rewrite the follow-up question to be a standalone search query.
             If the question is already standalone, return it as is.
             
             History:
-            {history[-3:]} # last 3 turns
+            {slim_history}
             
             Follow-up: {query}
             Standalone Query:"""
             try:
-                enhanced_query = await self.llm_service.generate_response(enhance_prompt)
-                enhanced_query = enhanced_query.strip().strip('"')
+                llm_response = await self.llm_service.generate_response(enhance_prompt)
+                enhanced_query = str(llm_response).strip().strip('"')
                 logger.info(f"Enhanced Query: {enhanced_query}")
             except Exception as e:
                 logger.error(f"Query enhancement failed: {e}")
@@ -107,19 +112,27 @@ class QualityPipeline:
             # Stage 2: Multi-Source Retrieval (Web + Vector)
             logger.info("Stage 2: Multi-Source Retrieval")
             
-            # Fetch Web Results
-            web_results = self.search_service.search_multiple_queries(
+            # Fetch results in parallel (same as stream)
+            web_task = self.search_service.search_multiple_queries(
                 expanded_queries, 
                 max_results_per_query=5 if fast_mode else 15
             )
-            
-            # Fetch Vector Results (Hybrid RAG)
-            vector_results = await self.vector_service.search_documents(
+            vector_task = self.vector_service.search_documents(
                 query, 
                 user_id=user.id,
                 session_id=session_id,
                 limit=10
             )
+
+            # Parallel Retrieve with timeout
+            try:
+                web_results, vector_results = await asyncio.wait_for(
+                    asyncio.gather(web_task, vector_task),
+                    timeout=25.0
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Pipeline process_query retrieval timed out.")
+                web_results, vector_results = [], []
 
             
             # Combine results using RRF (Premium Ranking)
@@ -128,7 +141,8 @@ class QualityPipeline:
             if not ranked_results:
                 # Fallback to LLM-only if no search results
                 logger.warning("No search results found, falling back to LLM-only")
-                answer = await self.llm_service.generate_response(query)
+                llm_fallback = await self.llm_service.generate_response(query)
+                answer = str(llm_fallback)
                 return {
                     "answer": answer,
                     "sources": [],
@@ -140,7 +154,7 @@ class QualityPipeline:
                 }
             
             # Select top sources
-            sources_to_use = ranked_results[:max_sources]
+            sources_to_use = ranked_results[:max_sources] # type: ignore
             
             # Stage 4: Semantic Chunking
             logger.info("Stage 4: Semantic Chunking")
@@ -148,8 +162,9 @@ class QualityPipeline:
             
             if fast_mode:
                  # Skip Stage 5 & 6 in Fast Mode
-                 prompt = f"Answer the user's question accurately using ONLY the provided sources. Use inline citations [1], [2].\n\nContext:\n{chunks[:5]}\n\nQuestion: {query}\n\nAnswer:"
-                 consensus_answer = await self.llm_service.generate_response(prompt)
+                  prompt = f"Answer the user's question accurately using ONLY the provided sources. Use inline citations [1], [2].\n\nContext:\n{chunks[:5]}\n\nQuestion: {query}\n\nAnswer:" # type: ignore
+                  fast_response = await self.llm_service.generate_response(prompt)
+                  consensus_answer = str(fast_response)
             else:
                 # Stage 5: Multi-Answer Generation
                 logger.info("Stage 5: Multi-Answer Generation")
@@ -182,7 +197,8 @@ class QualityPipeline:
         except Exception as e:
             logger.error(f"Pipeline error: {e}")
             # Fallback to LLM-only on error
-            answer = await self.llm_service.generate_response(query)
+            err_fallback = await self.llm_service.generate_response(query)
+            answer = str(err_fallback)
             return {
                 "answer": answer,
                 "sources": [],
@@ -194,65 +210,155 @@ class QualityPipeline:
                 }
             }
 
-    async def stream_query(self, query: str, user: Any, session_id: str = None, history: List[Dict] = None, use_search: bool = True, max_sources: int = 10, fast_mode: bool = False):
+    async def stream_query(self, query: str, user: Any, session_id: Optional[str] = None, history: Optional[List[Any]] = None, use_search: bool = True, max_sources: int = 10, fast_mode: bool = False):
         """
         Stream query results through the pipeline
         """
         history = history or []
         start_time = time.time()
         
-        # Stages 0-4 are performed synchronously before streaming text
+        # Fast Path Detection - Only for greetings, NOT factual questions
+        greeting_words = ["hi", "hello", "hey", "thanks", "thank you", "who are you", "help"]
+        is_greeting = any(query.lower().strip() == word or query.lower().startswith(word + " ") for word in greeting_words)
+        
+        if is_greeting and len(query.split()) < 5:
+            logger.info("Fast Path (Stream): Greeting detected, bypassing RAG")
+            async for token in self.llm_service.stream_response(query):
+                yield {"type": "token", "content": token}
+            return
+
         # Stage 0: Context Enhancement
         enhanced_query = query
         if history:
-            enhance_prompt = f"Given conversation history and follow-up, rewrite to standalone query.\nHistory: {history[-3:]}\nFollow-up: {query}\nStandalone Query:"
+            yield {"type": "status", "stage": 0, "content": "Analyzing conversation history..."}
+            
+            # Truncate history answers for Stage 0
+            slim_history = []
+            for h in history[-3:]: # type: ignore
+                slim_history.append({
+                    "query": h.get("query", ""),
+                    "answer": (h.get("answer", "")[:200] + "...") if len(h.get("answer", "")) > 200 else h.get("answer", "")
+                })
+
+            enhance_prompt = f"Given conversation history and follow-up, rewrite to standalone query.\nHistory: {slim_history}\nFollow-up: {query}\nStandalone Query:"
             try:
-                enhanced_query = await self.llm_service.generate_response(enhance_prompt)
-                enhanced_query = enhanced_query.strip().strip('"')
-            except: pass
+                # Add a smaller timeout specifically for context enhancement
+                llm_response = await asyncio.wait_for(self.llm_service.generate_response(enhance_prompt), timeout=10.0)
+                enhanced_query = str(llm_response).strip().strip('"')
+            except Exception as e:
+                logger.warning(f"Context enhancement failed, using original query: {e}")
 
         try:
             # Stage 1: Expansion
             if not fast_mode:
-                yield {"type": "status", "content": "Expanding search queries..."}
+                yield {"type": "status", "content": "Expanding search queries..." if not history else "Refining search queries..."}
                 expanded_queries = await self.expand_query(enhanced_query)
             else:
                 expanded_queries = [enhanced_query]
             
-            # Stage 2: Retrieval
-            yield {"type": "status", "content": f"Searching {'deeply' if not fast_mode else 'quickly'} across sources..."}
-            web_results = self.search_service.search_multiple_queries(
+            # Stage 2: Parallel Retrieval
+            yield {"type": "status", "stage": 2, "content": "Parallelizing retrieval..."}
+            
+            web_task = self.search_service.search_multiple_queries(
                 expanded_queries, 
                 max_results_per_query=5 if fast_mode else 15
             )
-            vector_results = await self.vector_service.search_documents(enhanced_query, user_id=user.id, session_id=session_id, limit=5 if fast_mode else 10)
+            vector_task = self.vector_service.search_documents(
+                enhanced_query, 
+                user_id=user.id, 
+                session_id=session_id, 
+                limit=5 if fast_mode else 10
+            )
             
-            # Stage 3: RRF
-            yield {"type": "status", "content": "Ranking results with RRF..."}
+            # Yielding status while gathering with a strict timeout
+            try:
+                web_results, vector_results = await asyncio.wait_for(
+                    asyncio.gather(web_task, vector_task),
+                    timeout=25.0 # 25s total for combined retrieval
+                )
+                yield {"type": "status", "stage": 2, "content": "Retrieval complete."}
+            except asyncio.TimeoutError:
+                logger.warning("Retrieval stage timed out. Proceeding with limited data.")
+                yield {"type": "status", "stage": 2, "content": "Search slow; proceeding with limited results..."}
+                web_results, vector_results = [], [] # Fallback to empty if both timed out
+            
+            # Stage 3: RRF (Ranking)
+            yield {"type": "status", "stage": 3, "content": "Applying neural ranking (RRF)..."}
             ranked_results = self.apply_rrf([vector_results, web_results])
             sources_to_use = ranked_results[:max_sources]
             
+            # Stage 4: Chunking
+            yield {"type": "status", "stage": 4, "content": "Processing semantic chunks..."}
             chunks = self.semantic_chunk(sources_to_use)
             
-            # Status: Generating
-            yield {"type": "status", "content": "Generating premium response..."}
+            # Stage 5+6 (Consensus/Consistency - simplified for speed if fast_mode)
+            yield {"type": "status", "stage": 5, "content": "Sourcing intelligence..."}
             
-            # Send initial metadata "packet"
+            yield {"type": "status", "stage": 6, "content": "Finalizing verification..."}
+            
+            # Send initial metadata "packet" with source information
+            logger.info(f"RAG Pipeline: Found {len(web_results)} web results, {len(vector_results)} vector results")
             initial_metadata = {
                 "type": "metadata",
                 "sources": sources_to_use,
-                "confidence": float(round(0.5 + (len(sources_to_use)/40.0), 2))
+                "confidence": float(round(float(0.5 + (len(sources_to_use)/40.0)), 2)), # type: ignore
+                "web_search_performed": len(web_results) > 0,
+                "documents_found": len(vector_results) > 0
             }
             yield initial_metadata
 
             # Stage 5: Streaming Generation
-            context = "\n\n".join(chunks[:8])
-            prompt = f"""You are a helpful AI assistant. Answer the user's question accurately using ONLY the provided sources. 
-CRITICAL: Use inline citations in the format [1], [2], etc., for every claim you make based on a source.
-If multiple sources support a claim, use [1][2].
-Do not mention "Source [1]" in text, just use the number in brackets.
+            # Use chunks (already formatted as Source [N] with title + snippet)
+            context = "\n\n".join(chunks[:10])
+            
+            # Log context to verify web results are being passed
+            logger.info(f"Context length for LLM: {len(context)} chars, sources: {len(sources_to_use)}")
+            if chunks:
+                logger.info(f"First chunk preview: {chunks[0][:200]}")
+            
+            is_personal = user.account_type == "personal"
+            has_documents = len(vector_results) > 0
+            
+            if is_personal and not has_documents:
+                # Personal account, no uploaded docs - pure web search like Perplexity
+                prompt = f"""You are MindX, a real-time AI search engine. Answer the question using the web search results below.
 
-Context:
+RULES:
+- Prioritize information from the web search results
+- Cite sources using [1], [2], [3] etc. after each fact
+- DO NOT mention knowledge cutoff dates
+- If the web results have relevant info, use it. If not, answer from your knowledge but note it may not be current.
+
+WEB SEARCH RESULTS:
+{context}
+
+Question: {query}
+
+Answer:"""
+            elif is_personal and has_documents:
+                prompt = f"""You are MindX, a real-time AI search engine. Answer using the web search results and uploaded documents below.
+
+RULES:
+- Prioritize information from the web search results and documents
+- Cite sources using [1], [2], [3] etc. after each fact
+- DO NOT mention knowledge cutoff dates
+
+SOURCES:
+{context}
+
+Question: {query}
+
+Answer:"""
+            else:
+                # Company account - hybrid RAG
+                prompt = f"""You are MindX, an enterprise AI search assistant. Answer using the provided sources.
+
+RULES:
+- Prioritize company documents, use web sources as supplementary
+- Cite sources using [1], [2], [3] etc. after each fact
+- DO NOT mention knowledge cutoff dates
+
+SOURCES:
 {context}
 
 Question: {query}
@@ -312,8 +418,8 @@ Provide ONLY the 3 alternative queries, one per line, without numbering or expla
             raw_queries = [q.strip() for q in str(response).split('\n') if q.strip()]
             # Include original query
             all_queries: List[str] = [query]
-            # Use explicit slicing to avoid linter confusion
-            top_queries = list(raw_queries[:3])
+            # Slicing safely
+            top_queries = raw_queries[:3] # type: ignore
             all_queries.extend(top_queries)
             logger.info(f"Expanded to {len(all_queries)} queries")
             return all_queries
@@ -337,13 +443,26 @@ Provide ONLY the 3 alternative queries, one per line, without numbering or expla
     
     def semantic_chunk(self, results: List[Dict]) -> List[str]:
         """
-        Stage 4: Break search results into semantic chunks with indexing for citations
+        Stage 4: Break search results into semantic chunks with indexing for citations.
+        Prefers full_content (from Jina AI) over snippet when available.
         """
         chunks = []
         for i, result in enumerate(results):
-            # Combine title and snippet for context, with explicit source index
             source_idx = i + 1
-            chunk = f"Source [{source_idx}] ({result.get('title', 'No Title')}):\n{result.get('snippet') or result.get('body') or 'No content available.'}"
+            title = result.get('title', 'No Title')
+            url = result.get('url', '')
+            source_label = result.get('source', 'Web')
+            credibility = result.get('credibility_score', 0.5)
+            
+            # Prefer full page content (Jina) over short snippet
+            content = result.get('full_content') or result.get('snippet') or result.get('body') or 'No content available.'
+            
+            chunk = (
+                f"Source [{source_idx}] ({title})\n"
+                f"URL: {url}\n"
+                f"Credibility: {source_label} ({credibility:.0%})\n"
+                f"Content: {content}"
+            )
             chunks.append(chunk)
         return chunks
     
@@ -363,7 +482,7 @@ Provide ONLY the 3 alternative queries, one per line, without numbering or expla
         for i in range(min(len(chunk_groups), num_candidates)):
             chunk_group = chunk_groups[i]
             # Top 5 chunks per candidate
-            top_chunks = chunk_group[:5]
+            top_chunks = chunk_group[:5] # type: ignore
             context = "\n\n".join(top_chunks)
 
 
@@ -418,9 +537,9 @@ Final Answer:"""
                 "**Consensus Answer:**", "**Resolving Contradictions:**",
                 "Consensus Point", "**Consensus Points:**"
             ]
-            clean_consensus = consensus
+            clean_consensus = str(consensus)
             for leak in leaks:
-                if leak in clean_consensus:
+                if isinstance(clean_consensus, str) and leak in clean_consensus:
                     clean_consensus = clean_consensus.split(leak)[0].strip()
             
             return clean_consensus
@@ -453,6 +572,6 @@ Final Answer:"""
         return {
             "answer": answer,
             "sources": sources,
-            "confidence": float(round(min(0.98, conf_val), 2))
+            "confidence": float(round(float(min(0.98, conf_val)), 2)) # type: ignore
         }
 

@@ -46,10 +46,45 @@ async def stream_search(request: SearchRequest, db: Session = Depends(get_db), c
             fast_mode=request.fast_mode
         ):
             yield f"data: {json.dumps(chunk)}\n\n"
+        yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+
+
+class FollowUpRequest(BaseModel):
+    question: str
+    answer: str
+
+@router.post("/followups")
+async def get_followups(
+    request: FollowUpRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Generate 3 follow-up question suggestions based on the Q&A."""
+    try:
+        from app.services.llm_service import LLMService
+        import json as _json, re as _re
+        llm = LLMService()
+        q = str(request.question)[:200]  # type: ignore
+        a = str(request.answer)[:400]    # type: ignore
+        prompt = (
+            f"Based on this Q&A, suggest exactly 3 short follow-up questions the user might ask next.\n"
+            f"Question: {q}\n"
+            f"Answer summary: {a}\n\n"
+            f"Return ONLY a JSON array of 3 strings, no explanation. Example: [\"Q1?\", \"Q2?\", \"Q3?\"]"
+        )
+        raw = await llm.generate_response(prompt=prompt)
+        # Extract JSON array from response
+        match = _re.search(r'\[.*?\]', raw, _re.DOTALL)
+        if match:
+            suggestions = _json.loads(match.group())
+            return {"suggestions": suggestions[:3]}
+    except Exception:
+        pass
+    return {"suggestions": []}
 
 
 @router.get("/history")

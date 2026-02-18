@@ -9,8 +9,7 @@
     <meta http-equiv="Expires" content="0" />
     <title>MindX | AI Search Dashboard v2.0</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
@@ -39,7 +38,7 @@
                         "neutral-dark": "#132210",
                     },
                     fontFamily: {
-                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                        "display": ["Inter", "sans-serif"]
                     },
                     borderRadius: {
                         "DEFAULT": "0.25rem",
@@ -63,38 +62,10 @@
             --text-muted: #94a3b8;
         }
 
-        /* Light mode overrides */
-        body.light-mode {
-            --background-dark: #f5f7f5;
-            --surface-dark: rgba(255, 255, 255, 0.85);
-            --border-dark: rgba(0, 0, 0, 0.08);
-            --text-main: #1a1a1a;
-            --text-muted: #555;
-        }
-
-        body.light-mode .glass {
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        body.light-mode #chat-container .user-message {
-            background: rgba(0, 0, 0, 0.04);
-        }
-
-        body.light-mode #chat-container .ai-message {
-            background: transparent;
-        }
-
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--background-dark);
             color: var(--text-main);
-        }
-
-        code,
-        pre,
-        .markdown-body pre,
-        .markdown-body code {
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
         }
 
         .glass {
@@ -112,20 +83,20 @@
             scrollbar-width: none;
         }
 
-        /* Message Bubbles */
+        /* Message Bubbles - Softer Claude style */
         .message-bubble {
             max-width: 90%;
-            padding: 1rem 1.25rem;
-            line-height: 1.8;
-            margin-bottom: 1rem;
+            padding: 1.25rem;
+            line-height: 1.7;
+            margin-bottom: 2rem;
             position: relative;
-            animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(12px);
             }
 
             to {
@@ -136,122 +107,29 @@
 
         .user-message {
             align-self: flex-end;
-            background: linear-gradient(135deg, rgba(0, 255, 65, 0.06), rgba(0, 255, 65, 0.02));
-            border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
-            border: 1px solid var(--primary-border);
-            color: #e8f0e8;
-            max-width: 72%;
-            font-size: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 1.5rem;
+            border: 1px solid var(--border-dark);
         }
 
         .ai-message {
             align-self: flex-start;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-dark);
-            border-radius: 0.25rem 1.25rem 1.25rem 1.25rem;
-            max-width: 720px;
-            width: 100%;
-            font-size: 15px;
-            word-break: break-word;
-            white-space: pre-wrap;
-            position: relative;
-        }
-
-        /* Message hover actions */
-        .msg-actions {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            opacity: 0;
-            transition: opacity 0.2s;
-            margin-top: 8px;
-        }
-
-        .ai-message:hover .msg-actions {
-            opacity: 1;
-        }
-
-        .msg-action-btn {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--text-muted);
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-dark);
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .msg-action-btn:hover {
-            background: var(--primary-soft);
-            color: var(--primary);
-            border-color: var(--primary-border);
-        }
-
-        .msg-action-btn.active {
-            color: var(--primary);
+            background: transparent;
+            border-radius: 1.5rem;
         }
 
         .markdown-body {
-            font-size: 15px;
+            font-size: 1rem;
             color: var(--text-main);
-            line-height: 1.8;
-        }
-
-        .markdown-body p {
-            margin: 0.6em 0;
-        }
-
-        .markdown-body ul,
-        .markdown-body ol {
-            padding-left: 1.4em;
-            margin: 0.5em 0;
-        }
-
-        .markdown-body li {
-            margin: 0.25em 0;
-        }
-
-        .markdown-body h1,
-        .markdown-body h2,
-        .markdown-body h3 {
-            margin: 1em 0 0.4em;
-            font-weight: 700;
-        }
-
-        .markdown-body strong {
-            color: #fff;
-        }
-
-        .markdown-body a {
-            color: var(--primary);
-            text-decoration: underline;
         }
 
         .markdown-body pre {
-            background: #0d1117;
+            background: rgba(0, 0, 0, 0.4);
             padding: 1.25rem;
             border-radius: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 1rem 0;
+            border: 1px solid var(--border-dark);
+            margin: 1.5rem 0;
             position: relative;
-            overflow-x: auto;
-            white-space: pre;
-        }
-
-        .markdown-body pre::before {
-            content: attr(data-lang);
-            position: absolute;
-            top: 8px;
-            right: 12px;
-            font-size: 10px;
-            color: #555;
-            font-family: 'JetBrains Mono', monospace;
-            text-transform: uppercase;
         }
 
         /* Citations - Cleaner style */
@@ -464,390 +342,61 @@
         .upload-menu-item span {
             font-size: 18px;
         }
-
-        /* ── Typing Indicator ── */
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 0;
-        }
-
-        .typing-indicator .dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--primary);
-            animation: typingPulse 1.4s infinite;
-            opacity: 0.4;
-        }
-
-        .typing-indicator .dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-indicator .dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes typingPulse {
-
-            0%,
-            60%,
-            100% {
-                transform: scale(1);
-                opacity: 0.4;
-            }
-
-            30% {
-                transform: scale(1.4);
-                opacity: 1;
-            }
-        }
-
-        /* ── Source Chips (inline in AI bubble) ── */
-        .sources-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 14px;
-            padding-top: 12px;
-            border-top: 1px solid var(--border-dark);
-            align-items: center;
-        }
-
-        .sources-label {
-            font-size: 10px;
-            color: #555;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            width: 100%;
-            margin-bottom: 2px;
-        }
-
-        .source-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-dark);
-            border-radius: 20px;
-            font-size: 11px;
-            color: #aaa;
-            text-decoration: none;
-            transition: all 0.2s;
-            cursor: pointer;
-            max-width: 200px;
-        }
-
-        .source-chip:hover {
-            background: var(--primary-soft);
-            border-color: var(--primary-border);
-            color: var(--primary);
-        }
-
-        .chip-num {
-            width: 15px;
-            height: 15px;
-            background: var(--primary);
-            border-radius: 50%;
-            font-size: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .source-count-badge {
-            font-size: 11px;
-            color: #666;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        /* ── Follow-up Chips ── */
-        .followups-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 4px 0 12px;
-            max-width: 720px;
-            animation: slideIn 0.3s ease;
-        }
-
-        .followup-chip {
-            padding: 6px 14px;
-            background: transparent;
-            border: 1px solid var(--border-dark);
-            border-radius: 20px;
-            color: #888;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-
-        .followup-chip:hover {
-            background: var(--primary-soft);
-            border-color: var(--primary-border);
-            color: var(--primary);
-        }
-
-        /* ── Stop Button ── */
-        #stop-btn {
-            display: none;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 10px;
-            background: rgba(255, 60, 60, 0.1);
-            border: 1px solid rgba(255, 60, 60, 0.2);
-            color: #ff6060;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 8px;
-        }
-
-        #stop-btn:hover {
-            background: rgba(255, 60, 60, 0.2);
-        }
-
-        /* ── Shortcuts Modal ── */
-        #shortcuts-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-
-        #shortcuts-modal.open {
-            display: flex;
-        }
-
-        .shortcuts-card {
-            background: #111;
-            border: 1px solid var(--border-dark);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            min-width: 340px;
-            max-width: 420px;
-        }
-
-        .shortcut-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-dark);
-            font-size: 13px;
-        }
-
-        .shortcut-row:last-child {
-            border-bottom: none;
-        }
-
-        .shortcut-row kbd {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border-dark);
-            border-radius: 5px;
-            padding: 2px 8px;
-            font-size: 11px;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--primary);
-        }
-
-        /* ── Mobile Sidebar ── */
-        #mobile-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 49;
-        }
-
-        #mobile-overlay.visible {
-            display: block;
-        }
-
-        @media (max-width: 768px) {
-            aside {
-                position: fixed !important;
-                left: -280px;
-                top: 0;
-                bottom: 0;
-                z-index: 50;
-                transition: left 0.3s ease;
-                width: 268px !important;
-            }
-
-            aside.mobile-open {
-                left: 0 !important;
-            }
-        }
-
-        /* ── Voice Button ── */
-        #voice-btn {
-            padding: 6px;
-            border-radius: 8px;
-            color: var(--text-muted);
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        #voice-btn:hover {
-            color: var(--primary);
-        }
-
-        #voice-btn.recording {
-            color: #ff4444;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        /* ── Char Counter ── */
-        #char-counter {
-            font-size: 10px;
-            color: #444;
-            font-family: 'JetBrains Mono', monospace;
-            transition: color 0.2s;
-        }
-
-        #char-counter.warn {
-            color: #f59e0b;
-        }
-
-        #char-counter.danger {
-            color: #ef4444;
-        }
     </style>
 </head>
 
 <body
     class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
 
-    <!-- Mobile overlay -->
-    <div id="mobile-overlay" onclick="closeMobileSidebar()"></div>
-
     <!-- Top Navigation Bar -->
     <header
-        class="sticky top-0 z-50 w-full border-b border-border-dark bg-background-dark/80 backdrop-blur-md px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <!-- Hamburger (mobile only) -->
-            <button id="hamburger-btn" onclick="toggleMobileSidebar()"
-                class="lg:hidden p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
-                <span class="material-symbols-outlined text-[22px]">menu</span>
-            </button>
-            <a href="/" class="flex items-center gap-3 no-underline">
-                <div
-                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(0,255,65,0.3)]">
-                    <span class="material-symbols-outlined text-sm font-bold">query_stats</span>
-                </div>
-                <h1 class="text-xl font-bold tracking-tight text-white">Mind<span class="text-primary">X</span></h1>
-            </a>
-        </div>
-        <div class="flex items-center gap-2">
-            <span id="user-greeting" class="text-sm font-medium text-slate-400 hidden sm:block">Hello, User</span>
-            <!-- Theme Toggle -->
-            <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark"
-                class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
-                <span class="material-symbols-outlined text-[20px]" id="theme-icon">light_mode</span>
-            </button>
-            <!-- Export Chat -->
-            <button onclick="exportChat()" title="Export chat as Markdown"
-                class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
-                <span class="material-symbols-outlined text-[20px]">download</span>
-            </button>
-            <!-- Shortcuts hint -->
-            <button onclick="showShortcutsModal()" title="Keyboard shortcuts (?)"
-                class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-white/5 transition-colors hidden sm:flex">
-                <span class="material-symbols-outlined text-[20px]">keyboard</span>
-            </button>
+        class="sticky top-0 z-50 w-full border-b border-border-dark bg-background-dark/80 backdrop-blur-md px-6 py-3 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-3 no-underline">
+            <div
+                class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(0,255,65,0.3)]">
+                <span class="material-symbols-outlined text-sm font-bold">query_stats</span>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight text-white">Mind<span class="text-primary">X</span></h1>
+        </a>
+        <div class="flex items-center gap-6">
+            <span id="user-greeting" class="text-sm font-medium text-slate-400">Hello, User</span>
             <button onclick="handleLogout()"
-                class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border border-border-dark hover:bg-white/5 hover:border-primary/50 transition-colors">
+                class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-border-dark hover:bg-white/5 hover:border-primary/50 transition-colors">
                 <span class="material-symbols-outlined text-[18px]">logout</span>
-                <span class="hidden sm:inline">Logout</span>
+                Logout
             </button>
         </div>
     </header>
-
-    <!-- Shortcuts Modal -->
-    <div id="shortcuts-modal" onclick="if(event.target===this) closeShortcutsModal()">
-        <div class="shortcuts-card">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-bold text-white">Keyboard Shortcuts</h3>
-                <button onclick="closeShortcutsModal()" class="text-slate-500 hover:text-white transition-colors">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
-            <div class="shortcut-row"><span class="text-slate-300">New Chat</span><kbd>Ctrl + N</kbd></div>
-            <div class="shortcut-row"><span class="text-slate-300">Search Chats</span><kbd>Ctrl + K</kbd></div>
-            <div class="shortcut-row"><span class="text-slate-300">Send Message</span><kbd>Enter</kbd></div>
-            <div class="shortcut-row"><span class="text-slate-300">New Line</span><kbd>Shift + Enter</kbd></div>
-            <div class="shortcut-row"><span class="text-slate-300">Show Shortcuts</span><kbd>?</kbd></div>
-            <div class="shortcut-row"><span class="text-slate-300">Close Modal</span><kbd>Escape</kbd></div>
-        </div>
-    </div>
 
     <div class="flex flex-1 overflow-hidden">
         <!-- Sidebar: Recent Conversations -->
         <aside class="w-72 border-r border-border-dark glass hidden lg:flex flex-col">
             <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div class="p-4 pb-2 space-y-3">
-                    <!-- New Chat Button -->
+                <div class="p-6 pb-2">
+                    <!-- New Chat Button at the very top -->
                     <button id="btn-new-chat"
-                        class="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-100 hover:text-white bg-white/5 hover:bg-white/10 border border-border-dark rounded-xl transition-all group">
+                        class="w-full flex items-center px-4 py-3 mb-6 text-sm font-medium text-slate-100 hover:text-white bg-white/5 hover:bg-white/10 border border-border-dark rounded-xl transition-all group">
                         <span
                             class="material-symbols-outlined mr-3 text-primary group-hover:rotate-90 transition-transform">add</span>
                         New Chat
-                        <kbd class="ml-auto text-[9px] text-slate-600 bg-white/5 px-1.5 py-0.5 rounded">Ctrl+N</kbd>
                     </button>
 
-                    <!-- Search Bar -->
-                    <div class="relative">
-                        <span
-                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-slate-600">search</span>
-                        <input id="history-search" type="text" placeholder="Search chats..."
-                            class="w-full bg-white/5 border border-border-dark rounded-xl pl-9 pr-10 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-primary/30 transition-colors"
-                            oninput="filterHistory(this.value)">
-                        <kbd
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-slate-600 bg-white/5 px-1.5 py-0.5 rounded">Ctrl+K</kbd>
-                    </div>
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Chat History</h2>
                 </div>
 
                 <!-- Scrollable history area -->
-                <nav id="search-history" class="flex-1 overflow-y-auto px-3 no-scrollbar pb-6">
+                <nav id="search-history" class="flex-1 overflow-y-auto px-4 space-y-1 no-scrollbar pb-6">
                     <p class="text-xs text-slate-600 px-3 py-2">No history</p>
                 </nav>
             </div>
 
-            <div class="p-4 mt-auto">
+            <div class="p-6 mt-auto">
                 <div class="rounded-xl border border-border-dark bg-white/5 p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <span id="storage-status" class="size-2 rounded-full bg-primary/40 animate-pulse"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase">Cloud Sync</span>
                     </div>
-                    <p class="text-[10px] text-slate-500">Enhanced by Hybrid RAG &amp; Fast Mode.</p>
+                    <p class="text-[10px] text-slate-500">Enhanced by Hybrid RAG & Fast Mode.</p>
                 </div>
             </div>
         </aside>
@@ -881,19 +430,7 @@
                 </div>
             </div>
 
-            <!-- Scroll to Bottom Button -->
-            <button id="scroll-btn" onclick="scrollToBottom()"
-                class="hidden fixed bottom-32 right-8 z-50 size-10 bg-primary/20 hover:bg-primary/40 border border-primary/30 rounded-full flex items-center justify-center text-primary transition-all shadow-lg">
-                <span class="material-symbols-outlined text-[20px]">keyboard_arrow_down</span>
-            </button>
-
-            <!-- Stop Generating Button -->
-            <div class="max-w-4xl mx-auto">
-                <button id="stop-btn" onclick="stopGenerating()">
-                    <span class="material-symbols-outlined text-[16px]">stop_circle</span>
-                    Stop generating
-                </button>
-            </div>
+            <!-- Input Section (Fixed at bottom) -->
             <div class="p-6 bg-transparent pb-10">
                 <div class="max-w-4xl mx-auto">
                     <!-- File Preview Zone (Above Input) -->
@@ -915,8 +452,7 @@
                                                 <span class="material-symbols-outlined text-[18px]">description</span>
                                                 Documents
                                             </div>
-                                            <span class="text-[7px] text-slate-500 ml-7 truncate">.pdf, .docx,
-                                                .doc</span>
+                                            <span class="text-[9px] text-slate-500 ml-7">.pdf, .docx, .doc</span>
                                         </div>
                                     </div>
                                     <div class="upload-menu-item" onclick="triggerFileUpload('.xlsx,.xls,.csv')">
@@ -925,8 +461,7 @@
                                                 <span class="material-symbols-outlined text-[18px]">table_chart</span>
                                                 Spreadsheets
                                             </div>
-                                            <span class="text-[7px] text-slate-500 ml-7 truncate">.xlsx, .xls,
-                                                .csv</span>
+                                            <span class="text-[9px] text-slate-500 ml-7">.xlsx, .xls, .csv</span>
                                         </div>
                                     </div>
                                     <div class="upload-menu-item" onclick="triggerFileUpload('.png,.jpg,.jpeg,.webp')">
@@ -934,8 +469,7 @@
                                             <div class="flex items-center gap-2">
                                                 <span class="material-symbols-outlined text-[18px]">image</span> Images
                                             </div>
-                                            <span class="text-[7px] text-slate-500 ml-7 truncate">.png, .jpg,
-                                                .webp</span>
+                                            <span class="text-[9px] text-slate-500 ml-7">.png, .jpg, .webp</span>
                                         </div>
                                     </div>
                                     <div class="upload-menu-item" onclick="triggerFileUpload('.txt,.md')">
@@ -944,7 +478,7 @@
                                                 <span class="material-symbols-outlined text-[18px]">text_snippet</span>
                                                 Text Files
                                             </div>
-                                            <span class="text-[7px] text-slate-500 ml-7 truncate">.txt, .md</span>
+                                            <span class="text-[9px] text-slate-500 ml-7">.txt, .md</span>
                                         </div>
                                     </div>
                                 </div>
@@ -952,25 +486,16 @@
                                     onchange="handleFileUpload(event)" />
                             </div>
 
-                            <!-- Voice Input -->
-                            <button id="voice-btn" onclick="toggleVoice()" title="Voice input">
-                                <span class="material-symbols-outlined text-[22px]">mic</span>
-                            </button>
-
                             <textarea id="search-input"
                                 class="flex-1 bg-transparent border-none text-white placeholder:text-slate-500 focus:ring-0 py-3 text-base resize-none no-scrollbar max-h-[200px]"
-                                placeholder="Message MindX..." rows="1" maxlength="4000"
-                                oninput="this.style.height=''; this.style.height=this.scrollHeight+'px'; updateCharCounter(this);"
+                                placeholder="Message MindX..." rows="1"
+                                oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
                                 onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); handleSearch(); }"></textarea>
 
-                            <div class="flex flex-col items-end gap-1 mb-1">
-                                <span id="char-counter">0/4000</span>
-                                <button id="search-btn" onclick="handleSearch()"
-                                    class="bg-primary hover:bg-primary/90 text-background-dark size-9 rounded-xl flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                                    disabled>
-                                    <span class="material-symbols-outlined font-bold text-[18px]">arrow_upward</span>
-                                </button>
-                            </div>
+                            <button id="search-btn" onclick="handleSearch()"
+                                class="bg-primary hover:bg-primary/90 text-background-dark size-10 rounded-xl flex items-center justify-center transition-all active:scale-90 mb-1">
+                                <span class="material-symbols-outlined font-bold">arrow_upward</span>
+                            </button>
                         </div>
                     </div>
 
@@ -1207,298 +732,70 @@
             renderHistory();
         }
 
-        // Session Management - always start fresh on page load (new login = new chat)
-        let currentSessionId = uuid.v4();
-        let allSessions = []; // full list for filtering
-        let activeSessionId = null; // tracks which session is highlighted
-        let currentChatMessages = []; // for export
-        let abortController = null; // for stop generating
-
-        // ─── Char Counter ───
-        function updateCharCounter(textarea) {
-            const len = textarea.value.length;
-            const counter = document.getElementById('char-counter');
-            const sendBtn = document.getElementById('search-btn');
-            counter.textContent = len + '/4000';
-            counter.className = len > 3500 ? 'danger' : len > 3000 ? 'warn' : '';
-            sendBtn.disabled = textarea.value.trim().length === 0;
-        }
-
-        // ─── Theme Toggle ───
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            const isLight = document.body.classList.contains('light-mode');
-            localStorage.setItem('mindx_theme', isLight ? 'light' : 'dark');
-            document.getElementById('theme-icon').textContent = isLight ? 'dark_mode' : 'light_mode';
-        }
-        // Restore theme on load
-        if (localStorage.getItem('mindx_theme') === 'light') {
-            document.body.classList.add('light-mode');
-            document.getElementById('theme-icon').textContent = 'dark_mode';
-        }
-
-        // ─── Shortcuts Modal ───
-        function showShortcutsModal() {
-            document.getElementById('shortcuts-modal').classList.add('open');
-        }
-        function closeShortcutsModal() {
-            document.getElementById('shortcuts-modal').classList.remove('open');
-        }
-
-        // ─── Mobile Sidebar ───
-        function toggleMobileSidebar() {
-            const aside = document.querySelector('aside');
-            const overlay = document.getElementById('mobile-overlay');
-            aside.classList.toggle('mobile-open');
-            overlay.classList.toggle('visible');
-        }
-        function closeMobileSidebar() {
-            document.querySelector('aside').classList.remove('mobile-open');
-            document.getElementById('mobile-overlay').classList.remove('visible');
-        }
-
-        // ─── Stop Generating ───
-        function stopGenerating() {
-            if (abortController) {
-                abortController.abort();
-                abortController = null;
-            }
-            document.getElementById('stop-btn').style.display = 'none';
-            document.getElementById('search-btn').disabled = false;
-        }
-
-        // ─── Voice Input ───
-        let voiceRecognition = null;
-        function toggleVoice() {
-            const btn = document.getElementById('voice-btn');
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert('Voice input is not supported in this browser.');
-                return;
-            }
-            if (voiceRecognition) {
-                voiceRecognition.stop();
-                voiceRecognition = null;
-                btn.classList.remove('recording');
-                return;
-            }
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            voiceRecognition = new SR();
-            voiceRecognition.continuous = false;
-            voiceRecognition.lang = 'en-US';
-            voiceRecognition.onresult = (e) => {
-                const transcript = e.results[0][0].transcript;
-                const input = document.getElementById('search-input');
-                input.value = transcript;
-                updateCharCounter(input);
-                input.style.height = '';
-                input.style.height = input.scrollHeight + 'px';
-            };
-            voiceRecognition.onend = () => {
-                voiceRecognition = null;
-                btn.classList.remove('recording');
-            };
-            voiceRecognition.onerror = () => {
-                voiceRecognition = null;
-                btn.classList.remove('recording');
-            };
-            voiceRecognition.start();
-            btn.classList.add('recording');
-        }
-
-        // ─── Export Chat ───
-        function exportChat() {
-            if (currentChatMessages.length === 0) {
-                alert('No messages to export yet.');
-                return;
-            }
-            let md = `# MindX Chat Export\n\n`;
-            currentChatMessages.forEach(m => {
-                if (m.role === 'user') {
-                    md += `**You:** ${m.content}\n\n`;
-                } else {
-                    md += `**MindX:** ${m.content}\n\n---\n\n`;
-                }
-            });
-            const blob = new Blob([md], { type: 'text/markdown' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `mindx-chat-${new Date().toISOString().slice(0, 10)}.md`;
-            a.click();
-        }
+        // Session Management
+        let currentSessionId = localStorage.getItem('currentSessionId') || uuid.v4();
+        localStorage.setItem('currentSessionId', currentSessionId);
 
         function startNewChat() {
             currentSessionId = uuid.v4();
             localStorage.setItem('currentSessionId', currentSessionId);
-            currentChatMessages = [];
 
             // Clear UI
-            const container = document.getElementById('chat-container');
-            container.innerHTML = `
-                <div id="empty-state"
-                    class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
-                    <span class="material-symbols-outlined text-primary text-5xl opacity-40">neurology</span>
-                    <p class="text-lg font-semibold text-slate-500">How can MindX help you today?</p>
-                    <p class="text-sm text-slate-600">Secure, AI-powered research at your fingertips.</p>
-                    <div class="flex flex-wrap justify-center gap-2 pt-8 max-w-lg">
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Who founded Netflix?</button>
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Explain quantum physics</button>
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest AI news</button>
-                    </div>
-                </div>`;
+            document.getElementById('answer-section').classList.add('hidden');
+            document.getElementById('sources-section').classList.add('hidden');
             document.getElementById('search-input').value = '';
-            updateCharCounter(document.getElementById('search-input'));
-            document.getElementById('chat-scroller').scrollTop = 0;
-            activeSessionId = null;
-            renderHistory(allSessions);
-            closeMobileSidebar();
+
+            // Optional: Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             console.log('Started new chat session:', currentSessionId);
         }
 
         document.getElementById('btn-new-chat')?.addEventListener('click', startNewChat);
 
-        // ─── Global Keyboard Shortcuts ───
-        document.addEventListener('keydown', (e) => {
-            const tag = document.activeElement?.tagName;
-            const inInput = tag === 'INPUT' || tag === 'TEXTAREA';
-
-            // Ctrl+N → New Chat
-            if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                startNewChat();
-                return;
-            }
-            // Ctrl+K → Focus search history filter
-            if (e.ctrlKey && e.key === 'k') {
-                e.preventDefault();
-                const hs = document.getElementById('history-search');
-                if (hs) { hs.focus(); hs.select(); }
-                return;
-            }
-            // Escape → close shortcuts modal / mobile sidebar
-            if (e.key === 'Escape') {
-                closeShortcutsModal();
-                closeMobileSidebar();
-                return;
-            }
-            // ? → show shortcuts modal (when not typing)
-            if (!inInput && e.key === '?') {
-                showShortcutsModal();
-                return;
-            }
-        });
-
         async function fetchHistory() {
             try {
-                // Try localStorage cache first for instant render
-                const cached = localStorage.getItem('mindx_sessions_cache');
-                if (cached) {
-                    allSessions = JSON.parse(cached);
-                    renderHistory(allSessions);
-                }
-
-                // Then fetch fresh from /chats
-                const response = await fetch('/chats?limit=100', {
+                const token = localStorage.getItem('mindx_token'); // Changed from 'token' to 'mindx_token' to match existing code
+                const response = await fetch('/qa/history?limit=50', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
-                    const data = await response.json();
-                    // Flatten groups into flat list for filtering
-                    allSessions = data.groups.flatMap(g => g.sessions.map(s => ({ ...s, _bucket: g.label })));
-                    localStorage.setItem('mindx_sessions_cache', JSON.stringify(allSessions));
-                    renderHistory(allSessions);
+                    const history = await response.json();
+
+                    // Group by session_id
+                    const sessions = {};
+                    history.forEach(item => {
+                        const sid = item.session_id || 'legacy';
+                        if (!sessions[sid]) {
+                            sessions[sid] = {
+                                id: sid,
+                                title: item.query.substring(0, 30) + (item.query.length > 30 ? '...' : ''),
+                                timestamp: new Date(item.created_at)
+                            };
+                        }
+                    });
+
+                    searchHistory = Object.values(sessions).sort((a, b) => b.timestamp - a.timestamp);
+                    renderHistory();
                 }
             } catch (err) {
                 console.error('Failed to fetch history:', err);
             }
         }
 
-        function filterHistory(query) {
-            const q = query.toLowerCase().trim();
-            if (!q) {
-                renderHistory(allSessions);
-                return;
-            }
-            const filtered = allSessions.filter(s =>
-                s.title.toLowerCase().includes(q) ||
-                (s.last_query || '').toLowerCase().includes(q)
-            );
-            renderHistory(filtered, true /* flat, no grouping */);
-        }
-
-        function renderHistory(sessions, flat = false) {
+        function renderHistory() {
             const nav = document.getElementById('search-history');
-            if (!sessions || sessions.length === 0) {
+            if (searchHistory.length === 0) {
                 nav.innerHTML = '<p class="text-[11px] text-slate-600 px-3 py-4 text-center border border-dashed border-white/5 rounded-xl">No chat history yet</p>';
                 return;
             }
 
-            function getRelativeTime(isoStr) {
-                if (!isoStr) return '';
-                const then = new Date(isoStr);
-                const diffMs = Date.now() - then;
-                const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMs / 3600000);
-                const diffDays = Math.floor(diffMs / 86400000);
-                if (diffMins < 1) return 'Just now';
-                if (diffMins < 60) return `${diffMins}m ago`;
-                if (diffHours < 24) return `${diffHours}h ago`;
-                if (diffDays === 1) return 'Yesterday';
-                if (diffDays < 7) return `${diffDays}d ago`;
-                return then.toLocaleDateString();
-            }
-
-            function sessionItem(s) {
-                const isActive = s.session_id === activeSessionId;
-                const borderClass = isActive ? 'border-l-2 border-l-primary bg-primary/5' : 'border-l-2 border-l-transparent';
-                return `
-                    <div class="group relative flex items-center gap-1 rounded-xl mb-0.5 ${borderClass} hover:bg-white/5 transition-all" data-sid="${s.session_id}">
-                        <button onclick="loadSession('${s.session_id}')"
-                            class="flex-1 flex flex-col px-3 py-2.5 text-left min-w-0">
-                            <div class="flex items-center gap-2 w-full">
-                                <span class="material-symbols-outlined text-[15px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-600 group-hover:text-slate-400'} transition-colors">chat_bubble</span>
-                                <span class="truncate text-[12px] font-medium ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'} transition-colors">${s.title}</span>
-                            </div>
-                            <div class="flex items-center gap-2 ml-6 mt-0.5">
-                                <span class="text-[9px] text-slate-600">${getRelativeTime(s.updated_at || s.created_at)}</span>
-                                ${s.message_count ? `<span class="text-[9px] text-slate-700">&bull; ${s.message_count} msg${s.message_count !== 1 ? 's' : ''}</span>` : ''}
-                            </div>
-                        </button>
-                        <!-- Hover actions -->
-                        <div class="flex items-center gap-0.5 pr-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button onclick="renameSession('${s.session_id}', event)" title="Rename"
-                                class="p-1 rounded-lg hover:bg-white/10 text-slate-600 hover:text-slate-300 transition-colors">
-                                <span class="material-symbols-outlined text-[14px]">edit</span>
-                            </button>
-                            <button onclick="deleteSession('${s.session_id}', event)" title="Delete"
-                                class="p-1 rounded-lg hover:bg-red-500/10 text-slate-600 hover:text-red-400 transition-colors">
-                                <span class="material-symbols-outlined text-[14px]">delete</span>
-                            </button>
-                        </div>
-                    </div>`;
-            }
-
-            if (flat) {
-                nav.innerHTML = sessions.map(sessionItem).join('');
-                return;
-            }
-
-            // Group by _bucket
-            const bucketOrder = ['Today', 'Yesterday', 'This Week', 'Last Month', 'Older'];
-            const groups = {};
-            sessions.forEach(s => {
-                const b = s._bucket || 'Older';
-                if (!groups[b]) groups[b] = [];
-                groups[b].push(s);
-            });
-
-            nav.innerHTML = bucketOrder
-                .filter(b => groups[b]?.length)
-                .map(b => `
-                    <div class="mb-3">
-                        <p class="text-[9px] font-bold uppercase tracking-widest text-slate-600 px-3 py-1">${b}</p>
-                        ${groups[b].map(sessionItem).join('')}
-                    </div>`)
-                .join('');
+            nav.innerHTML = searchHistory.map(session => `
+                <button onclick="loadSession('${session.id}')" class="w-full flex items-center px-4 py-3 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group mb-1">
+                    <span class="material-symbols-outlined text-[18px] mr-3 text-slate-600 group-hover:text-primary transition-colors">chat_bubble</span>
+                    <span class="truncate">${session.title}</span>
+                </button>
+            `).join('');
         }
 
 
@@ -1525,35 +822,20 @@
             if (badge) badge.textContent = sources.length;
 
             grid.innerHTML = sources.map((s, i) => {
-                let domain = '';
-                try {
-                    domain = s.source || (s.url ? new URL(s.url).hostname.replace('www.', '') : 'Source');
-                } catch (e) {
-                    domain = s.source || 'Source';
-                }
+                const domain = s.source || (s.url ? new URL(s.url).hostname : 'Source');
                 const idx = i + 1;
-                const faviconUrl = s.url ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
-                const credScore = s.credibility_score || 0.5;
-                const credLabel = s.source || 'Web';
-                const credColor = credScore >= 0.8 ? 'text-green-400' : credScore >= 0.6 ? 'text-yellow-400' : 'text-slate-400';
                 return `
-                    <div class="p-3 bg-white/5 border border-white/5 rounded-2xl hover:border-primary/30 transition-all group relative">
+                    <div class="p-4 bg-white/5 border border-white/5 rounded-2xl hover:border-primary/30 transition-all group relative">
                         <div class="absolute -top-2 -left-1 bg-primary text-background-dark text-[10px] font-bold px-2 py-0.5 rounded shadow-xl z-10">
                             ${idx}
                         </div>
-                        <div class="flex items-center gap-2 mb-2">
-                            ${faviconUrl ? `<img src="${faviconUrl}" class="w-4 h-4 rounded" onerror="this.style.display='none'">` : ''}
-                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[100px]">${domain}</span>
-                            <span class="ml-auto text-[8px] font-semibold ${credColor} shrink-0">${credLabel}</span>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[150px]">${domain}</span>
                         </div>
-                        <h4 class="text-xs font-semibold text-slate-200 group-hover:text-primary transition-colors mb-1 line-clamp-2">
-                            <a href="${s.url || '#'}" target="_blank" rel="noopener noreferrer" class="hover:underline">${s.title || 'Referenced Source'}</a>
+                        <h4 class="text-sm font-semibold text-slate-200 group-hover:text-primary transition-colors mb-2 line-clamp-1">
+                            <a href="${s.url || '#'}" target="_blank" class="hover:underline">${s.title || 'Referenced Document'}</a>
                         </h4>
-                        <p class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">${s.snippet || ''}</p>
-                        ${s.url ? `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="mt-2 flex items-center gap-1 text-[9px] text-primary/60 hover:text-primary truncate">
-                            <span class="material-symbols-outlined text-[10px]">open_in_new</span>
-                            <span class="truncate">${s.url}</span>
-                        </a>` : ''}
+                        <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed opacity-70">${s.snippet || 'Click to view details for this reference.'}</p>
                     </div>`;
             }).join('');
         }
@@ -1566,8 +848,8 @@
 
             // Clear input immediately
             input.value = '';
-            updateCharCounter(input);
-            input.style.height = '';
+
+            console.log('🚀 MindX Dashboard v2.0 - Stream Fix Active');
 
             const maxSources = document.getElementById('max-sources').value;
             const container = document.getElementById('chat-container');
@@ -1575,31 +857,24 @@
 
             if (emptyState) emptyState.remove();
 
-            // Track for export
-            currentChatMessages.push({ role: 'user', content: query });
-
-            // Append User Message Bubble (optimistic)
+            // Append User Message Bubble
             const userDiv = document.createElement('div');
             userDiv.className = 'message-bubble user-message';
             userDiv.textContent = query;
             container.appendChild(userDiv);
 
-            // Append AI bubble with typing indicator
+            // Append AI Loading Bubble
             const aiDiv = document.createElement('div');
             aiDiv.className = 'message-bubble ai-message';
-            aiDiv.innerHTML = `<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+            aiDiv.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined animate-spin text-primary">sync</span>
+                    <span class="text-sm italic text-slate-400">Thinking...</span>
+                </div>`;
             container.appendChild(aiDiv);
             scrollToBottom();
 
-            // Show stop button
-            const stopBtn = document.getElementById('stop-btn');
-            stopBtn.style.display = 'flex';
-            document.getElementById('search-btn').disabled = true;
-
-            // Create abort controller for this request
-            abortController = new AbortController();
-
-            let currentSources = [];
+            const startTime = Date.now();
 
             try {
                 const response = await fetch('/qa/stream', {
@@ -1615,16 +890,14 @@
                         max_sources: parseInt(maxSources),
                         fast_mode: document.getElementById('fast-mode-toggle').checked
                     }),
-                    signal: abortController.signal
                 });
 
                 if (!response.ok) throw new Error('Streaming failed');
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
-                let fullAnswer = '';
+                let fullAnswer = "";
                 let streamComplete = false;
-                let firstToken = true;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -1637,54 +910,50 @@
                         if (line.startsWith('data: ')) {
                             const raw = line.substring(6);
                             if (raw === '[DONE]') {
+                                console.log('✅ [DONE] received, setting streamComplete=true');
                                 streamComplete = true;
                                 break;
                             }
                             try {
                                 const data = JSON.parse(raw);
                                 if (data.type === 'token') {
-                                    if (firstToken) {
-                                        firstToken = false;
-                                        // Clear typing indicator on first token
-                                        aiDiv.innerHTML = '';
-                                    }
                                     fullAnswer += data.content;
 
                                     // Artifact Detection (Code Blocks)
                                     const codeBlockRegex = /```(\w*)\n([\s\S]*?)(?:```|$)/g;
                                     const matches = Array.from(fullAnswer.matchAll(codeBlockRegex));
+
                                     if (matches.length > 0) {
                                         const lastMatch = matches[matches.length - 1];
                                         const lang = lastMatch[1] || 'text';
                                         const content = lastMatch[2];
+
+                                        // Auto-open sidebar for non-trivial code blocks
                                         if (content.length > 60) {
-                                            const title = 'Generated ' + (lang.charAt(0).toUpperCase() + lang.slice(1) || 'Code');
+                                            const title = "Generated " + (lang.charAt(0).toUpperCase() + lang.slice(1) || "Code");
                                             openArtifact(content, lang, title);
                                         }
                                     }
 
-                                    // Render with citations
+                                    // Fix citation rendering: Ensure [1] is converted to a link
                                     const processedAnswer = fullAnswer.replace(/\[(\d+)\]/g, (match, n) => {
                                         return `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`;
                                     });
-                                    aiDiv.innerHTML = `<div class="markdown-body">${marked.parse(processedAnswer)}</div><span class="text-primary animate-pulse">▋</span>`;
-
+                                    aiDiv.innerHTML = `<div class="markdown-body">${marked.parse(processedAnswer)}</div>`;
                                 } else if (data.type === 'status') {
                                     if (data.stage) animateStage(data.stage);
-                                    if (firstToken) {
-                                        aiDiv.innerHTML = `
-                                            <div class="flex items-center gap-3">
-                                                <div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                                <span class="text-xs font-bold uppercase tracking-tight text-slate-500">${data.content}</span>
-                                            </div>`;
-                                    }
+                                    aiDiv.innerHTML = `
+                                        <div class="flex items-center gap-3">
+                                            <span class="material-symbols-outlined animate-spin text-primary">sync</span>
+                                            <span class="text-xs font-bold uppercase tracking-tight text-slate-500">${data.content}</span>
+                                        </div>`;
                                 } else if (data.type === 'metadata') {
-                                    currentSources = data.sources || [];
+                                    // Update metadata display
                                     document.getElementById('ai-status').innerHTML = `
                                         <span class="material-symbols-outlined text-primary text-[14px]">verified</span>
-                                        ${Math.round((data.confidence || 0.85) * 100)}% Confirmed
+                                        ${data.confidence || 85}% Confirmed
                                     `;
-                                    renderSources(currentSources);
+                                    renderSources(data.sources);
                                 } else if (data.type === 'error') {
                                     aiDiv.innerHTML = `
                                         <div class="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
@@ -1705,164 +974,53 @@
                     scrollToBottom();
                 }
 
-                // ─── Finalize AI bubble ───
-                // Remove cursor
-                aiDiv.innerHTML = `<div class="markdown-body" data-raw="${encodeURIComponent(fullAnswer)}">${marked.parse(fullAnswer.replace(/\[(\d+)\]/g, (m, n) => `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`))
-                    }</div>`;
-
-                // Add inline source chips
-                if (currentSources.length > 0) {
-                    const chipsHtml = buildSourceChips(currentSources);
-                    aiDiv.querySelector('.markdown-body').insertAdjacentHTML('afterend', chipsHtml);
-                }
-
-                // Add message action buttons
-                addMessageActions(aiDiv, fullAnswer);
-
-                // Track for export
-                currentChatMessages.push({ role: 'assistant', content: fullAnswer });
-
-                // Highlight code blocks
-                setTimeout(() => {
-                    Prism.highlightAllUnder(aiDiv);
-                }, 100);
-
-                // Update session title
+                // Finalize UI
                 if (searchHistory.length === 0 || !searchHistory.find(s => s.id === currentSessionId)) {
                     updateSessionTitle(currentSessionId, query);
                 }
 
-                // Generate follow-up suggestions in background
-                generateFollowUps(query, fullAnswer, container);
-
-                // Refresh sidebar after 3s (for auto-title)
-                setTimeout(() => fetchHistory(), 3000);
+                // Highlight code blocks and add copy buttons
+                setTimeout(() => {
+                    Prism.highlightAllUnder(aiDiv);
+                    addCopyButtons(aiDiv);
+                }, 100);
 
             } catch (err) {
-                if (err.name === 'AbortError') {
-                    // User stopped — finalize what we have
-                    if (aiDiv.querySelector('.markdown-body')) {
-                        addMessageActions(aiDiv, aiDiv.querySelector('.markdown-body').innerText);
-                    } else {
-                        aiDiv.innerHTML = `<span class="text-slate-500 text-sm italic">Generation stopped.</span>`;
-                    }
-                } else {
-                    aiDiv.innerHTML = `
-                        <div class="flex items-center gap-2 text-red-400">
-                            <span class="material-symbols-outlined">error</span>
-                            <p>${err.message}</p>
-                        </div>`;
-                }
-            } finally {
-                stopBtn.style.display = 'none';
-                document.getElementById('search-btn').disabled = false;
-                abortController = null;
-                scrollToBottom();
+                aiDiv.innerHTML = `
+                    <div class="flex items-center gap-2 text-red-400">
+                        <span class="material-symbols-outlined">error</span>
+                        <p>${err.message}</p>
+                    </div>`;
             }
         }
 
-        // ─── Build Inline Source Chips ───
-        function buildSourceChips(sources) {
-            if (!sources || sources.length === 0) return '';
-            const chips = sources.slice(0, 6).map((s, i) => {
-                let domain = 'source';
-                try { domain = s.url ? new URL(s.url).hostname.replace('www.', '') : (s.source || 'source'); } catch (e) { }
-                const favicon = s.url ? `<img src="https://www.google.com/s2/favicons?domain=${domain}&sz=12" width="12" height="12" style="border-radius:2px" onerror="this.style.display='none'">` : '';
-                const title = (s.title || domain).slice(0, 28);
-                return `<a href="${s.url || '#'}" target="_blank" rel="noopener" class="source-chip" data-index="${i + 1}" title="${s.title || ''}">\n                    ${favicon}<span class="chip-num">${i + 1}</span><span class="truncate">${title}</span>\n                </a>`;
-            }).join('');
-            return `<div class="sources-row"><span class="sources-label">🔍 ${sources.length} source${sources.length !== 1 ? 's' : ''}</span>${chips}</div>`;
-        }
+        function addCopyButtons(container) {
+            const lastMessage = container.lastElementChild;
+            if (!lastMessage || !lastMessage.classList.contains('ai-message')) return;
 
-        // ─── Message Action Buttons ───
-        function addMessageActions(aiDiv, rawText) {
-            // Remove old footer
-            aiDiv.querySelector('.ai-footer')?.remove();
+            // Remove existing footer if any
+            const existingFooter = lastMessage.querySelector('.ai-footer');
+            if (existingFooter) existingFooter.remove();
 
             const footer = document.createElement('div');
-            footer.className = 'ai-footer msg-actions';
+            footer.className = 'ai-footer flex items-center gap-4 mt-4 pt-4 border-t border-white/5';
 
-            // Copy
             const copyBtn = document.createElement('button');
-            copyBtn.className = 'msg-action-btn copy-btn';
-            copyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">content_copy</span> Copy';
-            copyBtn.onclick = async () => {
-                await navigator.clipboard.writeText(rawText);
-                copyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">check</span> Copied!';
-                copyBtn.classList.add('active');
+            copyBtn.className = 'copy-btn';
+            copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">content_copy</span> Copy';
+            copyBtn.onclick = () => {
+                const text = lastMessage.querySelector('.markdown-body').innerText;
+                navigator.clipboard.writeText(text);
+                copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">check</span> Copied!';
+                copyBtn.classList.add('copied');
                 setTimeout(() => {
-                    copyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">content_copy</span> Copy';
-                    copyBtn.classList.remove('active');
+                    copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">content_copy</span> Copy';
+                    copyBtn.classList.remove('copied');
                 }, 2000);
             };
 
-            // Retry
-            const retryBtn = document.createElement('button');
-            retryBtn.className = 'msg-action-btn';
-            retryBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">refresh</span> Retry';
-            retryBtn.onclick = () => {
-                // Find the user message before this AI message
-                const prev = aiDiv.previousElementSibling;
-                if (prev && prev.classList.contains('user-message')) {
-                    document.getElementById('search-input').value = prev.textContent;
-                    aiDiv.remove();
-                    handleSearch();
-                }
-            };
-
-            // Thumbs up
-            const upBtn = document.createElement('button');
-            upBtn.className = 'msg-action-btn';
-            upBtn.innerHTML = '👍';
-            upBtn.title = 'Good response';
-            upBtn.onclick = () => { upBtn.classList.toggle('active'); downBtn.classList.remove('active'); };
-
-            // Thumbs down
-            const downBtn = document.createElement('button');
-            downBtn.className = 'msg-action-btn';
-            downBtn.innerHTML = '👎';
-            downBtn.title = 'Bad response';
-            downBtn.onclick = () => { downBtn.classList.toggle('active'); upBtn.classList.remove('active'); };
-
             footer.appendChild(copyBtn);
-            footer.appendChild(retryBtn);
-            footer.appendChild(upBtn);
-            footer.appendChild(downBtn);
-            aiDiv.appendChild(footer);
-        }
-
-        // ─── Follow-up Suggestions ───
-        async function generateFollowUps(question, answer, container) {
-            try {
-                const res = await fetch('/qa/followups', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ question, answer: answer.slice(0, 600) })
-                });
-                if (!res.ok) return;
-                const data = await res.json();
-                const suggestions = data.suggestions || [];
-                if (suggestions.length === 0) return;
-
-                const row = document.createElement('div');
-                row.className = 'followups-row';
-                suggestions.forEach(q => {
-                    const chip = document.createElement('button');
-                    chip.className = 'followup-chip';
-                    chip.textContent = q;
-                    chip.onclick = () => {
-                        document.getElementById('search-input').value = q;
-                        updateCharCounter(document.getElementById('search-input'));
-                        row.remove();
-                        handleSearch();
-                    };
-                    row.appendChild(chip);
-                });
-                container.appendChild(row);
-                scrollToBottom();
-            } catch (e) {
-                // Follow-ups are best-effort, silently fail
-            }
+            lastMessage.appendChild(footer);
         }
 
         // ─── Artifact Sidebar Controls ───
@@ -1979,67 +1137,19 @@
         }
 
         function updateSessionTitle(sid, query) {
-            // Optimistically add to sidebar if not already there
-            const existing = allSessions.find(s => s.session_id === sid);
-            if (!existing) {
-                const newSession = {
-                    session_id: sid,
-                    title: query.substring(0, 40) + (query.length > 40 ? '…' : ''),
-                    message_count: 1,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    _bucket: 'Today'
-                };
-                allSessions.unshift(newSession);
-                localStorage.setItem('mindx_sessions_cache', JSON.stringify(allSessions));
-                renderHistory(allSessions);
+            const title = query.substring(0, 30) + (query.length > 30 ? '...' : '');
+            const existing = searchHistory.find(s => s.id === sid);
+            if (existing) {
+                existing.title = title;
+            } else {
+                searchHistory.unshift({ id: sid, title: title, timestamp: new Date() });
             }
-            // Refresh from server after 3s (auto-title will be ready)
-            setTimeout(fetchHistory, 3000);
-        }
-
-        async function renameSession(sid, e) {
-            e.stopPropagation();
-            const session = allSessions.find(s => s.session_id === sid);
-            const newTitle = prompt('Rename chat:', session?.title || '');
-            if (!newTitle || !newTitle.trim()) return;
-            try {
-                const resp = await fetch(`/chats/${sid}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ title: newTitle.trim() })
-                });
-                if (resp.ok) {
-                    if (session) session.title = newTitle.trim();
-                    localStorage.setItem('mindx_sessions_cache', JSON.stringify(allSessions));
-                    renderHistory(allSessions);
-                }
-            } catch (err) { console.error('Rename failed:', err); }
-        }
-
-        async function deleteSession(sid, e) {
-            e.stopPropagation();
-            if (!confirm('Delete this chat?')) return;
-            try {
-                const resp = await fetch(`/chats/${sid}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (resp.ok) {
-                    allSessions = allSessions.filter(s => s.session_id !== sid);
-                    localStorage.setItem('mindx_sessions_cache', JSON.stringify(allSessions));
-                    renderHistory(allSessions);
-                    if (sid === activeSessionId) startNewChat();
-                }
-            } catch (err) { console.error('Delete failed:', err); }
+            renderHistory();
         }
 
         async function loadSession(sid) {
-            activeSessionId = sid;
             currentSessionId = (sid === 'legacy' || !sid) ? null : sid;
-
-            // Highlight active in sidebar
-            renderHistory(allSessions);
+            localStorage.setItem('currentSessionId', currentSessionId);
 
             const container = document.getElementById('chat-container');
             container.innerHTML = `
@@ -2048,36 +1158,38 @@
                 </div>`;
 
             try {
-                const response = await fetch(`/chats/${sid}`, {
+                const url = currentSessionId ? `/qa/history?session_id=${currentSessionId}` : '/qa/history?limit=20';
+                const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
+                    const messages = await response.json();
                     container.innerHTML = '';
 
-                    if (!data.messages || data.messages.length === 0) {
+                    if (messages.length === 0) {
                         startNewChat();
                         return;
                     }
 
-                    data.messages.forEach(msg => {
+                    messages.forEach(msg => {
                         // User Bubble
                         const uDiv = document.createElement('div');
                         uDiv.className = 'message-bubble user-message';
-                        uDiv.textContent = msg.role_user;
+                        uDiv.textContent = msg.query;
                         container.appendChild(uDiv);
 
                         // AI Bubble
                         const aDiv = document.createElement('div');
                         aDiv.className = 'message-bubble ai-message';
-                        const processedAnswer = (msg.role_assistant || '').replace(/\[(\d+)\]/g, (match, n) => {
+                        const processedAnswer = msg.answer.replace(/\[(\d+)\]/g, (match, n) => {
                             return `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`;
                         });
                         aDiv.innerHTML = `<div class="markdown-body">${marked.parse(processedAnswer)}</div>`;
                         container.appendChild(aDiv);
                     });
 
+                    // Apply code tools to loaded history
                     setTimeout(() => {
                         Prism.highlightAllUnder(container);
                         addCopyButtons(container);
@@ -2092,18 +1204,12 @@
 
         function startNewChat() {
             currentSessionId = uuid.v4();
-            activeSessionId = null;
-            renderHistory(allSessions); // clear active highlight
+            localStorage.setItem('currentSessionId', currentSessionId);
             document.getElementById('chat-container').innerHTML = `
                 <div id="empty-state" class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
                     <span class="material-symbols-outlined text-primary text-5xl opacity-40">neurology</span>
                     <p class="text-lg font-semibold text-slate-500">New Conversation</p>
                     <p class="text-sm text-slate-600">Ask a question to begin.</p>
-                    <div class="flex flex-wrap justify-center gap-2 pt-4 max-w-lg">
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Who founded Netflix?</button>
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Explain quantum physics</button>
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest AI news</button>
-                    </div>
                 </div>`;
             document.getElementById('search-input').focus();
         }
@@ -2208,34 +1314,9 @@
             }
         });
 
-        // ─── Keyboard Shortcuts ───
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+N → New Chat
-            if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                startNewChat();
-            }
-            // Ctrl+K → Focus search
-            if (e.ctrlKey && e.key === 'k') {
-                e.preventDefault();
-                const hs = document.getElementById('history-search');
-                if (hs) { hs.focus(); hs.select(); }
-            }
-        });
-
-        // ─── Scroll-to-bottom button visibility ───
-        const chatScroller = document.getElementById('chat-scroller');
-        if (chatScroller) {
-            chatScroller.addEventListener('scroll', () => {
-                const btn = document.getElementById('scroll-btn');
-                if (!btn) return;
-                const distFromBottom = chatScroller.scrollHeight - chatScroller.scrollTop - chatScroller.clientHeight;
-                btn.classList.toggle('hidden', distFromBottom < 100);
-            });
-        }
-
         // ─── Check for ?q= parameter (from landing page) ───
         window.addEventListener('DOMContentLoaded', () => {
+            // Initial history fetch
             fetchHistory();
 
             const params = new URLSearchParams(window.location.search);

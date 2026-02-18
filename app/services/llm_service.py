@@ -8,7 +8,7 @@ class LLMService:
         if not api_key:
             raise RuntimeError("GROQ_API_KEY is not set")
 
-        self.client = AsyncGroq(api_key=api_key)
+        self.client = AsyncGroq(api_key=api_key, timeout=30.0)
 
         # ✅ CURRENTLY SUPPORTED MODEL
         self.model = "llama-3.1-8b-instant"

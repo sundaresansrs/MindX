@@ -13,7 +13,8 @@ class User(Base):
     password_hash = Column(String, nullable=False)
 
     full_name = Column(String, nullable=True)
-    account_type = Column(String, nullable=True)
+    account_type = Column(String, nullable=True) # "personal" or "company"
     company_name = Column(String, nullable=True)
+    access_level = Column(String, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())

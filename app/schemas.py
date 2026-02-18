@@ -10,6 +10,7 @@ class UserCreate(BaseModel):
     password: str
     account_type: str
     company_name: Optional[str] = None
+    access_level: Optional[str] = None
     full_name: str
 
 

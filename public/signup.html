@@ -16,180 +16,249 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#33f20d",
-                        "background-light": "#f6f8f5",
+                        "primary": "#00FF41",
                         "background-dark": "#050804",
-                        "neutral-dark": "#132210",
-                        "neutral-border": "#294922",
+                        "surface-dark": "rgba(14, 31, 16, 0.6)",
+                        "border-dark": "rgba(41, 73, 34, 0.4)",
                     },
                     fontFamily: {
                         "display": ["Inter", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
                     },
                 },
             },
         }
     </script>
     <style>
+        :root {
+            --primary: #00FF41;
+            --background-dark: #050804;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
+            background-color: var(--background-dark);
+            overflow-x: hidden;
         }
 
-        .company-field {
-            display: none;
+        .glass-card {
+            background: rgba(14, 31, 16, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 65, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        .company-field.visible {
-            display: block;
+        .input-glass {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 255, 65, 0.1);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .input-glass:focus {
+            border-color: var(--primary);
+            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+        }
+
+        .selection-card {
+            background: rgba(14, 31, 16, 0.3);
+            border: 1px solid rgba(0, 255, 65, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .selection-card.active {
+            border-color: var(--primary);
+            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+
+        .selection-card.active .material-symbols-outlined {
+            color: var(--primary);
+        }
+
+        .conditional-field {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .conditional-field.visible {
+            max-height: 400px;
+            opacity: 1;
+            margin-top: 1.5rem;
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
         }
     </style>
 </head>
 
-<body
-    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex flex-col font-display">
+<body class="text-white min-h-screen flex flex-col font-display">
 
-    <!-- Top Navigation -->
-    <header class="w-full px-6 py-6 flex items-center justify-between max-w-7xl mx-auto">
-        <a href="/" class="flex items-center gap-2 group cursor-pointer no-underline">
-            <div
-                class="size-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(51,242,13,0.3)]">
-                <span class="material-symbols-outlined text-xl font-bold">query_stats</span>
-            </div>
-            <h1 class="text-xl font-bold tracking-tight dark:text-white">Mind<span class="text-primary">X</span></h1>
-        </a>
-        <div class="hidden md:block">
-            <a class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
-                href="/">← Back to Home</a>
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Header -->
+    <header class="w-full px-8 py-6 flex justify-center items-center z-50">
+        <div class="max-w-7xl w-full flex justify-between items-center text-white">
+            <a class="flex items-center gap-3 group no-underline" href="/">
+                <div
+                    class="size-9 bg-primary flex items-center justify-center rounded-xl shadow-[0_0_20px_rgba(0,255,65,0.4)]">
+                    <span class="material-symbols-outlined text-background-dark font-bold">query_stats</span>
+                </div>
+                <h1 class="text-2xl font-black tracking-tighter group-hover:text-primary transition-colors">
+                    Mind<span class="text-primary">X</span></h1>
+            </a>
+            <nav>
+                <a class="text-sm font-bold text-slate-400 hover:text-primary transition-all flex items-center gap-2"
+                    href="/">
+                    <span class="material-symbols-outlined text-sm">arrow_back</span> Back
+                </a>
+            </nav>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        <div class="w-full max-w-[480px] space-y-8">
-            <!-- Header -->
-            <div class="text-center space-y-2">
-                <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Create your account</h2>
-                <p class="text-slate-600 dark:text-slate-400">Start searching smarter today</p>
-            </div>
+    <main class="flex-grow flex items-center justify-center px-4 py-12 relative">
+        <div class="w-full max-w-[550px] z-10">
+            <!-- Signup Card -->
+            <div class="glass-card rounded-3xl p-8 md:p-12 relative overflow-hidden">
+                <div
+                    class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent">
+                </div>
 
-            <!-- Error Area (hidden by default) -->
-            <div id="error-area"
-                class="hidden bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-start gap-3 text-sm text-red-500">
-                <span class="material-symbols-outlined text-lg">error</span>
-                <p id="error-message">Please ensure all required fields are filled out correctly.</p>
-            </div>
+                <div class="mb-10 text-center">
+                    <h2 class="text-4xl font-black tracking-tight mb-3">Join MindX</h2>
+                    <p class="text-slate-400 text-sm font-medium">Initialize your intelligence profile.</p>
+                </div>
 
-            <!-- Sign Up Form Card -->
-            <div
-                class="bg-white dark:bg-[#0e1f10] rounded-xl shadow-2xl p-8 border border-slate-200 dark:border-neutral-border">
+                <!-- Error Area -->
+                <div id="error-area"
+                    class="mb-8 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3 text-red-500 text-xs font-bold hidden">
+                    <span class="material-symbols-outlined text-lg">error</span>
+                    <span id="error-message"></span>
+                </div>
+
                 <form id="signup-form" class="space-y-6" onsubmit="handleSignup(event)">
-                    <!-- Account Type Selector -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <label class="relative cursor-pointer group">
-                            <input checked name="account_type" class="peer sr-only" type="radio" value="personal"
-                                onchange="toggleCompanyField()" />
-                            <div
-                                class="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-slate-200 dark:border-neutral-border bg-slate-50 dark:bg-background-dark transition-all peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:shadow-[0_0_10px_rgba(51,242,13,0.1)]">
-                                <span
-                                    class="material-symbols-outlined mb-2 text-slate-400 dark:text-slate-500 peer-checked:group-[]:text-primary transition-colors">person</span>
-                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Personal</span>
+                    <!-- Account Type Selection -->
+                    <div class="space-y-3">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-slate-500 px-1">Account
+                            Path</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div onclick="selectAccountType('personal')" id="card-personal"
+                                class="selection-card rounded-2xl p-4 flex flex-col items-center gap-2 active">
+                                <span class="material-symbols-outlined text-2xl text-slate-500">person</span>
+                                <span class="text-xs font-bold uppercase tracking-wider">Personal</span>
                             </div>
-                        </label>
-                        <label class="relative cursor-pointer group">
-                            <input name="account_type" class="peer sr-only" type="radio" value="company"
-                                onchange="toggleCompanyField()" />
-                            <div
-                                class="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-slate-200 dark:border-neutral-border bg-slate-50 dark:bg-background-dark transition-all peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:shadow-[0_0_10px_rgba(51,242,13,0.1)]">
-                                <span
-                                    class="material-symbols-outlined mb-2 text-slate-400 dark:text-slate-500 peer-checked:group-[]:text-primary transition-colors">domain</span>
-                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Company</span>
-                            </div>
-                        </label>
-                    </div>
-
-                    <!-- Form Fields -->
-                    <div class="space-y-4">
-                        <!-- Company Name (conditional) -->
-                        <div id="company-field" class="company-field">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Company
-                                Name</label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">corporate_fare</span>
-                                <input id="company-name"
-                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-neutral-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white transition-all outline-none"
-                                    placeholder="Enter company name" type="text" />
+                            <div onclick="selectAccountType('company')" id="card-company"
+                                class="selection-card rounded-2xl p-4 flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-2xl text-slate-500">business</span>
+                                <span class="text-xs font-bold uppercase tracking-wider">Company</span>
                             </div>
                         </div>
+                        <input type="hidden" id="account_type" value="personal">
+                    </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Full Name -->
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Full
-                                Name</label>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-slate-500 px-1"
+                                for="full_name">Legal Name</label>
                             <div class="relative">
                                 <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">badge</span>
-                                <input id="full-name"
-                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-neutral-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white transition-all outline-none"
-                                    placeholder="John Doe" required type="text" />
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">person</span>
+                                <input
+                                    class="w-full h-14 pl-12 pr-4 input-glass rounded-xl text-sm outline-none placeholder:text-slate-600"
+                                    id="full_name" placeholder="John Doe" type="text" required />
                             </div>
                         </div>
 
                         <!-- Email -->
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email
-                                Address</label>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-slate-500 px-1"
+                                for="email">Neural ID (Email)</label>
                             <div class="relative">
                                 <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">mail</span>
-                                <input id="email"
-                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-neutral-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white transition-all outline-none"
-                                    placeholder="name@example.com" required type="email" />
-                            </div>
-                        </div>
-
-                        <!-- Password -->
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Password</label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">lock</span>
-                                <input id="password"
-                                    class="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-neutral-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white transition-all outline-none"
-                                    placeholder="Create a strong password" required type="password" />
-                                <button type="button" onclick="togglePassword()"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
-                                    <span id="password-toggle-icon"
-                                        class="material-symbols-outlined text-lg">visibility</span>
-                                </button>
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">mail</span>
+                                <input
+                                    class="w-full h-14 pl-12 pr-4 input-glass rounded-xl text-sm outline-none placeholder:text-slate-600"
+                                    id="email" placeholder="name@example.com" type="email" required />
                             </div>
                         </div>
                     </div>
 
-                    <!-- Submit -->
+                    <!-- Conditional Company Fields -->
+                    <div id="company-fields" class="conditional-field">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-[11px] font-bold uppercase tracking-widest text-slate-500 px-1"
+                                    for="company_name">Company Name</label>
+                                <div class="relative">
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">corporate_fare</span>
+                                    <input
+                                        class="w-full h-14 pl-12 pr-4 input-glass rounded-xl text-sm outline-none placeholder:text-slate-600"
+                                        id="company_name" placeholder="Acme Corp" type="text" />
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[11px] font-bold uppercase tracking-widest text-slate-500 px-1"
+                                    for="access_level">Organization Level</label>
+                                <div class="relative">
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">verified_user</span>
+                                    <select id="access_level"
+                                        class="w-full h-14 pl-12 pr-4 input-glass rounded-xl text-sm outline-none appearance-none cursor-pointer">
+                                        <option value="enterprise" class="bg-background-dark">Enterprise</option>
+                                        <option value="developer" class="bg-background-dark">Developer</option>
+                                        <option value="researcher" class="bg-background-dark">Researcher</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-slate-500 px-1"
+                            for="password">Security Protocol (Password)</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">lock</span>
+                            <input
+                                class="w-full h-14 pl-12 pr-14 input-glass rounded-xl text-sm outline-none placeholder:text-slate-600"
+                                id="password" placeholder="••••••••" type="password" required />
+                            <button type="button" onclick="togglePassword()"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-primary transition-colors">
+                                <span id="password-toggle-icon"
+                                    class="material-symbols-outlined text-lg">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <button id="signup-btn"
-                        class="w-full py-4 bg-primary hover:bg-opacity-90 text-background-dark font-bold rounded-lg transition-all shadow-[0_4px_20px_rgba(51,242,13,0.2)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="w-full h-14 bg-primary hover:shadow-[0_0_30px_rgba(0,255,65,0.4)] text-background-dark font-black rounded-xl transition-all active:scale-[0.97] mt-8 flex items-center justify-center gap-2 group"
                         type="submit">
-                        Sign Up
+                        <span id="btn-text">Initialize Identity</span>
+                        <span id="btn-icon"
+                            class="material-symbols-outlined group-hover:translate-x-1 transition-transform">bolt</span>
                     </button>
                 </form>
 
-                <!-- Login Link -->
-                <div class="mt-8 text-center border-t border-slate-100 dark:border-neutral-border pt-6">
-                    <p class="text-sm text-slate-600 dark:text-slate-400">
-                        Already have an account?
-                        <a class="text-primary font-semibold hover:underline decoration-primary underline-offset-4 ml-1"
-                            href="/login.html">Login</a>
+                <div class="mt-10 text-center pt-8 border-t border-white/5">
+                    <p class="text-sm text-slate-500">
+                        Existing entity?
+                        <a class="text-primary font-bold hover:underline decoration-primary/30 underline-offset-8 ml-1"
+                            href="/login.html">Login Portal</a>
                     </p>
                 </div>
             </div>
-
             <!-- Terms -->
             <p class="text-[11px] text-center text-slate-500 dark:text-slate-500 max-w-xs mx-auto leading-relaxed">
                 By signing up, you agree to our
@@ -212,15 +281,16 @@
     </footer>
 
     <script>
-        // Toggle company name field visibility
-        function toggleCompanyField() {
-            const isCompany = document.querySelector('input[name="account_type"][value="company"]').checked;
-            const field = document.getElementById('company-field');
-            if (isCompany) {
-                field.classList.add('visible');
+        function selectAccountType(type) {
+            document.getElementById('account_type').value = type;
+            document.getElementById('card-personal').classList.toggle('active', type === 'personal');
+            document.getElementById('card-company').classList.toggle('active', type === 'company');
+
+            const companyFields = document.getElementById('company-fields');
+            if (type === 'company') {
+                companyFields.classList.add('visible');
             } else {
-                field.classList.remove('visible');
-                document.getElementById('company-name').value = '';
+                companyFields.classList.remove('visible');
             }
         }
 
@@ -237,18 +307,10 @@
             }
         }
 
-        // Show error
         function showError(msg) {
-            console.error('Signup Error:', msg);
             const area = document.getElementById('error-area');
             const messageEl = document.getElementById('error-message');
-
-            if (msg && typeof msg === 'object') {
-                messageEl.textContent = JSON.stringify(msg);
-            } else {
-                messageEl.textContent = msg || 'An unknown error occurred';
-            }
-
+            messageEl.textContent = msg;
             area.classList.remove('hidden');
             area.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
@@ -258,20 +320,20 @@
             document.getElementById('error-area').classList.add('hidden');
         }
 
-        // Handle signup form submission
         async function handleSignup(e) {
             e.preventDefault();
             hideError();
-            console.log('Signup attempt started');
 
             const btn = document.getElementById('signup-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnIcon = document.getElementById('btn-icon');
+
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const fullName = document.getElementById('full-name').value.trim();
-            const accountType = document.querySelector('input[name="account_type"]:checked').value;
-            const companyName = document.getElementById('company-name').value.trim();
-
-            console.log('Form data:', { email, fullName, accountType, hasPassword: !!password });
+            const fullName = document.getElementById('full_name').value.trim();
+            const accountType = document.getElementById('account_type').value;
+            const companyName = document.getElementById('company_name').value.trim();
+            const accessLevel = document.getElementById('access_level').value;
 
             // Validation
             if (!email || !password || !fullName) {
@@ -283,84 +345,78 @@
                 return;
             }
             if (accountType === 'company' && !companyName) {
-                showError('Company name is required for company accounts.');
+                showError('Company name is required for organization profiles.');
                 return;
             }
 
-            // Disable button
             btn.disabled = true;
-            btn.textContent = 'Creating account...';
+            btnText.textContent = 'Initializing...';
+            btnIcon.textContent = 'autorenew';
+            btnIcon.classList.add('animate-spin');
 
             try {
-                const body = {
-                    email: email,
-                    password: password,
+                const payload = {
+                    email,
+                    password,
+                    full_name: fullName,
                     account_type: accountType,
-                    full_name: fullName
+                    company_name: accountType === 'company' ? companyName : null,
+                    access_level: accountType === 'company' ? accessLevel : 'personal'
                 };
-                if (companyName) body.company_name = companyName;
 
-                console.log('Sending request to /auth/signup');
                 const response = await fetch('/auth/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
+                    body: JSON.stringify(payload)
                 });
 
-                console.log('Response status:', response.status);
-                let data;
-                const text = await response.text();
-                console.log('Raw response text:', text);
-
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    console.error('JSON parse error:', e);
-                    if (!response.ok) {
-                        throw new Error(`Server Error (${response.status}): ${text.substring(0, 100)}`);
-                    }
-                    throw new Error('Server returned invalid JSON data');
-                }
+                const data = await response.json();
 
                 if (!response.ok) {
-                    console.error('API Error details:', data);
-                    let msg = 'Signup failed.';
-                    if (data && data.detail) {
-                        if (typeof data.detail === 'string') {
-                            msg = data.detail;
-                        } else if (Array.isArray(data.detail)) {
-                            msg = data.detail.map(err => {
-                                const loc = Array.isArray(err.loc) ? err.loc.join('.') : 'input';
-                                return `${loc}: ${err.msg}`;
-                            }).join(' | ');
-                        } else {
-                            msg = JSON.stringify(data.detail);
-                        }
-                    } else if (data && data.error) {
-                        msg = data.error;
-                    }
-                    throw new Error(msg);
+                    throw new Error(data.detail || 'Signup failed. Identifier may already exist.');
                 }
 
-                console.log('Signup success! Token received.');
-                // Store token and user info
                 localStorage.setItem('mindx_token', data.access_token);
                 localStorage.setItem('mindx_user', JSON.stringify({
-                    email: email,
+                    email,
                     full_name: fullName,
-                    account_type: accountType,
+                    account_type: accountType
                 }));
 
                 window.location.href = '/dashboard.html';
             } catch (err) {
-                console.error('Caught error in handleSignup:', err);
-                showError(err.message || 'An unexpected error occurred');
-            } finally {
+                showError(err.message);
                 btn.disabled = false;
-                btn.textContent = 'Sign Up';
+                btnText.textContent = 'Initialize Identity';
+                btnIcon.textContent = 'bolt';
+                btnIcon.classList.remove('animate-spin');
             }
         }
 
+        // Matrix Effect
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        for (let x = 0; x < columns; x++) drops[x] = 1;
+
+        function draw() {
+            ctx.fillStyle = 'rgba(5, 8, 4, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00FF41';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 33);
 
         // If already logged in, redirect to dashboard
         if (localStorage.getItem('mindx_token')) {

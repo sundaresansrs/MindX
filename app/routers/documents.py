@@ -91,14 +91,18 @@ async def upload_document(
     try:
         content = await file.read()
         filename = file.filename
+        print(f"DEBUG: Processing upload for {filename}, size: {len(content)} bytes")
         
         # Parse content based on file type
         parser = UploadService()
         parsed_text = parser.parse_file(content, filename)
         
         if not parsed_text or parsed_text.startswith("Error parsing") or parsed_text.startswith("Unsupported"):
+             print(f"DEBUG: Parse failed for {filename}: {parsed_text}")
              raise HTTPException(status_code=400, detail=parsed_text)
 
+        print(f"DEBUG: Parsed {len(parsed_text)} chars from {filename}. Starting vector ingestion.")
+        
         # Index via VectorService
         vector_service = VectorService(db)
         new_doc = await vector_service.ingest_document(
@@ -108,12 +112,15 @@ async def upload_document(
             session_id=session_id
         )
         
+        print(f"DEBUG: Successfully ingested {filename} as doc ID {new_doc.id}")
+        
         return DocumentResponse(
             id=str(new_doc.id),
             content=new_doc.content[:200] + "...",
             source_url=new_doc.source_url
         )
     except Exception as e:
+        print(f"DEBUG: Critical error during upload of {filename}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 @router.post("/search", response_model=List[DocumentResponse])

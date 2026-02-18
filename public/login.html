@@ -15,133 +15,218 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#33f20d",
-                        "background-light": "#f6f8f5",
+                        "primary": "#00FF41",
                         "background-dark": "#050804",
-                        "neutral-dark": "#132210",
-                        "neutral-border": "#294922",
+                        "surface-dark": "rgba(14, 31, 16, 0.6)",
+                        "border-dark": "rgba(41, 73, 34, 0.4)",
                     },
                     fontFamily: {
                         "display": ["Inter", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
                     },
                 },
             },
         }
     </script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        :root {
+            --primary: #00FF41;
+            --background-dark: #050804;
         }
 
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-dark);
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: rgba(14, 31, 16, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 65, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        .input-glass {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 255, 65, 0.1);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .input-glass:focus {
+            border-color: var(--primary);
+            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+        }
+
+        /* Matrix Rain Animation */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
 
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex flex-col">
+<body class="text-white min-h-screen flex flex-col font-display">
+
+    <canvas id="matrix-canvas"></canvas>
 
     <!-- Header -->
-    <header
-        class="w-full px-6 py-6 flex justify-center items-center border-b border-primary/10 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-7xl w-full flex justify-between items-center">
-            <a class="flex items-center gap-2 group no-underline" href="/">
+    <header class="w-full px-8 py-6 flex justify-center items-center z-50">
+        <div class="max-w-7xl w-full flex justify-between items-center text-white">
+            <a class="flex items-center gap-3 group no-underline" href="/">
                 <div
-                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(51,242,13,0.3)]">
-                    <span class="material-symbols-outlined text-sm font-bold">query_stats</span>
+                    class="size-9 bg-primary flex items-center justify-center rounded-xl shadow-[0_0_20px_rgba(0,255,65,0.4)]">
+                    <span class="material-symbols-outlined text-background-dark font-bold">query_stats</span>
                 </div>
-                <h1
-                    class="text-2xl font-bold tracking-tighter dark:text-white text-slate-900 group-hover:text-primary transition-colors">
+                <h1 class="text-2xl font-black tracking-tighter group-hover:text-primary transition-colors">
                     Mind<span class="text-primary">X</span></h1>
             </a>
             <nav>
-                <a class="text-sm font-medium hover:text-primary transition-colors" href="/">← Back to home</a>
+                <a class="text-sm font-bold text-slate-400 hover:text-primary transition-all flex items-center gap-2"
+                    href="/">
+                    <span class="material-symbols-outlined text-sm">arrow_back</span> Back
+                </a>
             </nav>
         </div>
     </header>
 
-    <main class="flex-grow flex items-center justify-center px-4 py-12 relative overflow-hidden">
-        <!-- Background Glow -->
-        <div
-            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none">
-        </div>
-
-        <div class="w-full max-w-[440px] z-10">
+    <main class="flex-grow flex items-center justify-center px-4 relative">
+        <div class="w-full max-w-[460px] z-10">
             <!-- Login Card -->
-            <div
-                class="bg-white dark:bg-[#0e1f10] border border-slate-200 dark:border-neutral-border rounded-xl shadow-2xl p-8 md:p-10">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold tracking-tight mb-2">Welcome back</h2>
-                    <p class="text-slate-500 dark:text-[#90cb95] text-sm">Log in to your account to continue.</p>
+            <div class="glass-card rounded-3xl p-10 md:p-12 relative overflow-hidden">
+                <!-- Decorative top glow -->
+                <div
+                    class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent">
+                </div>
+
+                <div class="mb-10 text-center">
+                    <h2 class="text-4xl font-black tracking-tight mb-3">Access Portal</h2>
+                    <p class="text-slate-400 text-sm font-medium">Initialize your intelligence session.</p>
                 </div>
 
                 <!-- Error Message Area -->
                 <div id="error-area"
-                    class="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-red-400 text-xs font-medium hidden">
-                    <span class="material-symbols-outlined text-sm">warning</span>
+                    class="mb-8 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3 text-red-500 text-xs font-bold hidden">
+                    <span class="material-symbols-outlined text-lg">error</span>
                     <span id="error-message">Incorrect login credentials.</span>
                 </div>
 
-                <form id="login-form" class="space-y-5" onsubmit="handleLogin(event)">
+                <form id="login-form" class="space-y-6" onsubmit="handleLogin(event)">
                     <!-- Email Field -->
                     <div class="space-y-2">
-                        <label class="text-sm font-semibold block px-1" for="email">Email Address</label>
-                        <input
-                            class="w-full h-12 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-neutral-border rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-[#4a7a4e]"
-                            id="email" placeholder="name@example.com" type="email" required />
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-slate-500 px-1"
+                            for="email">Neural Identifier (Email)</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">mail</span>
+                            <input
+                                class="w-full h-14 pl-12 pr-4 input-glass rounded-xl text-sm outline-none placeholder:text-slate-600"
+                                id="email" placeholder="name@example.com" type="email" required />
+                        </div>
                     </div>
 
                     <!-- Password Field -->
                     <div class="space-y-2">
-                        <div class="flex justify-between items-center px-1">
-                            <label class="text-sm font-semibold" for="password">Password</label>
-                        </div>
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-slate-500 px-1"
+                            for="password">Security Protocol (Password)</label>
                         <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">lock</span>
                             <input
-                                class="w-full h-12 bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-neutral-border rounded-lg px-4 pr-12 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-[#4a7a4e]"
+                                class="w-full h-14 pl-12 pr-14 input-glass rounded-xl text-sm outline-none placeholder:text-slate-600"
                                 id="password" placeholder="••••••••" type="password" required />
                             <button type="button" onclick="togglePassword()"
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#90cb95] hover:text-primary transition-colors flex items-center justify-center p-1">
-                                <span id="password-toggle-icon" class="material-symbols-outlined">visibility</span>
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-primary transition-colors flex items-center justify-center p-1">
+                                <span id="password-toggle-icon"
+                                    class="material-symbols-outlined text-lg">visibility</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Login Button -->
                     <button id="login-btn"
-                        class="w-full h-12 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="w-full h-14 bg-primary hover:shadow-[0_0_30px_rgba(0,255,65,0.4)] text-background-dark font-black rounded-xl transition-all active:scale-[0.97] mt-4 flex items-center justify-center gap-2 group"
                         type="submit">
-                        Login
+                        <span class="text-lg">Authorize Access</span>
+                        <span
+                            class="material-symbols-outlined group-hover:translate-x-1 transition-transform">bolt</span>
                     </button>
                 </form>
-            </div>
 
-            <!-- Footer Link -->
-            <p class="text-center mt-8 text-sm text-slate-500 dark:text-[#90cb95]">
-                Don't have an account?
-                <a class="text-primary font-bold hover:underline transition-all" href="/signup.html">Sign Up</a>
-            </p>
+                <!-- Footer Link -->
+                <div class="mt-10 text-center pt-8 border-t border-white/5">
+                    <p class="text-sm text-slate-500">
+                        New entity?
+                        <a class="text-primary font-bold hover:underline decoration-primary/30 underline-offset-8 ml-1"
+                            href="/signup.html">Request Account</a>
+                    </p>
+                </div>
+            </div>
         </div>
     </main>
 
-    <footer class="w-full px-6 py-8 border-t border-primary/5 bg-background-light dark:bg-background-dark">
+    <footer class="w-full px-8 py-10 z-10 bg-transparent">
         <div
-            class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400 dark:text-[#4a7a4e]">
-            <p>© 2026 MindX Intelligence Systems. All rights reserved.</p>
-            <div class="flex gap-6">
-                <a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
-                <a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+            class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">
+            <p>© 2026 MindX Intelligence - System.v2.4.0</p>
+            <div class="flex gap-8">
+                <a class="hover:text-primary transition-colors" href="#">Encryption Policy</a>
+                <a class="hover:text-primary transition-colors" href="#">Terminal Terms</a>
             </div>
         </div>
     </footer>
 
     <script>
+        // Matrix Rain Implementation
+        function initMatrix() {
+            const canvas = document.getElementById('matrix-canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const characters = "0101010101ABCDEFHIJKLMNOPQRSTUVWXYZ";
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+
+            for (let x = 0; x < columns; x++) drops[x] = 1;
+
+            function draw() {
+                ctx.fillStyle = "rgba(5, 8, 4, 0.05)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#00FF41";
+                ctx.font = fontSize + "px monospace";
+
+                for (let i = 0; i < drops.length; i++) {
+                    const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975)
+                        drops[i] = 0;
+
+                    drops[i]++;
+                }
+            }
+            setInterval(draw, 33);
+        }
+        initMatrix();
+
         // Toggle password visibility
         function togglePassword() {
             const input = document.getElementById('password');
@@ -157,8 +242,11 @@
 
         function showError(msg) {
             const area = document.getElementById('error-area');
-            document.getElementById('error-message').textContent = msg;
+            const messageEl = document.getElementById('error-message');
+            messageEl.textContent = msg;
             area.classList.remove('hidden');
+            // Small vibration effect
+            area.style.animation = 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both';
         }
 
         function hideError() {
@@ -175,15 +263,14 @@
             const password = document.getElementById('password').value;
 
             if (!email || !password) {
-                showError('Please fill in all fields.');
+                showError('Credentials required for authorization.');
                 return;
             }
 
             btn.disabled = true;
-            btn.textContent = 'Logging in...';
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Authorization Pending...';
 
             try {
-                // FastAPI OAuth2 expects form-urlencoded with username/password
                 const formData = new URLSearchParams();
                 formData.append('username', email);
                 formData.append('password', password);
@@ -197,27 +284,34 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.detail || 'Invalid email or password.');
+                    throw new Error(data.detail || 'Authorization failed. Verify credentials.');
                 }
 
-                // Store token
                 localStorage.setItem('mindx_token', data.access_token);
                 localStorage.setItem('mindx_user', JSON.stringify({ email: email }));
 
-                // Redirect to dashboard
-                window.location.href = '/dashboard.html';
+                // Add success effect before redirect
+                btn.style.background = '#fff';
+                btn.style.color = '#000';
+                btn.textContent = 'Authorized';
+
+                setTimeout(() => window.location.href = '/dashboard.html', 500);
             } catch (err) {
                 showError(err.message);
-            } finally {
                 btn.disabled = false;
-                btn.textContent = 'Login';
+                btn.innerHTML = '<span>Authorize Access</span><span class="material-symbols-outlined">bolt</span>';
             }
         }
 
-        // If already logged in, redirect
         if (localStorage.getItem('mindx_token')) {
             window.location.href = '/dashboard.html';
         }
+
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('matrix-canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
     </script>
 </body>
 

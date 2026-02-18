@@ -25,6 +25,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         password_hash=hash_password(user.password),
         account_type=user.account_type,
         company_name=user.company_name,
+        access_level=user.access_level,
         full_name=user.full_name,
 
 
