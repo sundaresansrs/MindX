@@ -22,3 +22,4 @@ class ChatHistory(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    is_pinned = Column(Integer, default=0)  # 0 for false, 1 for true (SQLite friendly)

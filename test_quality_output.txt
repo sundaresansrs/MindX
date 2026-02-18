@@ -1,0 +1,67 @@
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+Stage 1: Multi-query Expansion
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+Expanded to 4 queries
+Stage 2: Multi-Source Retrieval
+Vector search failed: 'NoneType' object has no attribute 'scalars'
+Pipeline error: 'NoneType' object has no attribute 'rollback'
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+Stage 1: Multi-query Expansion
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+Expanded to 4 queries
+Stage 2: Multi-Source Retrieval
+Vector search failed: 'NoneType' object has no attribute 'scalars'
+Pipeline error: 'NoneType' object has no attribute 'rollback'
+SearXNG unavailable (All connection attempts failed), will use DuckDuckGo
+SearXNG unavailable (All connection attempts failed), will use DuckDuckGo
+SearXNG unavailable (All connection attempts failed), will use DuckDuckGo
+SearXNG unavailable (All connection attempts failed), will use DuckDuckGo
+C:\MindX\app\services\search_service.py:190: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  with DDGS() as ddgs:  # type: ignore
+C:\MindX\app\services\search_service.py:190: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  with DDGS() as ddgs:  # type: ignore
+C:\MindX\app\services\search_service.py:190: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  with DDGS() as ddgs:  # type: ignore
+C:\MindX\app\services\search_service.py:190: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  with DDGS() as ddgs:  # type: ignore
+response: https://www.bing.com/search?q=Explain+quantum+physics 200
+response: https://www.bing.com/search?q=What+are+the+fundamental+principles+of+quantum+mechanics%3F 200
+response: https://www.bing.com/search?q=Describe+the+relationship+between+matter+and+energy+at+the+quantum+level 200
+response: https://www.bing.com/search?q=How+do+quantum+theories+explain+the+behavior+of+subatomic+particles%3F 200
+DuckDuckGo returned 0 results for: What are the fundamental principles of quantum mechanics?
+DuckDuckGo returned 0 results for: Describe the relationship between matter and energy at the quantum level
+DuckDuckGo returned 0 results for: Explain quantum physics
+DuckDuckGo returned 0 results for: How do quantum theories explain the behavior of subatomic particles?
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+Connecting to database: localhost:5432/mindx
+
+========================================
+MINDX v2.0 QUALITY VERIFICATION
+========================================
+
+> TEST 1: Structure & Bolding ('Explain quantum physics')
+
+[Answer Preview]:
+Quantum physics, also known as quantum mechanics, is a branch of physics that studies the behavior of matter and energy at an atomic and subatomic level. At these scales, the classical laws of physics no longer apply, and strange, seemingly random phenomena govern the behavior of particles and systems.
+
+**Key Principles of Quantum Physics:**
+
+1. **Wave-Particle Duality**: Quantum objects, such as electrons and photons, can exhibit both wave-like and particle-like behavior depending on how they are observed.
+2. **Uncertainty Principle**: It is impossible to know certain properties of a quantum ...
+
+FAIL STRUCTURE:
+  - FAIL: No headers found (##, ###, or ####)
+
+> TEST 2: Spam Filtering ('key principles of effective leadership')
+PASS FILTER: No blocked domains in 0 sources.
+sys:1: ResourceWarning: unclosed <socket.socket fd=1496, family=23, type=1, proto=6, laddr=('2401:4900:67c8:51a6:6999:49b7:dc92:e622', 62483, 0, 0), raddr=('2606:4700:83b3:ce55:6dfe:623:5caa:d12d', 443, 0, 0)>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\asyncio\proactor_events.py:116: ResourceWarning: unclosed transport <_ProactorSocketTransport fd=-1 read=<_OverlappedFuture cancelled>>
+  _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+sys:1: ResourceWarning: unclosed <socket.socket fd=1580, family=23, type=1, proto=6, laddr=('2401:4900:67c8:51a6:6999:49b7:dc92:e622', 62484, 0, 0), raddr=('2606:4700:83b3:ce55:6dfe:623:5caa:d12d', 443, 0, 0)>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\asyncio\proactor_events.py:116: ResourceWarning: unclosed transport <_ProactorSocketTransport fd=-1 read=<_OverlappedFuture cancelled>>
+  _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback

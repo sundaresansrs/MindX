@@ -72,7 +72,7 @@ class ChatHistoryService:
     def get_sessions_list(self, user_id: int, limit: int = 100) -> List[Dict]:
         """
         Returns one row per session_id: the most recent message row.
-        Includes title, message_count, created_at, updated_at.
+        Groups by session_id and sorts by is_pinned and updated_at.
         """
         # Subquery: latest id per session
         subq = (
@@ -84,7 +84,7 @@ class ChatHistoryService:
         rows = (
             self.db.query(ChatHistory)
             .join(subq, ChatHistory.id == subq.c.max_id)
-            .order_by(desc(ChatHistory.updated_at))
+            .order_by(desc(ChatHistory.is_pinned), desc(ChatHistory.updated_at))
             .limit(limit)
             .all()
         )
@@ -106,6 +106,7 @@ class ChatHistoryService:
                 "title": row.title or row.query[:40] + ("…" if len(row.query) > 40 else ""),
                 "message_count": count,
                 "last_query": row.query[:60],
+                "is_pinned": bool(row.is_pinned),
                 "created_at": row.created_at.isoformat() if row.created_at else None,
                 "updated_at": row.updated_at.isoformat() if row.updated_at else None,
             })
@@ -171,6 +172,44 @@ class ChatHistoryService:
         )
         self.db.commit()
         return deleted > 0
+
+    # ─── Pin a chat session ───────────────────────────────────────────────────
+
+    def pin_session(self, user_id: int, session_id: str, pinned: bool) -> bool:
+        sid: Any = session_id
+        try:
+            sid = uuid.UUID(session_id)
+        except ValueError:
+            return False
+
+        updated = (
+            self.db.query(ChatHistory)
+            .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == sid)
+            .update({"is_pinned": 1 if pinned else 0})
+        )
+        self.db.commit()
+        return updated > 0
+
+    # ─── Bulk delete sessions ─────────────────────────────────────────────────
+
+    def bulk_delete(self, user_id: int, session_ids: List[str]) -> int:
+        sids = []
+        for sid_str in session_ids:
+            try:
+                sids.append(uuid.UUID(sid_str))
+            except ValueError:
+                continue
+
+        if not sids:
+            return 0
+
+        deleted = (
+            self.db.query(ChatHistory)
+            .filter(ChatHistory.user_id == user_id, ChatHistory.session_id.in_(sids))
+            .delete(synchronize_session=False)
+        )
+        self.db.commit()
+        return deleted
 
     # ─── Update answer specifically (for streaming sync) ─────────────────────
 

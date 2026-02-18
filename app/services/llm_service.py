@@ -86,13 +86,17 @@ class LLMService:
         question: str,
         context: str,
         chat_history: List[Dict],
-        max_history: int = 6  # last 3 exchanges = 6 messages
+        max_history: int = 6,
+        system_prompt: Optional[str] = None
     ) -> List[Dict]:
         """
         Build the full message array including conversation history.
         This makes follow-up questions work correctly.
         """
-        system_msg = f"""You are MindX AI, an intelligent research assistant.
+        if system_prompt:
+            system_msg = system_prompt
+        else:
+            system_msg = f"""You are MindX AI, an intelligent research assistant.
 
 You have access to live search results AND the conversation history.
 

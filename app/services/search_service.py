@@ -88,8 +88,11 @@ def filter_results(results: List[Dict]) -> List[Dict]:
         'zhihu.com', 'baidu.com', 'weibo.com', 'qq.com',
         'taobao.com', 'bilibili.com', 'sina.com.cn',
         'tieba.baidu.com', '163.com', 'sohu.com',
-        'douban.com', 'xiaohongshu.com'
+        'csdn.net', 'jianshu.com', 'douban.com',
+        'xiaohongshu.com'
     ]
+
+    from langdetect import detect # type: ignore
 
     filtered = []
     for r in results:
@@ -97,37 +100,29 @@ def filter_results(results: List[Dict]) -> List[Dict]:
         snippet = r.get('snippet', '')
         title = r.get('title', '')
 
-        # Block specific domains
+        # 1. Block Chinese domains
         if any(domain in url for domain in BLOCKED_DOMAINS):
             logger.info(f"🚫 Blocked domain: {url}")
             continue
 
-        # Block non-English content
-        combined = (snippet + " " + title).lower()
-        
-        # Aggressive check for common non-English characters (Chinese, Japanese, Korean, Cyrillic)
-        non_en_patterns = [
-            r'[\u4e00-\u9fff]', # Chinese
-            r'[\u3040-\u30ff]', # Japanese
-            r'[\uac00-\ud7af]', # Korean
-            r'[\u0400-\u04ff]'  # Cyrillic
-        ]
-        if any(re.search(pattern, combined) for pattern in non_en_patterns):
-            logger.info(f"🚫 Non-English characters detected, filtering: {title[:40]}")
-            continue
+        # 2. Block non-English content
+        try:
+            # Combine title and snippet for better detection
+            combined = (title + " " + snippet).strip()
+            if len(combined) > 30:
+                if detect(combined) != 'en':
+                    logger.info(f"🚫 Detected non-English content: {title[:40]}")
+                    continue
+        except:
+            pass
 
-        if not is_english_content(combined):
-            logger.info(f"🚫 Langdetect non-English filtered: {title[:40]}")
-            continue
-
-        # Block results with no snippet or very short ones
+        # 3. Block results with no snippet
         if len(snippet.strip()) < 30:
-            logger.info(f"🚫 No snippet or too short, skipping: {title[:40]}")
             continue
 
         filtered.append(r)
 
-    logger.info(f"✅ {len(filtered)}/{len(results)} results passed filter")
+    logger.info(f"✅ {len(filtered)}/{len(results)} results passed English filter")
     return filtered
 
 
@@ -193,25 +188,38 @@ class SearchService:
 
             def sync_search() -> List[Dict]:
                 with DDGS() as ddgs:  # type: ignore
-                    return list(ddgs.text(  # type: ignore
+                    # Newer ddgs versions use 'text' with different parameters or just changed internal structure
+                    # The warning suggested 'ddgs' package, let's ensure we use it correctly
+                    results = []
+                    search_results = ddgs.text(
                         query,
-                        region='us-en',      # Force US English results
+                        region='wt-wt', 
                         safesearch='off',
-                        max_results=max_results,
-                    ))
+                        max_results=max_results
+                    )
+                    return list(search_results)
 
             fn: Callable[[], List[Dict]] = sync_search
             raw: List[Dict] = await asyncio.wait_for(asyncio.to_thread(fn), timeout=15.0)  # type: ignore
+            
             results = []
             for item in raw:
-                score, label = get_credibility_score(item.get("href", ""))
+                # Key names might have changed: 'href' -> 'href', 'body' -> 'body'
+                url = item.get("href") or item.get("link", "")
+                title = item.get("title", "")
+                snippet = item.get("body") or item.get("snippet", "")
+                
+                if not url or not title: continue
+                
+                score, label = get_credibility_score(url)
                 results.append({
-                    "title": item.get("title", ""),
-                    "url": item.get("href", ""),
-                    "snippet": item.get("body", ""),
+                    "title": title,
+                    "url": url,
+                    "snippet": snippet,
                     "source": label,
                     "credibility_score": score,
                 })
+            
             logger.info(f"DuckDuckGo returned {len(results)} results for: {query}")
             return results
         except asyncio.TimeoutError:

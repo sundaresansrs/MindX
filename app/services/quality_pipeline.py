@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional, Any, cast
 import asyncio
+import json
 from itertools import islice
 from app.services.llm_service import LLMService # type: ignore
 from app.services.search_service import SearchService # type: ignore
@@ -31,70 +32,207 @@ class QualityPipeline:
     # PASS 1 — RAW ANSWER GENERATION (SMART MODEL)
     # ════════════════════════════════════════════════
     PASS1_SYSTEM = """
-You are the Fact Synthesis Engine for MindX AI. Your role is purely objective.
-You are "Silent" — you have no personality, no greetings, and no meta-talk.
+You are a research analyst for MindX AI.
 
-CRITICAL INSTRUCTIONS:
-1. CITATION IS MANDATORY: Every single factual claim MUST have a citation immediatey after it using [N] format.
-2. RELEVANCE: If provided search results are irrelevant, ignore them and answer from internal knowledge using [General Knowledge]. Never mention the search results are missing.
-3. NO FORMATTING: Write in raw prose ONLY. No markdown, no bolding, no lists. That is the job of the next pass.
-4. ENGLISH ONLY: Strictly output in English.
-5. NO REPETITION: Do not repeat the user's question.
-6. CONFLICTS: If sources conflict, state both views and cite both.
+ABSOLUTE RULES:
+1. Answer the question directly and completely
+2. Never say "I did not find information in the search results"
+3. Never say "Based on search results..." or "According to source X"
+4. Never mention the search results at all
+5. If search context is irrelevant, use your own knowledge confidently
+6. Cite facts with [1][2][3] immediately after each fact
+7. Write in English only — ignore any foreign language sources
+8. Never list references at the end
+9. Never use __1__ markers — use [1] only
+10. Be thorough — cover all important aspects of the question
 
-FACTUAL SYNTHESIS STYLE:
-"Primary research indicates X [1]. However, secondary analysis suggests Y [2]."
+Your answer must start immediately with the actual answer.
+No preamble. No hedging. No meta-commentary.
 """
 
-    # ════════════════════════════════════════════════
-    # PASS 2 — STRUCTURE & DISPLAY FORMATTING (SMART MODEL)
-    # ════════════════════════════════════════════════
     PASS2_SYSTEM = """
-You are the Expert Presentation Layer for MindX AI. Your goal is to transform raw factual data into a premium, scannable, and highly professional response.
+You are the display formatter for MindX AI.
+Transform raw research notes into Claude-quality structured output.
 
-USER INTENT: {intent}
+════════════════════════════════════════
+STEP 1 — IDENTIFY QUESTION TYPE AND CHOOSE STRUCTURE
+════════════════════════════════════════
 
-PRESENTATION PRINCIPLES:
-1. DIRECTNESS: Start immediately with the answer. No padding, no filler.
-2. STRUCTURE: Use headers (##), bold terms, and lists to make the answer scannable.
-3. TLDR: Always include a 1-sentence italicized summary after the opening statement.
-4. NO CITATIONS: Do NOT include any [N] or __N__ markers. They will be handled by the UI.
-5. PREMIUM FORMATTING:
-   - Use `code blocks` for chemical formulas, math, or technical identifiers.
-   - Use markdown tables for comparisons.
-   - Use bolding for key entities and technical terms.
-   - Separate long paragraphs into smaller, digestible chunks.
+CONCEPT/EXPLAIN question → Structure:
+  - Bold subject + direct definition sentence
+  - Italic TLDR line
+  - ## The Core Idea (2-3 prose paragraphs)
+  - ## Key Principles (bullet list with bold terms)
+  - ## Why It Matters (real-world applications)
+  - Closing insight sentence
 
-INTENT-SPECIFIC LAYOUTS:
-- factual/person/definition: Direct answer -> TLDR -> 2-3 deep paragraphs -> "Key Facts" list -> Bottom Line.
-- comparison: Summary -> TLDR -> Comparison Table -> Differentiating factors list.
-- howto: Summary -> TLDR -> Step-by-step numbered list -> Safety/Pro-tips block.
-- news/current: Summary -> TLDR -> Timeline or event summary -> Impact analysis.
+WHO IS/BIOGRAPHY question → Structure:
+  - Bold name + one-sentence who they are
+  - Italic TLDR
+  - Background paragraph
+  - Key contributions/achievements paragraph
+  - Legacy/impact paragraph
 
-STRICT RULES:
-- Never use citation numbers.
-- Never repeat the question.
-- Never use generic AI phrasing like "As of my last update".
-- Maintain a highly sophisticated, expert tone (think Scientific American or The Economist).
+HOW TO/PROCESS question → Structure:
+  - Direct answer sentence
+  - Italic TLDR
+  - Numbered steps (bold step name + explanation)
+  - Tips or warnings if relevant
+
+COMPARISON question → Structure:
+  - Direct answer sentence
+  - Prose explaining key differences
+  - Markdown comparison table
+  - Recommendation sentence
+
+LIST/EXAMPLES question → Structure:
+  - Intro sentence
+  - Numbered list (bold term + explanation for each)
+  - Brief context paragraph
+
+WHY question → Structure:
+  - Direct answer
+  - Cause → Effect prose
+  - Implications paragraph
+
+════════════════════════════════════════
+STEP 2 — FORMATTING RULES
+════════════════════════════════════════
+
+OPENING:
+- First sentence directly answers. Bold the main subject: **Netflix**
+- Never start with "Certainly!", "Great question!", "Based on..."
+- Never restate the question
+
+TLDR LINE (always second element):
+- One italic summary: *Netflix was founded in 1997 by Reed Hastings 
+  and Marc Randolph as a DVD-by-mail service before pivoting to streaming.*
+- Blank line after
+
+PROSE PARAGRAPHS:
+- Max 3-4 sentences each
+- Blank line between every paragraph
+- One idea per paragraph
+- NEVER repeat information already stated in a previous paragraph
+- NEVER write 3+ paragraphs all defining the same concept differently
+
+HEADERS:
+- ## for major sections (answers over 200 words)
+- #### for smaller sections or short answers (REQUIRED if answer < 200 words)
+- Descriptive titles: ## Key Principles, #### Why It Matters
+- NEVER: ## Introduction, ## Conclusion, ## Overview, ## Summary
+- **CRITICAL**: You MUST include at least one `##` OR `####` header in every response.
+- **PROHIBITED**: Do NOT use bold-only lines (e.g. **Title**) as section headers.
+
+BULLET POINTS (for lists of features, principles, properties):
+- Format: **Bold Key Term** — one complete sentence explanation
+- Every bullet minimum one full sentence
+- Never single-word bullets
+- Max 6 bullets per list
+- Use • symbol
+
+NUMBERED LISTS (steps, processes, ranked items ONLY):
+- Format: 1. **Step Name** — explanation of the step
+- Never use numbers for unordered content
+
+BOLD:
+- Every key technical term on first use: **superposition**, **entanglement**
+- All proper nouns and names: **Reed Hastings**, **Isaac Newton**
+- Important facts that need emphasis
+- NEVER bold entire sentences
+
+ITALIC:
+- TLDR line only
+- Subtle clarifications or asides
+
+CODE FORMAT:
+- Chemical formulas: `Fe₂O₃`, `H₂O`, `CO₂`
+- Math equations: `E = mc²`
+- Technical notation
+
+TABLES:
+- Only for direct side-by-side comparisons
+- Bold column headers
+
+════════════════════════════════════════
+STEP 3 — ABSOLUTE PROHIBITIONS
+════════════════════════════════════════
+
+NEVER include ANY of these:
+✗ Citation numbers [1][2][3] anywhere — not in prose, not anywhere
+✗ __1__ or __2__ markers anywhere
+✗ "References:" section or any source listing
+✗ URLs in the answer body
+✗ "Based on search results..."
+✗ "According to source X..."
+✗ "Note: this answer may not be current"
+✗ "I did not find information about..."
+✗ Repeated paragraphs saying the same thing differently
+✗ Walls of text with no formatting breaks
+✗ More than 2 consecutive prose paragraphs without a list or header
+✗ "In conclusion" or "In summary" or "To summarize"
+✗ Restating the question at any point
+
+════════════════════════════════════════
+STEP 4 — LENGTH TARGETS
+════════════════════════════════════════
+
+Simple fact (who, when, where): 80-150 words, no headers
+Definition/concept: 250-400 words with headers and bullets
+Multi-part question: 400-600 words
+Comparison: 300-450 words with table
+Never exceed 700 words
+
+════════════════════════════════════════
+## The Founders
+
+**Reed Hastings**, a software entrepreneur, came up with the core 
+idea after reportedly being charged a $40 late fee for a Blockbuster 
+rental of Apollo 13. He brought in **Marc Randolph**, a veteran 
+marketer and serial entrepreneur, as co-founder and first CEO.
+
+Randolph is widely credited with conceiving the original business 
+model and is often called Netflix's "founding father." Hastings 
+provided the funding and technical vision, eventually taking over 
+as CEO in 1999 as the company scaled.
+
+## From DVDs to Streaming
+
+Netflix launched its streaming service in 2007, a decade after 
+founding, completely pivoting away from physical media. The bet 
+paid off — Netflix now has over **260 million subscribers** across 
+190 countries, making it the dominant force in global entertainment.
+
+The company's success also triggered the "streaming wars," 
+prompting Disney, HBO, Apple, and Amazon to launch competing 
+services, permanently dismantling the traditional TV model.
+
+════════════════════════════════════════
+PRODUCE OUTPUT EXACTLY LIKE THIS REFERENCE.
+Your formatted answer must be indistinguishable in quality 
+and structure from a Claude AI response.
+════════════════════════════════════════
 """
 
-    # ════════════════════════════════════════════════
-    # PASS 3 — CONFIDENCE SCORING (FAST MODEL)
-    # ════════════════════════════════════════════════
     PASS3_SYSTEM = """
-Return ONLY a JSON logic object for the answer confidence.
+You are a Research Auditor for MindX AI. 
+Evaluate the factuality and reliability of the provided answer based on the context.
+
+Score based on:
+1. Authority: Are sources official, academic, or reputable?
+2. Multi-Sourcing: Do multiple sources confirm the core facts?
+3. Language: Deduct points for mixed-language or non-English sources.
+4. Accuracy: Does the answer accurately reflect the context?
+
+Return ONLY this JSON object:
 {
-  "score": 92,
-  "level": "high",
-  "reason": "4 authoritative sources agree on all key facts.",
-  "conflicts": null
+  "score": 0-100,
+  "level": "high | medium | low",
+  "reason": "specific reason for this score",
+  "conflicts": "describe any factual conflicts found, or null"
 }
-Rules: score (0-100), level (high/medium/low based on score). Deduct for foreign sources, conflicts, or <3 sources.
 """
 
-    # ════════════════════════════════════════════════
-    # FOLLOW-UP SUGGESTIONS (FAST MODEL)
-    # ════════════════════════════════════════════════
     FOLLOWUP_SYSTEM = """
 You generate deep-dive follow-up questions for MindX AI.
 
@@ -178,7 +316,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
             # Stage 1: Expansion (already handled by Intelligence if not fast_mode)
             if expanded_queries == [resolved_query]:
                 logger.info("Stage 1: One-shot Query Optimization")
-                optimized = await self.query_intel.optimize_query_for_search(resolved_query)
+                optimized = await self.query_intel.optimize_query_for_search(resolved_query, history)
                 expanded_queries = [optimized]
             elif not fast_mode:
                 logger.info("Stage 1: Multi-query Expansion")
@@ -243,15 +381,17 @@ If answer is about "Oxidation of Iron", suggestions could be:
             # ════════════════════════════════════════════════
             
             # Pass 1: Accuracy (Silent)
-            is_relevant = await self.check_context_relevance(query, context)
-            if not is_relevant:
-                logger.warning("Search context irrelevant. Using model knowledge fallback.")
-                context = "The search results are unrelated. Answer from your own knowledge using [General Knowledge] citations."
+            relevance = await self.check_context_relevance(query, context)
+            if not relevance.get("is_relevant", True):
+                logger.warning(f"Search context irrelevant: {relevance.get('reason')}")
+                context = f"The search results were found to be mostly irrelevant: {relevance.get('reason')}. Answer the user's question directly and comprehensively using your own knowledge. Do not mention search results or lack thereof."
 
             messages = await self.llm_service.build_messages_with_history(
                 question=query,
                 context=context,
                 chat_history=history
+            ,
+                system_prompt=self.PASS1_SYSTEM
             )
             
             raw_answer = await self.llm_service.generate_chat_completion(
@@ -365,8 +505,8 @@ If answer is about "Oxidation of Iron", suggestions could be:
             # Stage 1: Expansion (already handled by Intelligence if not fast_mode)
             if expanded_queries == [resolved_query]:
                 yield {"type": "status", "content": "Optimizing search intent..."}
-                optimized = await self.query_intel.optimize_query_for_search(resolved_query)
-                expanded_queries = [optimized]
+                optimized_queries = await self.query_intel.optimize_query_for_search(resolved_query, intelligence)
+                expanded_queries = optimized_queries
             elif not fast_mode:
                 # Fallback to older expansion if intelligence was too simple
                 yield {"type": "status", "content": "Expanding search queries..."}
@@ -428,15 +568,19 @@ If answer is about "Oxidation of Iron", suggestions could be:
             yield {"type": "status", "stage": 5, "content": "Analyzing and citing sources..."}
             
             # Pass 1: Silent Accuracy Generation
-            is_relevant = await self.check_context_relevance(query, context)
-            if not is_relevant:
-                logger.warning("Search context irrelevant. Using model knowledge fallback.")
-                context = "The search results are unrelated. Answer from your own knowledge using [General Knowledge] citations."
+            relevance = await self.check_context_relevance(query, context)
+            if not relevance.get("is_relevant", True):
+                if not fast_mode: 
+                    yield {"type": "status", "content": "Context mismatch; relying on model intelligence..."}
+                logger.warning(f"Search context irrelevant: {relevance.get('reason')}")
+                context = f"The search results were found to be mostly irrelevant: {relevance.get('reason')}. Answer the user's question directly and comprehensively using your own knowledge. Do not mention search results or lack thereof."
 
             messages = await self.llm_service.build_messages_with_history(
                 question=query,
                 context=context,
                 chat_history=history
+            ,
+                system_prompt=self.PASS1_SYSTEM
             )
             
             raw_answer = await self.llm_service.generate_chat_completion(
@@ -453,17 +597,49 @@ If answer is about "Oxidation of Iron", suggestions could be:
 
             intent = intelligence.get("intent", "factual")
             full_formatted = ""
+            # Stream with citation filtering
+            buffer = ""
+            import re
+            
             async for token in self.llm_service.stream_response(
                 prompt=f"Raw answer:\n\n{raw_answer}",
                 system_prompt=self.PASS2_SYSTEM.format(intent=intent),
                 model=self.llm_service.SMART_MODEL
             ):
-                # Clean token if it contains a snippet of a citation bracket
-                # This is tricky mid-stream, so we'll just append and yield as is
-                # The prompt should prevent them, but strip_citations_from_display
-                # will be used for final verification and UI display fixes
                 full_formatted += token
-                yield {"type": "token", "content": token}
+                buffer += token
+                
+                # Check if buffer contains a potential start of a citation
+                if "[" in buffer:
+                    # Check if complete citation exists
+                    match = re.search(r'\[\s*\d+(?:,\s*\d+)*(?:-\d+)*\s*\]', buffer)
+                    if match:
+                        # Remove the citation from buffer
+                        buffer = buffer.replace(match.group(0), "")
+                        # Yield remaining buffer if no more open brackets
+                        if "[" not in buffer:
+                           yield {"type": "token", "content": buffer}
+                           buffer = ""
+                        continue
+                    
+                    # If buffer gets too long without closing bracket, flush it
+                    # (Safety against hanging "[Summary: ...")
+                    if len(buffer) > 20 and not re.search(r'\[\s*\d+', buffer):
+                         # Likely not a citation, or a long one we shouldn't block
+                         yield {"type": "token", "content": buffer}
+                         buffer = ""
+                else:
+                    # No bracket, yield immediately
+                    # Last check for stray numbers if prompted to be ultra-clean
+                    yield {"type": "token", "content": buffer}
+                    buffer = ""
+
+            # Flush any remaining buffer
+            if buffer:
+                 # Last check for citations
+                 buffer = re.sub(r'\[\s*\d+(?:,\s*\d+)*(?:-\d+)*\s*\]', '', buffer)
+                 if buffer:
+                    yield {"type": "token", "content": buffer}
 
             # Final clean-up of the formatted answer to ensure NO citations leak
             full_formatted = self.strip_citations_from_display(full_formatted)
@@ -682,9 +858,7 @@ Final Answer:"""
         text = re.sub(r'\s*\[\d+(?:,\s*\d+)*(?:-\d+)*\]', '', text)
         # Remove __1__, __2__ style  
         text = re.sub(r'\s*__\d+__', '', text)
-        # Remove floating numbers that might be leaked citations
-        text = re.sub(r'(?<=\s)\d+(?=\s|[.,!?]|$)', '', text)
-        return text.strip()
+        
         return text.strip()
 
     def verify_citations(self, raw: str, formatted: str) -> str:
@@ -700,29 +874,46 @@ Final Answer:"""
         missing = raw_citations - fmt_citations
         
         if missing:
-            logger.warning(f"Pass 2 dropped citations: {missing} — appending repair note.")
-            # Append warning note and missing citations at bottom
-            repair_note = f"\n\n> [!NOTE]\n> Citations for sources {', '.join([f'[{m}]' for m in sorted(list(missing))])} were verified from the reasoning pass."
-            formatted += repair_note
+            logger.info(f"Pass 2 dropped citations: {missing} — consistent with Claude-style formatting.")
+            # Do NOT append repair note for Claude-style output as it violates the clean look.
+            # repair_note = f"\n\n> [!NOTE]\n> Citations for sources {', '.join([f'[{m}]' for m in sorted(list(missing))])} were verified from the reasoning pass."
+            # formatted += repair_note
         
         return formatted
 
 
-    async def check_context_relevance(self, question: str, context: str) -> bool:
+    async def check_context_relevance(self, question: str, context: str) -> Dict[str, Any]:
         """
-        Quick check: are these search results actually relevant
-        to the question? If not, skip RAG and use model knowledge.
+        Stage 4b: Relevance Pass
+        Analyze search results to see if they actually contain the answer.
+        Returns a detailed report.
         """
         try:
-            context_snippet = "".join(islice(context, 1000))
+            context_snippet = "".join(islice(context, 1500))
+            prompt = f"""
+Analyze if the provided context is relevant to answering the question: "{question}"
+
+Context Preview:
+{context_snippet}
+
+Return ONLY a JSON object:
+{{
+  "is_relevant": true | false,
+  "relevance_score": 0-100,
+  "reason": "short explanation",
+  "missing_aspects": ["topic1", "topic2"]
+}}
+"""
             response = await self.llm_service.generate_response(
-                prompt=f"Are these search results relevant to answering: '{question}'?\n\nResults preview: {context_snippet}",
-                system_prompt="Answer only 'yes' or 'no'.",
+                prompt=prompt,
+                system_prompt="You are a Relevance Auditor. Return ONLY raw JSON.",
                 model=self.llm_service.FAST_MODEL
             )
-            return 'yes' in response.lower()
-        except:
-            return True # Default to yes if LLM check fails
+            raw = response.strip().replace('```json', '').replace('```', '').strip()
+            return json.loads(raw)
+        except Exception as e:
+            logger.warn(f"Relevance check failed: {e}")
+            return {"is_relevant": True, "relevance_score": 100, "reason": "Audit failed, defaulting to relevant."}
 
     async def verify_facts(self, answer: str, sources: List[Dict]) -> Dict:
         """
@@ -754,7 +945,6 @@ Final Answer:"""
     async def _pass3_score(self, question: str, answer: str, sources: List[Dict]) -> Dict:
         """Internal helper for Pass 3: Confidence Scoring"""
         try:
-            import json
             import re
             
             # Type-safe slicing for Pyre using islice

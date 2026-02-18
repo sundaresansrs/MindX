@@ -1,0 +1,51 @@
+Testing /qa/stream endpoint...
+Query: tell me about world war
+
+Logged in successfully
+
+Starting stream...
+World War, also known as the First World War, was a global conflict that lasted from 1914 to 1918. It was one of the deadliest conflicts in history, involving many countries and resulting in the loss of millions of lives [1].
+
+The war began on July 28, 1914, when Austria-Hungary declared war on Serbia, following the assassination of Archduke Franz Ferdinand [1]. The conflict quickly escalated into a global war, involving many countries, including Germany, France, Britain, Russia, and the United States.
+
+The war was fought on multiple fronts, including the Western Front in France and Belgium, the Eastern Front in Russia, and the Italian Front in Italy [1]. The war saw the introduction of new technologies, such as tanks, airplanes, and poison gas, which caused widespread destruction and loss of life.
+
+The war ended on November 11, 1918, with the signing of the Armistice of CompiΦgne, which marked the end of hostilities between the Allied Powers and Germany [1]. The Treaty of Versailles, signed in 1919, imposed harsh penalties on Germany, contributing to widespread resentment and setting the stage for the outbreak of World War II.
+
+There was also a Second World War, which lasted from 1939 to 1945. It was a global conflict that involved many countries and resulted in the loss of millions of lives. The war began on September 1, 1939, when Germany, under the leadership of Adolf Hitler, invaded Poland [2]. The war saw the rise of fascist and nationalist ideologies, as well as the use of new technologies, such as radar and jet aircraft.
+
+The war ended on September 2, 1945, with the formal surrender of Japan, following the atomic bombings of Hiroshima and Nagasaki [3].
+
+References:
+[1] https://www.britannica.com/event/World-War-I
+[2] https://www.history.com/topics/world-war-ii
+[3] https://www.nationalww2museum.org/learn/encyclopedia/t/treaty-of-versailles
+Stream completed successfully
+
+
+--- Full Response Debug ---
+World War, also known as the First World War, was a global conflict that lasted from 1914 to 1918. It was one of the deadliest conflicts in history, involving many countries and resulting in the loss of millions of lives [1].
+
+The war began on July 28, 1914, when Austria-Hungary declared war on Serbia, following the assassination of Archduke Franz Ferdinand [1]. The conflict quickly escalated into a global war, involving many countries, including Germany, France, Britain, Russia, and the United States.
+
+The war was fought on multiple fronts, including the Western Front in France and Belgium, the Eastern Front in Russia, and the Italian Front in Italy [1]. The war saw the introduction of new technologies, such as tanks, airplanes, and poison gas, which caused widespread destruction and loss of life.
+
+The war ended on November 11, 1918, with the signing of the Armistice of CompiΦgne, which marked the end of hostilities between the Allied Powers and Germany [1]. The Treaty of Versailles, signed in 1919, imposed harsh penalties on Germany, contributing to widespread resentment and setting the stage for the outbreak of World War II.
+
+There was also a Second World War, which lasted from 1939 to 1945. It was a global conflict that involved many countries and resulted in the loss of millions of lives. The war began on September 1, 1939, when Germany, under the leadership of Adolf Hitler, invaded Poland [2]. The war saw the rise of fascist and nationalist ideologies, as well as the use of new technologies, such as radar and jet aircraft.
+
+The war ended on September 2, 1945, with the formal surrender of Japan, following the atomic bombings of Hiroshima and Nagasaki [3].
+
+References:
+[1] https://www.britannica.com/event/World-War-I
+[2] https://www.history.com/topics/world-war-ii
+[3] https://www.nationalww2museum.org/learn/encyclopedia/t/treaty-of-versailles
+---------------------------
+
+
+
+--- Quality Check ---
+FAILURE: Citation markers [N] found in output: ['[1]', '[1]', '[1]', '[1]', '[2]', '[3]', '[1]', '[2]', '[3]']
+SUCCESS: No negative phrases found.
+WARNING: No markdown headers (##) found. (Might be short answer?)
+WARNING: No standard bullet points found.

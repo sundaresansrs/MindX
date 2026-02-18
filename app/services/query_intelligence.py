@@ -1,4 +1,5 @@
 import json
+import re
 import logging
 from typing import List, Dict, Optional
 from groq import AsyncGroq
@@ -90,19 +91,29 @@ class QueryIntelligence:
     async def resolve_context_references(self, question: str, chat_history: List[Dict]) -> str:
         """
         Resolves pronouns and references in follow-up questions.
+        Enhanced for multi-turn nested references.
         """
         if not chat_history:
             return question
 
-        context_words = ['he', 'she', 'it', 'they', 'his', 'her', 'their', 'this', 'that', 'these', 'those', 'the same', 'also', 'too', 'more about']
+        context_words = [
+            'he', 'she', 'it', 'they', 'his', 'her', 'their', 'this', 'that', 'these', 'those', 
+            'the same', 'also', 'too', 'more about', 'who is he', 'what is it', 'tell me more',
+            'why', 'how', 'when', 'where', 'him', 'them'
+        ]
+        
+        # Check if query is a clear follow-up or contains pronouns
+        is_short = len(question.split()) < 5
         has_reference = any(word in question.lower().split() for word in context_words)
-
-        if not has_reference:
+        
+        if not has_reference and not is_short:
             return question
 
+        # Provide a deeper window of context for resolution
         recent_context_list = []
-        for m in list(islice(chat_history, max(0, len(chat_history)-4), len(chat_history))):
-            role = "User" if str(m.get('role', '')).lower() == 'user' else "AI"
+        # Take up to 6 turns (user + ai pairs)
+        for m in list(islice(chat_history, max(0, len(chat_history)-6), len(chat_history))):
+            role = "User" if str(m.get('role', '')).lower() == 'user' else "MindX"
             content = str(m.get('content', ''))
             recent_context_list.append(f"{role}: {content[:300]}")
         recent_context = "\n".join(recent_context_list)
@@ -111,41 +122,91 @@ class QueryIntelligence:
             response = await self.client.chat.completions.create(
                 model=self.FAST_MODEL,
                 temperature=0.1,
-                max_tokens=100,
+                max_tokens=150,
                 messages=[
                     {
                         "role": "system",
-                        "content": "Rewrite the follow-up question as a fully self-contained question by resolving any pronouns or references using the conversation context. Return ONLY the rewritten question. Nothing else."
+                        "content": """You are a Context Resolver for MindX AI. 
+Rewrite the user's follow-up question into a fully self-contained, descriptive search query.
+Resolve ALL pronouns (it, they, he, she, this, that) using the conversation history.
+If the question is very short (e.g., "Why?"), expand it to include the subject being discussed.
+
+Rules:
+- Return ONLY the rewritten question.
+- Do not add "Search for:" or any prefix.
+- Ensure the result is a complete, grammatically correct question or a dense keyword set.
+"""
                     },
                     {
                         "role": "user",
-                        "content": f"Context:\n{recent_context}\n\nFollow-up question: {question}"
+                        "content": f"Conversation Context:\n{recent_context}\n\nUser Follow-up: {question}"
                     }
                 ]
             )
             resolved = response.choices[0].message.content.strip()
-            logger.info(f"🔄 Query resolved: '{question}' -> '{resolved}'")
+            # Clean up potential markdown or quotes
+            resolved = resolved.replace('"', '').replace("'", "").strip()
+            logger.info(f"🔄 Context Resolved: '{question}' -> '{resolved}'")
             return resolved
         except Exception as e:
             logger.error(f"Context resolution failed: {e}")
             return question
 
-    async def optimize_query_for_search(self, query: str) -> str:
+    async def optimize_query_for_search(self, question: str, intelligence: Optional[Dict] = None) -> List[str]:
         """
-        Further refines a query to be search-engine optimized.
+        Rewrite the query into 3 search-optimized variations.
+        ENFORCES STRICT TOPIC PRESERVATION.
         """
+        intent = "factual"
+        if intelligence:
+            intent = intelligence.get("intent", "factual")
+
         try:
             response = await self.client.chat.completions.create(
                 model=self.FAST_MODEL,
                 temperature=0.1,
-                max_tokens=50,
+                max_tokens=200,
                 messages=[
-                    {"role": "system", "content": OPTIMIZE_QUERY_PROMPT},
-                    {"role": "user", "content": query}
+                    {
+                        "role": "system",
+                        "content": """Convert this question into 3 search engine queries.
+
+CRITICAL RULES:
+- Keep the ACTUAL TOPIC words — never replace them with synonyms.
+- "making tea" stays as "making tea" — do NOT convert to "prepare beverage".
+- "father of physics" stays as "father of physics" — do NOT convert to "physics founder".
+- Do not extract abstract concepts like "prepare" or "definition" if the user is asking for a process.
+- Queries must be 3-6 words, English only.
+- Return ONLY a JSON array of 3 strings.
+
+Example:
+Input: "explain about the process of making tea"
+Output: ["how to make tea steps", "tea making process complete guide", "brewing tea method explained"]
+"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Question: {question} (Intent: {intent})"
+                    }
                 ]
             )
-            optimized = response.choices[0].message.content.strip()
-            return optimized
+            
+            raw = response.choices[0].message.content.strip()
+            # Clean potential markdown
+            raw = re.sub(r'```json|```', '', raw).strip()
+            
+            try:
+                optimized_list = json.loads(raw)
+                if isinstance(optimized_list, list) and len(optimized_list) > 0:
+                    logger.info(f"🔍 Search Optimized ({intent}): '{question}' → {optimized_list}")
+                    return [q.replace('"', '').replace("'", "").strip() for q in optimized_list]
+            except:
+                pass
+
+            # Fallback - extract key nouns or just return the original + 2 basic variants
+            logger.warning(f"Query optimization parsing failed for: {raw}. Using fallback.")
+            return [question, f"{question} explained", f"{question} guide"]
+            
         except Exception as e:
             logger.error(f"Query optimization failed: {e}")
-            return query
+            return [question]

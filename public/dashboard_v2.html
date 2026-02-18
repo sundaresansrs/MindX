@@ -11,8 +11,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
+    <!-- Material Symbols Removed in favor of premium inline SVGs -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
@@ -116,6 +115,16 @@
             align-self: flex-start;
             background: transparent;
             border-radius: 1.5rem;
+        }
+
+        .ai-message li>p {
+            margin: 0;
+        }
+
+        .ai-message ul,
+        .ai-message ol {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
         }
 
         .markdown-body {
@@ -342,6 +351,29 @@
         .upload-menu-item span {
             font-size: 18px;
         }
+
+        /* Grouped History Labels */
+        .history-group-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            padding: 1.5rem 0.75rem 0.5rem;
+            opacity: 0.6;
+        }
+
+        .pinned-badge {
+            font-size: 10px;
+            color: var(--primary);
+            margin-left: auto;
+            opacity: 0.8;
+        }
+
+        .history-item-pinned {
+            border-left: 2px solid var(--primary) !important;
+            background: rgba(0, 255, 65, 0.03) !important;
+        }
     </style>
 </head>
 
@@ -354,7 +386,12 @@
         <a href="/" class="flex items-center gap-3 no-underline">
             <div
                 class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(0,255,65,0.3)]">
-                <span class="material-symbols-outlined text-sm font-bold">query_stats</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
             </div>
             <h1 class="text-xl font-bold tracking-tight text-white">Mind<span class="text-primary">X</span></h1>
         </a>
@@ -362,7 +399,12 @@
             <span id="user-greeting" class="text-sm font-medium text-slate-400">Hello, User</span>
             <button onclick="handleLogout()"
                 class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-border-dark hover:bg-white/5 hover:border-primary/50 transition-colors">
-                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
                 Logout
             </button>
         </div>
@@ -376,12 +418,21 @@
                     <!-- New Chat Button at the very top -->
                     <button id="btn-new-chat"
                         class="w-full flex items-center px-4 py-3 mb-6 text-sm font-medium text-slate-100 hover:text-white bg-white/5 hover:bg-white/10 border border-border-dark rounded-xl transition-all group">
-                        <span
-                            class="material-symbols-outlined mr-3 text-primary group-hover:rotate-90 transition-transform">add</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                            class="mr-3 text-primary group-hover:rotate-90 transition-transform">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
                         New Chat
                     </button>
 
-                    <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Chat History</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500">Chat History</h2>
+                        <button onclick="bulkDeleteSessions()"
+                            class="text-[10px] font-bold text-slate-600 hover:text-red-400 transition-colors uppercase tracking-wider">Clear
+                            All</button>
+                    </div>
                 </div>
 
                 <!-- Scrollable history area -->
@@ -410,7 +461,16 @@
                     <!-- Empty State -->
                     <div id="empty-state"
                         class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
-                        <span class="material-symbols-outlined text-primary text-5xl opacity-40">neurology</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                            class="text-primary opacity-40">
+                            <path
+                                d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z">
+                            </path>
+                            <path
+                                d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z">
+                            </path>
+                        </svg>
                         <p class="text-lg font-semibold text-slate-500">How can MindX help you today?</p>
                         <p class="text-sm text-slate-600">Secure, AI-powered research at your fingertips.</p>
 
@@ -442,14 +502,27 @@
                             <div class="relative mb-1">
                                 <button onclick="toggleUploadMenu(event)"
                                     class="p-2 text-slate-400 hover:text-primary cursor-pointer transition-colors flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-[24px]">attach_file</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path
+                                            d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                                        </path>
+                                    </svg>
                                 </button>
 
                                 <div id="upload-menu" class="upload-menu">
                                     <div class="upload-menu-item" onclick="triggerFileUpload('.pdf,.docx,.doc')">
                                         <div class="flex flex-col">
                                             <div class="flex items-center gap-2">
-                                                <span class="material-symbols-outlined text-[18px]">description</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path
+                                                        d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z">
+                                                    </path>
+                                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                                </svg>
                                                 Documents
                                             </div>
                                             <span class="text-[9px] text-slate-500 ml-7">.pdf, .docx, .doc</span>
@@ -458,7 +531,14 @@
                                     <div class="upload-menu-item" onclick="triggerFileUpload('.xlsx,.xls,.csv')">
                                         <div class="flex flex-col">
                                             <div class="flex items-center gap-2">
-                                                <span class="material-symbols-outlined text-[18px]">table_chart</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M3 3h18v18H3z"></path>
+                                                    <path d="M21 9H3"></path>
+                                                    <path d="M21 15H3"></path>
+                                                    <path d="M12 3v18"></path>
+                                                </svg>
                                                 Spreadsheets
                                             </div>
                                             <span class="text-[9px] text-slate-500 ml-7">.xlsx, .xls, .csv</span>
@@ -467,7 +547,14 @@
                                     <div class="upload-menu-item" onclick="triggerFileUpload('.png,.jpg,.jpeg,.webp')">
                                         <div class="flex flex-col">
                                             <div class="flex items-center gap-2">
-                                                <span class="material-symbols-outlined text-[18px]">image</span> Images
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                                </svg>
+                                                Images
                                             </div>
                                             <span class="text-[9px] text-slate-500 ml-7">.png, .jpg, .webp</span>
                                         </div>
@@ -475,7 +562,17 @@
                                     <div class="upload-menu-item" onclick="triggerFileUpload('.txt,.md')">
                                         <div class="flex flex-col">
                                             <div class="flex items-center gap-2">
-                                                <span class="material-symbols-outlined text-[18px]">text_snippet</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path
+                                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                    </path>
+                                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                                </svg>
                                                 Text Files
                                             </div>
                                             <span class="text-[9px] text-slate-500 ml-7">.txt, .md</span>
@@ -494,7 +591,12 @@
 
                             <button id="search-btn" onclick="handleSearch()"
                                 class="bg-primary hover:bg-primary/90 text-background-dark size-10 rounded-xl flex items-center justify-center transition-all active:scale-90 mb-1">
-                                <span class="material-symbols-outlined font-bold">arrow_upward</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                                    <polyline points="5 12 12 5 19 12"></polyline>
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -549,37 +651,64 @@
                 <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
                 <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin">
                 </div>
-                <span class="material-symbols-outlined text-primary text-2xl">neurology</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="text-primary">
+                    <path d="M12 2a5 5 0 0 0-5 5v1h10V7a5 5 0 0 0-5-5z"></path>
+                    <path d="M17 12V8H7v4a5 5 0 1 0 10 0z"></path>
+                    <path d="M5 12a7 7 0 1 0 14 0h-2a5 5 0 1 1-10 0H5z"></path>
+                </svg>
             </div>
             <div class="space-y-2">
                 <p class="text-lg font-semibold text-white">Synthesizing Results</p>
                 <div id="pipeline-stages" class="flex flex-col gap-1">
                     <div id="stage-1" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
                         <span>Query Enhancement</span>
                     </div>
                     <div id="stage-2" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
                         <span>Web & Vector Retrieval</span>
                     </div>
                     <div id="stage-3" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
                         <span>Dynamic Re-ranking</span>
                     </div>
                     <div id="stage-4" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
                         <span>Semantic Chunking</span>
                     </div>
                     <div id="stage-5" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
                         <span>Answer Generation</span>
                     </div>
                     <div id="stage-6" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
                         <span>Consistency Optimization</span>
                     </div>
                     <div id="stage-7" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <span class="material-symbols-outlined text-[16px]">circle</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
                         <span>Fact Verification</span>
                     </div>
                 </div>
@@ -592,8 +721,13 @@
             <div class="bg-surface-dark border border-border-dark rounded-2xl overflow-hidden shadow-xl">
                 <div class="p-8 space-y-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <div class="bg-primary/20 p-1.5 rounded-lg">
-                            <span class="material-symbols-outlined text-primary text-[20px]">magic_button</span>
+                        <div class="bg-primary/20 p-1.5 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-primary">
+                                <path
+                                    d="m12 3 1.912 5.886 6.19 0-5.008 3.638 1.912 5.886L12 14.772l-5.007 3.638 1.912-5.886L3.898 8.886l6.19 0L12 3z" />
+                            </svg>
                         </div>
                         <span class="text-sm font-bold tracking-wide text-primary uppercase">AI Answer</span>
                     </div>
@@ -607,42 +741,27 @@
                     class="bg-background-dark/50 border-t border-border-dark px-8 py-4 flex flex-wrap gap-4 items-center">
                     <div
                         class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                        <span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                            class="text-primary">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
                         <span id="meta-confidence">--% Confidence</span>
                     </div>
                     <div
-                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                        <span class="material-symbols-outlined text-[14px] text-primary">menu_book</span>
-                        <span id="meta-sources">-- Sources</span>
-                    </div>
-                    <div
-                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                        <span class="material-symbols-outlined text-[14px] text-primary">timer</span>
-                        <span id="meta-time">--s</span>
-                    </div>
-                    <div
                         class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full ml-auto">
-                        <span class="material-symbols-outlined text-[14px] text-primary">language</span>
-                        <span id="meta-mode">Hybrid Mode</span>
-
+                        <div class="size-1.5 bg-primary rounded-full animate-pulse mr-1"></div>
+                        <span id="meta-mode">Hybrid Mode Active</span>
                     </div>
                 </div>
-            </div>
-        </article>
+                <span class="material-symbols-outlined text-[14px] text-primary">language</span>
+                <span id="meta-mode">Hybrid Mode</span>
 
-        <!-- Sources Panel (hidden by default) -->
-        <section id="sources-section" class="hidden space-y-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <h3 class="text-lg font-bold text-white">Sources</h3>
-                    <span id="sources-count-badge"
-                        class="bg-primary/20 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full border border-primary/20">0</span>
-                </div>
             </div>
-            <div id="sources-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Source items injected here -->
-            </div>
-        </section>
+    </div>
+    </div>
+    </article>
+
 
     </div>
 
@@ -698,19 +817,25 @@
         }
 
         // ─── Pipeline Stage Animation ───
+        const STAGE_ICONS = {
+            todo: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>',
+            doing: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-pulse"><circle cx="12" cy="12" r="10"></circle></svg>',
+            done: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+        };
+
         function animateStage(stageNum) {
             for (let i = 1; i <= 7; i++) {
                 const el = document.getElementById('stage-' + i);
-                const icon = el.querySelector('.material-symbols-outlined');
+                if (!el) continue;
                 if (i < stageNum) {
                     el.className = 'flex items-center justify-center gap-2 text-primary/60 text-sm';
-                    icon.textContent = 'check_circle';
+                    el.innerHTML = STAGE_ICONS.done + `<span>${el.querySelector('span').textContent}</span>`;
                 } else if (i === stageNum) {
                     el.className = 'flex items-center justify-center gap-2 text-primary text-sm font-medium';
-                    icon.textContent = 'pending';
+                    el.innerHTML = STAGE_ICONS.doing + `<span>${el.querySelector('span').textContent}</span>`;
                 } else {
                     el.className = 'flex items-center justify-center gap-2 text-slate-600 text-sm';
-                    icon.textContent = 'circle';
+                    el.innerHTML = STAGE_ICONS.todo + `<span>${el.querySelector('span').textContent}</span>`;
                 }
             }
         }
@@ -718,9 +843,9 @@
         function resetStages() {
             for (let i = 1; i <= 7; i++) {
                 const el = document.getElementById('stage-' + i);
-                const icon = el.querySelector('.material-symbols-outlined');
+                if (!el) continue;
                 el.className = 'flex items-center justify-center gap-2 text-slate-600 text-sm';
-                icon.textContent = 'circle';
+                el.innerHTML = STAGE_ICONS.todo + `<span>${el.querySelector('span').textContent}</span>`;
             }
         }
 
@@ -755,48 +880,149 @@
 
         async function fetchHistory() {
             try {
-                const token = localStorage.getItem('mindx_token'); // Changed from 'token' to 'mindx_token' to match existing code
-                const response = await fetch('/qa/history?limit=50', {
+                const token = localStorage.getItem('mindx_token');
+                const response = await fetch('/chats', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
-                    const history = await response.json();
-
-                    // Group by session_id
-                    const sessions = {};
-                    history.forEach(item => {
-                        const sid = item.session_id || 'legacy';
-                        if (!sessions[sid]) {
-                            sessions[sid] = {
-                                id: sid,
-                                title: item.query.substring(0, 30) + (item.query.length > 30 ? '...' : ''),
-                                timestamp: new Date(item.created_at)
-                            };
-                        }
-                    });
-
-                    searchHistory = Object.values(sessions).sort((a, b) => b.timestamp - a.timestamp);
-                    renderHistory();
+                    const data = await response.json();
+                    renderHistoryGroups(data.groups);
                 }
             } catch (err) {
                 console.error('Failed to fetch history:', err);
             }
         }
 
-        function renderHistory() {
+        function detectTopicEmoji(title) {
+            const t = title.toLowerCase();
+            if (t.includes('code') || t.includes('python') || t.includes('js') || t.includes('script')) return '💻';
+            if (t.includes('news') || t.includes('event') || t.includes('latest')) return '📰';
+            if (t.includes('ai') || t.includes('intelligence') || t.includes('search')) return '🧠';
+            if (t.includes('math') || t.includes('science') || t.includes('physics')) return '🔬';
+            if (t.includes('how to') || t.includes('tutorial') || t.includes('guide')) return '📖';
+            return '💬';
+        }
+
+        function renderHistoryGroups(groups) {
             const nav = document.getElementById('search-history');
-            if (searchHistory.length === 0) {
+            if (!nav) return;
+
+            if (!groups || groups.length === 0) {
                 nav.innerHTML = '<p class="text-[11px] text-slate-600 px-3 py-4 text-center border border-dashed border-white/5 rounded-xl">No chat history yet</p>';
                 return;
             }
 
-            nav.innerHTML = searchHistory.map(session => `
-                <button onclick="loadSession('${session.id}')" class="w-full flex items-center px-4 py-3 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group mb-1">
-                    <span class="material-symbols-outlined text-[18px] mr-3 text-slate-600 group-hover:text-primary transition-colors">chat_bubble</span>
-                    <span class="truncate">${session.title}</span>
-                </button>
-            `).join('');
+            const chatIcon = (title) => `<div class="mr-3 text-lg opacity-70 group-hover:opacity-100 transition-opacity">${detectTopicEmoji(title)}</div>`;
+
+            let html = '';
+            groups.forEach(group => {
+                html += `<div class="history-group-label">${group.label}</div>`;
+                group.sessions.forEach(session => {
+                    const timeStr = timeAgo(session.updated_at);
+                    const isActive = currentSessionId === session.session_id;
+                    const isPinned = session.is_pinned;
+
+                    html += `
+                    <div class="group relative w-full mb-1">
+                        <button onclick="loadSession('${session.session_id}')" class="w-full flex items-start px-4 py-3 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group ${isActive ? 'bg-white/5 text-white' : ''} ${isPinned ? 'history-item-pinned' : ''}">
+                            ${chatIcon(session.title)}
+                            <div class="flex-1 truncate text-left">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="truncate font-bold tracking-tight">${session.title}</div>
+                                    <span class="text-[9px] font-mono text-slate-600 flex-shrink-0">${timeStr}</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-normal truncate mt-0.5 opacity-60">${session.last_query || ''}</div>
+                            </div>
+                            ${isPinned ? '<span class="pinned-badge ml-2 text-[10px]">📌</span>' : ''}
+                        </button>
+                        <div class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 flex gap-1 transition-all z-20">
+                            <button onclick="event.stopPropagation(); pinSession('${session.session_id}', ${!isPinned})" class="p-1.5 hover:text-primary transition-colors bg-background-dark/80 rounded-lg shadow-lg" title="${isPinned ? 'Unpin' : 'Pin'}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m11 15-3-3 3-3"></path><path d="m15 11 3 3-3 3"></path></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); renameSession('${session.session_id}')" class="p-1.5 hover:text-indigo-400 transition-colors bg-background-dark/80 rounded-lg shadow-lg" title="Rename">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); deleteSession('${session.session_id}')" class="p-1.5 hover:text-red-400 transition-colors bg-background-dark/80 rounded-lg shadow-lg" title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                    </div>`;
+                });
+            });
+            nav.innerHTML = html;
         }
+
+        async function pinSession(sid, pinned) {
+            try {
+                const token = localStorage.getItem('mindx_token');
+                const response = await fetch(`/chats/${sid}/pin`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ pinned })
+                });
+                if (response.ok) fetchHistory();
+            } catch (err) { console.error('Pin failed:', err); }
+        }
+
+        async function renameSession(sid) {
+            const newTitle = prompt('Enter new chat title:');
+            if (!newTitle || !newTitle.trim()) return;
+            try {
+                const token = localStorage.getItem('mindx_token');
+                const response = await fetch(`/chats/${sid}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ title: newTitle.trim() })
+                });
+                if (response.ok) fetchHistory();
+            } catch (err) { console.error('Rename failed:', err); }
+        }
+
+        async function bulkDeleteSessions() {
+            if (!confirm('Are you sure you want to delete all non-pinned conversations?')) return;
+            try {
+                const token = localStorage.getItem('mindx_token');
+                // First get all sessions to find non-pinned IDs
+                const response = await fetch('/chats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                const idsToDelete = [];
+                data.groups.forEach(g => {
+                    g.sessions.forEach(s => {
+                        if (!s.is_pinned) idsToDelete.push(s.session_id);
+                    });
+                });
+
+                if (idsToDelete.length === 0) {
+                    alert('No non-pinned conversations to delete.');
+                    return;
+                }
+
+                const delResponse = await fetch('/chats', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ session_ids: idsToDelete })
+                });
+                if (delResponse.ok) {
+                    if (idsToDelete.includes(currentSessionId)) startNewChat();
+                    fetchHistory();
+                }
+            } catch (err) { console.error('Bulk delete failed:', err); }
+        }
+
+        // ─── Keyboard Shortcuts ───
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('search-input')?.focus();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                startNewChat();
+            }
+        });
 
 
 
@@ -806,48 +1032,53 @@
             handleSearch();
         }
 
-        // ─── Display Sources ───
-        function renderSources(sources) {
-            const grid = document.getElementById('sources-grid');
-            if (!sources || sources.length === 0) {
-                document.getElementById('sources-section')?.classList.add('hidden');
-                return;
-            }
+        // ─── Utility: Time Ago ───
+        function timeAgo(date) {
+            if (!date) return 'Long ago';
+            const now = new Date();
+            const past = new Date(date);
+            const diff = Math.floor((now - past) / 1000); // seconds
 
-            // Also check if we need to reveal the section
-            const section = document.getElementById('sources-section');
-            if (section) section.classList.remove('hidden');
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+            return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
 
-            const badge = document.getElementById('sources-count-badge');
-            if (badge) badge.textContent = sources.length;
+        // ─── Inline Sources (Perplexity-style chips) ───
+        function renderSourceChips(msgEl, sources) {
+            if (!sources || sources.length === 0) return;
 
-            grid.innerHTML = sources.map((s, i) => {
-                const domain = s.source || (s.url ? new URL(s.url).hostname : 'Source');
-                const idx = i + 1;
+            const existingRow = msgEl.querySelector('.sources-row');
+            if (existingRow) existingRow.remove();
+
+            const row = document.createElement('div');
+            row.className = 'sources-row flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5';
+
+            row.innerHTML = sources.map((s, i) => {
+                const domain = s.source || (s.url ? new URL(s.url).hostname.replace('www.', '') : 'Source');
                 return `
-                    <div class="p-4 bg-white/5 border border-white/5 rounded-2xl hover:border-primary/30 transition-all group relative">
-                        <div class="absolute -top-2 -left-1 bg-primary text-background-dark text-[10px] font-bold px-2 py-0.5 rounded shadow-xl z-10">
-                            ${idx}
-                        </div>
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[150px]">${domain}</span>
-                        </div>
-                        <h4 class="text-sm font-semibold text-slate-200 group-hover:text-primary transition-colors mb-2 line-clamp-1">
-                            <a href="${s.url || '#'}" target="_blank" class="hover:underline">${s.title || 'Referenced Document'}</a>
-                        </h4>
-                        <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed opacity-70">${s.snippet || 'Click to view details for this reference.'}</p>
-                    </div>`;
+                    <a href="${s.url || '#'}" target="_blank" 
+                       class="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/5 rounded-full hover:border-primary/30 hover:bg-white/10 transition-all group relative source-chip"
+                       title="${s.title || domain}">
+                        <span class="text-[10px] font-bold text-primary/60 group-hover:text-primary">${i + 1}</span>
+                        <span class="text-[11px] font-medium text-slate-400 group-hover:text-slate-200 truncate max-w-[120px]">${domain}</span>
+                    </a>
+                `;
             }).join('');
+
+            msgEl.querySelector('.message-bubble')?.appendChild(row);
         }
 
         // ─── Main Search Handler (Streaming Version) ───
-        async function handleSearch() {
+        async function handleSearch(manualQuery = null, isRetry = false) {
             const input = document.getElementById('search-input');
-            const query = input.value.trim();
+            const query = manualQuery || input.value.trim();
             if (!query) return;
 
-            // Clear input immediately
-            input.value = '';
+            // Clear input immediately if it was from input
+            if (!manualQuery) input.value = '';
 
             console.log('🚀 MindX Dashboard v2.0 - Stream Fix Active');
 
@@ -857,19 +1088,25 @@
 
             if (emptyState) emptyState.remove();
 
-            // Append User Message Bubble
-            const userDiv = document.createElement('div');
-            userDiv.className = 'message-bubble user-message';
-            userDiv.textContent = query;
-            container.appendChild(userDiv);
+            // Append User Message Bubble (SKIP if retry)
+            if (!isRetry) {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'message-bubble user-message';
+                userDiv.textContent = query;
+                container.appendChild(userDiv);
+            }
 
-            // Append AI Loading Bubble
+            // Append AI Loading Bubble (Typing Indicator)
             const aiDiv = document.createElement('div');
             aiDiv.className = 'message-bubble ai-message';
             aiDiv.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined animate-spin text-primary">sync</span>
-                    <span class="text-sm italic text-slate-400">Thinking...</span>
+                <div class="flex items-center gap-2 py-1 px-1">
+                    <div class="flex gap-1.5 item-center">
+                        <span class="size-1.5 bg-primary/60 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                        <span class="size-1.5 bg-primary/60 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                        <span class="size-1.5 bg-primary/60 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                    </div>
+                    <span class="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-2">MindX is thinking</span>
                 </div>`;
             container.appendChild(aiDiv);
             scrollToBottom();
@@ -944,20 +1181,25 @@
                                     if (data.stage) animateStage(data.stage);
                                     aiDiv.innerHTML = `
                                         <div class="flex items-center gap-3">
-                                            <span class="material-symbols-outlined animate-spin text-primary">sync</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-primary"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
                                             <span class="text-xs font-bold uppercase tracking-tight text-slate-500">${data.content}</span>
                                         </div>`;
                                 } else if (data.type === 'metadata') {
                                     // Update metadata display
                                     document.getElementById('ai-status').innerHTML = `
-                                        <span class="material-symbols-outlined text-primary text-[14px]">verified</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                         ${data.confidence || 85}% Confirmed
                                     `;
-                                    renderSources(data.sources);
+
+                                    // Update metadata specific fields
+                                    if (data.confidence) document.getElementById('meta-confidence').textContent = data.confidence + '% Confidence';
+
+                                    // Render inline source chips below the current AI message
+                                    renderSourceChips(aiDiv, data.sources);
                                 } else if (data.type === 'error') {
                                     aiDiv.innerHTML = `
                                         <div class="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                                            <span class="material-symbols-outlined text-red-500">error</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                                             <div>
                                                 <p class="text-xs font-bold text-red-500 uppercase">System Error</p>
                                                 <p class="text-sm text-slate-400 mt-1">${data.content}</p>
@@ -982,19 +1224,20 @@
                 // Highlight code blocks and add copy buttons
                 setTimeout(() => {
                     Prism.highlightAllUnder(aiDiv);
-                    addCopyButtons(aiDiv);
+                    addMessageActions(container, query);
+                    saveActiveChat(); // Persist session
                 }, 100);
 
             } catch (err) {
                 aiDiv.innerHTML = `
                     <div class="flex items-center gap-2 text-red-400">
-                        <span class="material-symbols-outlined">error</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                         <p>${err.message}</p>
                     </div>`;
             }
         }
 
-        function addCopyButtons(container) {
+        function addMessageActions(container, query) {
             const lastMessage = container.lastElementChild;
             if (!lastMessage || !lastMessage.classList.contains('ai-message')) return;
 
@@ -1005,21 +1248,39 @@
             const footer = document.createElement('div');
             footer.className = 'ai-footer flex items-center gap-4 mt-4 pt-4 border-t border-white/5';
 
+            // SVG Icons (Feather Icons style)
+            const copyIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+            const checkIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            const retryIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>';
+
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copy-btn';
-            copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">content_copy</span> Copy';
+            copyBtn.innerHTML = `${copyIcon} Copy`;
             copyBtn.onclick = () => {
                 const text = lastMessage.querySelector('.markdown-body').innerText;
                 navigator.clipboard.writeText(text);
-                copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">check</span> Copied!';
+                copyBtn.innerHTML = `${checkIcon} Copied!`;
                 copyBtn.classList.add('copied');
                 setTimeout(() => {
-                    copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">content_copy</span> Copy';
+                    copyBtn.innerHTML = `${copyIcon} Copy`;
                     copyBtn.classList.remove('copied');
                 }, 2000);
             };
 
+            const retryBtn = document.createElement('button');
+            retryBtn.className = 'copy-btn ml-2';
+            retryBtn.innerHTML = `${retryIcon} Retry`;
+            retryBtn.onclick = () => {
+                // Fade out effect
+                lastMessage.style.opacity = '0.5';
+                setTimeout(() => {
+                    lastMessage.remove();
+                    handleSearch(query, true); // Trigger retry
+                }, 200);
+            };
+
             footer.appendChild(copyBtn);
+            footer.appendChild(retryBtn);
             lastMessage.appendChild(footer);
         }
 
@@ -1187,12 +1448,14 @@
                         });
                         aDiv.innerHTML = `<div class="markdown-body">${marked.parse(processedAnswer)}</div>`;
                         container.appendChild(aDiv);
+
+                        // Add actions to each historical message
+                        addMessageActions(container, msg.query);
                     });
 
                     // Apply code tools to loaded history
                     setTimeout(() => {
                         Prism.highlightAllUnder(container);
-                        addCopyButtons(container);
                         scrollToBottom();
                     }, 50);
                 }
@@ -1207,7 +1470,7 @@
             localStorage.setItem('currentSessionId', currentSessionId);
             document.getElementById('chat-container').innerHTML = `
                 <div id="empty-state" class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
-                    <span class="material-symbols-outlined text-primary text-5xl opacity-40">neurology</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-primary opacity-40"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"></path></svg>
                     <p class="text-lg font-semibold text-slate-500">New Conversation</p>
                     <p class="text-sm text-slate-600">Ask a question to begin.</p>
                 </div>`;
@@ -1228,9 +1491,11 @@
                 const fileItem = document.createElement('div');
                 fileItem.className = 'flex items-center gap-2 bg-white/5 border border-white/5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-400';
                 fileItem.innerHTML = `
-                    <span class="material-symbols-outlined text-[14px]">description</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                     <span>${file.name}</span>
-                    <span class="status-icon material-symbols-outlined text-[14px] animate-spin text-primary">sync</span>
+                    <span class="status-icon flex items-center justify-center animate-spin text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+                    </span>
                 `;
                 previewZone.appendChild(fileItem);
 
@@ -1257,7 +1522,7 @@
                 } catch (err) {
                     console.error('File upload failed:', err);
                     const statusIcon = fileItem.querySelector('.status-icon');
-                    statusIcon.textContent = 'error';
+                    statusIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
                     statusIcon.classList.remove('animate-spin');
                     statusIcon.classList.add('text-red-500');
                     fileItem.title = err.message;
@@ -1270,20 +1535,35 @@
             const isFast = document.getElementById('fast-mode-toggle').checked;
             const label = document.getElementById('mode-label');
             const aiStatus = document.getElementById('ai-status');
-            const boltIcon = document.querySelector('.material-symbols-outlined.text-slate-500');
 
             if (isFast) {
                 label.innerText = 'Fast Mode';
                 aiStatus.innerHTML = '<span class="size-1.5 bg-yellow-500 rounded-full animate-pulse"></span> MindX Fast Mode';
-                if (boltIcon) boltIcon.innerText = 'electric_bolt';
             } else {
                 label.innerText = 'Deep Search';
                 aiStatus.innerHTML = '<span class="size-1.5 bg-primary rounded-full animate-pulse"></span> MindX Intelligent Mode';
-                if (boltIcon) boltIcon.innerText = 'bolt';
             }
         }
 
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        async function deleteSession(sid) {
+            if (!confirm('Are you sure you want to delete this conversation?')) return;
+            try {
+                const token = localStorage.getItem('mindx_token');
+                const response = await fetch(`/chats/${sid}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    searchHistory = searchHistory.filter(s => s.id !== sid);
+                    if (currentSessionId === sid) startNewChat();
+                    renderHistory();
+                }
+            } catch (err) {
+                console.error('Failed to delete session:', err);
+            }
+        }
 
 
         // ─── Categorized Upload Menu ───
@@ -1314,10 +1594,13 @@
             }
         });
 
-        // ─── Check for ?q= parameter (from landing page) ───
+        // ─── Initial Load ───
         window.addEventListener('DOMContentLoaded', () => {
             // Initial history fetch
             fetchHistory();
+
+            // Try restoring from LocalStorage first
+            const restored = restoreActiveChat();
 
             const params = new URLSearchParams(window.location.search);
             const q = params.get('q');
@@ -1333,7 +1616,12 @@
         <div class="artifact-header">
             <div class="flex items-center gap-3">
                 <div class="size-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                    <span id="artifact-icon" class="material-symbols-outlined text-lg">code</span>
+                    <svg id="artifact-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
                 </div>
                 <div>
                     <h3 id="artifact-title" class="text-sm font-bold text-white leading-none">Artifact</h3>
@@ -1345,14 +1633,26 @@
             <div class="flex items-center gap-3">
                 <button id="artifact-preview-btn" onclick="togglePreview()"
                     class="hidden h-9 px-4 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary transition-all flex items-center gap-2 text-xs font-bold">
-                    <span class="material-symbols-outlined text-sm">visibility</span> Preview
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg> Preview
                 </button>
                 <button onclick="copyArtifact()"
                     class="h-9 px-4 rounded-lg bg-surface-dark/50 hover:bg-surface-dark border border-border-dark text-slate-300 hover:text-white transition-all flex items-center gap-2 text-xs font-medium">
-                    <span class="material-symbols-outlined text-sm">content_copy</span> Copy
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg> Copy
                 </button>
                 <button onclick="closeArtifact()" class="close-artifact">
-                    <span class="material-symbols-outlined text-[20px]">close</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
                 </button>
             </div>
         </div>

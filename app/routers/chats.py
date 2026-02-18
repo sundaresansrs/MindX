@@ -29,6 +29,12 @@ class RenameRequest(BaseModel):
 class TitleRequest(BaseModel):
     title: str
 
+class PinRequest(BaseModel):
+    pinned: bool
+
+class BulkDeleteRequest(BaseModel):
+    session_ids: List[str]
+
 
 # ─── Helper: group sessions by date bucket ────────────────────────────────────
 
@@ -142,6 +148,27 @@ def rename_chat(
     return {"ok": True, "title": body.title.strip()}
 
 
+# ─── PATCH /chats/{id}/pin ────────────────────────────────────────────────────
+
+@router.patch("/{session_id}/pin")
+def pin_chat(
+    session_id: str,
+    body: PinRequest,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Pin or unpin a chat session."""
+    service = ChatHistoryService(db)
+    ok = service.pin_session(
+        user_id=current_user.id,
+        session_id=session_id,
+        pinned=body.pinned,
+    )
+    if not ok:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    return {"ok": True, "pinned": body.pinned}
+
+
 # ─── DELETE /chats/{id} ───────────────────────────────────────────────────────
 
 @router.delete("/{session_id}")
@@ -156,6 +183,20 @@ def delete_chat(
     if not ok:
         raise HTTPException(status_code=404, detail="Chat session not found")
     return {"ok": True, "deleted": session_id}
+
+
+# ─── DELETE /chats (Bulk) ─────────────────────────────────────────────────────
+
+@router.delete("")
+def bulk_delete_chats(
+    body: BulkDeleteRequest,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete multiple chat sessions at once."""
+    service = ChatHistoryService(db)
+    count = service.bulk_delete(user_id=current_user.id, session_ids=body.session_ids)
+    return {"ok": True, "deleted_count": count}
 
 
 # ─── POST /chats/{id}/title ───────────────────────────────────────────────────

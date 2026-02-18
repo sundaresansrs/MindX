@@ -1,0 +1,51 @@
+Testing /qa/stream endpoint...
+Query: tell me about world war
+
+Logged in successfully
+
+Starting stream...
+Based on the web search results, I couldn't find any information about a current or ongoing World War. However, I can provide some general information about global risks and shifts that may be relevant to the topic.
+
+According to the Global Risks Report 2026 [1], the world is facing significant global risks, including increased geopolitical instability, which could potentially lead to conflict. The report highlights the need for global cooperation and resilience in the face of these risks.
+
+In terms of global shifts, the World Economic Forum has identified several key trends in 2025, including increased geopolitical instability [2]. This shift is also affecting global supply chains, which are facing rising geopolitical fragmentation and economic divergence [3].
+
+It's worth noting that global trade is not retreating, but rather adapting to these shifts [4]. However, global health and healthcare have also been affected by these changes, with a downturn in global health outcomes in 2025 [5].
+
+It's essential to note that these reports do not mention a current or ongoing World War. However, they do highlight the need for global cooperation and resilience in the face of increasing global risks and shifts.
+
+References:
+[1] https://www.weforum.org/publications/global-risks-report-2026/
+[2] https://www.weforum.org/stories/2025/08/inflection-points-7-global-shifts-defining-2025-so-far-in-charts/
+[3] https://www.weforum.org/stories/2025/06/how-supply-chains-need-to-adapt-to-a-shifting-global-landscape/
+[4] https://www.weforum.org/stories/2026/01/global-trade-globalization-resilience-adaption/
+[5] https://www.weforum.org/stories/2025/12/the-top-global-health-stories-from-2025/
+Stream completed successfully
+
+
+--- Full Response Debug ---
+Based on the web search results, I couldn't find any information about a current or ongoing World War. However, I can provide some general information about global risks and shifts that may be relevant to the topic.
+
+According to the Global Risks Report 2026 [1], the world is facing significant global risks, including increased geopolitical instability, which could potentially lead to conflict. The report highlights the need for global cooperation and resilience in the face of these risks.
+
+In terms of global shifts, the World Economic Forum has identified several key trends in 2025, including increased geopolitical instability [2]. This shift is also affecting global supply chains, which are facing rising geopolitical fragmentation and economic divergence [3].
+
+It's worth noting that global trade is not retreating, but rather adapting to these shifts [4]. However, global health and healthcare have also been affected by these changes, with a downturn in global health outcomes in 2025 [5].
+
+It's essential to note that these reports do not mention a current or ongoing World War. However, they do highlight the need for global cooperation and resilience in the face of increasing global risks and shifts.
+
+References:
+[1] https://www.weforum.org/publications/global-risks-report-2026/
+[2] https://www.weforum.org/stories/2025/08/inflection-points-7-global-shifts-defining-2025-so-far-in-charts/
+[3] https://www.weforum.org/stories/2025/06/how-supply-chains-need-to-adapt-to-a-shifting-global-landscape/
+[4] https://www.weforum.org/stories/2026/01/global-trade-globalization-resilience-adaption/
+[5] https://www.weforum.org/stories/2025/12/the-top-global-health-stories-from-2025/
+---------------------------
+
+
+
+--- Quality Check ---
+FAILURE: Citation markers [N] found in output: ['[1]', '[2]', '[3]', '[4]', '[5]', '[1]', '[2]', '[3]', '[4]', '[5]']
+SUCCESS: No negative phrases found.
+WARNING: No markdown headers (##) found. (Might be short answer?)
+WARNING: No standard bullet points found.

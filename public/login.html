@@ -289,13 +289,15 @@
 
                 localStorage.setItem('mindx_token', data.access_token);
                 localStorage.setItem('mindx_user', JSON.stringify({ email: email }));
+                localStorage.removeItem('mindx_active_chat'); // Force new chat on fresh login
+                localStorage.removeItem('currentSessionId');
 
                 // Add success effect before redirect
                 btn.style.background = '#fff';
                 btn.style.color = '#000';
                 btn.textContent = 'Authorized';
 
-                setTimeout(() => window.location.href = '/dashboard.html', 500);
+                setTimeout(() => window.location.href = '/dashboard_v2.html', 500);
             } catch (err) {
                 showError(err.message);
                 btn.disabled = false;
@@ -304,7 +306,7 @@
         }
 
         if (localStorage.getItem('mindx_token')) {
-            window.location.href = '/dashboard.html';
+            window.location.href = '/dashboard_v2.html';
         }
 
         window.addEventListener('resize', () => {
