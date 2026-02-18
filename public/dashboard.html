@@ -74,33 +74,335 @@
             --text-muted: #94a3b8;
         }
 
-        /* Light mode overrides */
+        /* ═══════════════════════════════════
+           LIGHT MODE — Complete Redesign
+        ═══════════════════════════════════ */
         body.light-mode {
-            --background-rgb: 245 247 245;
-            /* #f5f7f5 */
-            --surface-rgb: 255 255 255;
-            /* #ffffff */
-            --border-rgb: 0 0 0;
-            /* #000000 */
-            --text-main: #1a1a1a;
-            --text-muted: #555;
+            /* Layer system — 3 distinct depths */
+            --bg: #f0f0f5;
+            /* page background — slightly cool gray */
+            --surface: #ffffff;
+            /* cards, sidebar */
+            --surface2: #f5f5fa;
+            /* input backgrounds, hover states */
+            --surface3: #ebebf2;
+            /* active states, subtle separators */
 
-            /* Update legacy vars if used directly in CSS */
-            --background-dark: rgb(245, 247, 245);
-            --surface-dark: rgb(255, 255, 255);
-            --border-dark: rgba(0, 0, 0, 0.1);
+            /* Borders */
+            --border: rgba(0, 0, 0, 0.08);
+            --border2: rgba(0, 0, 0, 0.14);
+
+            /* Text */
+            --text-main: #0f0f1a;
+            /* primary — near black, not pure black */
+            --text-muted: #4a4a6a;
+            /* secondary */
+            --text-muted-extra: #8a8aaa;
+            /* muted */
+
+            /* Accent — keep same as dark but adjusted for legibility */
+            --primary: #5b52f0;
+            --primary-soft: rgba(91, 82, 240, 0.08);
+            --primary-border: rgba(91, 82, 240, 0.2);
+            --accent2: #e85555;
+            --accent3: #00a87a;
+            /* deeper green for light bg */
+
+            /* Shadows — critical for light mode depth */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.10), 0 4px 8px rgba(0, 0, 0, 0.06);
+
+            background-color: var(--bg);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
         }
 
-        body.light-mode .glass {
-            background: rgba(255, 255, 255, 0.9);
+        /* ── Header ── */
+        body.light-mode .header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border2);
+            box-shadow: var(--shadow-sm);
         }
 
-        body.light-mode #chat-container .user-message {
-            background: rgba(0, 0, 0, 0.04);
+        body.light-mode .logo-text {
+            background: linear-gradient(135deg, #5b52f0, #00a87a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            /* bolder in light mode — needs weight */
         }
 
-        body.light-mode #chat-container .ai-message {
-            background: transparent;
+        /* ── Sidebar ── */
+        body.light-mode .sidebar {
+            background: #ffffff;
+            border-right: 1px solid var(--border2);
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+        }
+
+        body.light-mode .history-group-label {
+            color: #8a8aaa;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+        }
+
+        body.light-mode .history-item {
+            border-radius: 8px;
+            color: var(--text-muted);
+        }
+
+        body.light-mode .history-item:hover {
+            background: var(--surface3);
+            color: var(--text-main);
+        }
+
+        body.light-mode .history-item.active {
+            background: rgba(91, 82, 240, 0.08);
+            border: 1px solid rgba(91, 82, 240, 0.2);
+            color: var(--text-main);
+        }
+
+        body.light-mode .history-item.active::before {
+            background: var(--primary);
+            /* keep the left accent bar */
+        }
+
+        body.light-mode .history-item-title {
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        body.light-mode .history-item-meta {
+            color: #9090b0;
+        }
+
+        /* ── Main chat background ── */
+        body.light-mode .main-content {
+            background: var(--bg);
+            /* different from sidebar — creates depth */
+        }
+
+        /* ── Welcome card ── */
+        body.light-mode .welcome-card {
+            background: #ffffff;
+            border: 1px solid var(--border2);
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            /* shadow gives it depth on light bg */
+        }
+
+        body.light-mode .welcome-logo {
+            background: linear-gradient(135deg, #5b52f0, #00a87a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        body.light-mode .welcome-title {
+            color: #0f0f1a;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        body.light-mode .welcome-sub {
+            color: #6a6a8a;
+        }
+
+        body.light-mode .welcome-icon {
+            opacity: 0.8;
+            color: var(--primary);
+        }
+
+        /* ── Starter chips ── */
+        body.light-mode .starter-chip {
+            background: #ffffff;
+            border: 1.5px solid rgba(0, 0, 0, 0.12);
+            border-radius: 24px;
+            color: #2a2a4a;
+            font-weight: 500;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+        }
+
+        body.light-mode .starter-chip:hover {
+            background: rgba(91, 82, 240, 0.06);
+            border-color: rgba(91, 82, 240, 0.4);
+            color: #5b52f0;
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        /* ── Message bubbles ── */
+        body.light-mode .user-message {
+            background: linear-gradient(135deg, #5b52f0, #7b72ff);
+            color: #ffffff;
+            /* white text on purple — high contrast */
+            border: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        body.light-mode .ai-message {
+            background: #ffffff;
+            border: 1px solid var(--border2);
+            color: #0f0f1a;
+            box-shadow: var(--shadow-sm);
+        }
+
+        body.light-mode .ai-message strong {
+            color: #0f0f1a;
+            font-weight: 700;
+        }
+
+        body.light-mode .ai-message h2 {
+            color: #1a1a2e;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        body.light-mode .ai-message code {
+            background: rgba(91, 82, 240, 0.08);
+            color: #5b52f0;
+            border: 1px solid rgba(91, 82, 240, 0.15);
+        }
+
+        body.light-mode .ai-message pre {
+            background: #f5f5fa;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #1a1a2e;
+        }
+
+        /* ── Citation badges ── */
+        body.light-mode .citation {
+            background: rgba(0, 168, 122, 0.12);
+            border: 1px solid rgba(0, 168, 122, 0.35);
+            color: #007a5a;
+        }
+
+        body.light-mode .citation:hover {
+            background: rgba(0, 168, 122, 0.22);
+        }
+
+        /* ── Source chips ── */
+        body.light-mode .source-chip {
+            background: #f5f5fa;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #4a4a6a;
+        }
+
+        body.light-mode .source-chip:hover {
+            background: rgba(0, 168, 122, 0.08);
+            border-color: rgba(0, 168, 122, 0.4);
+            color: #007a5a;
+        }
+
+        /* ── Input area ── */
+        body.light-mode .input-area {
+            background: var(--bg);
+            border-top: 1px solid var(--border2);
+        }
+
+        body.light-mode .chat-input-container {
+            background: #ffffff;
+            border: 1.5px solid rgba(0, 0, 0, 0.14);
+            box-shadow: var(--shadow-sm);
+        }
+
+        body.light-mode .chat-input-container:focus-within {
+            border-color: #5b52f0;
+            box-shadow: 0 0 0 3px rgba(91, 82, 240, 0.1);
+        }
+
+        body.light-mode textarea {
+            color: #0f0f1a;
+        }
+
+        body.light-mode textarea::placeholder {
+            color: #9090b0;
+        }
+
+        body.light-mode .send-btn {
+            background: #5b52f0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        body.light-mode .send-btn:hover {
+            background: #4a42d8;
+            box-shadow: 0 4px 12px rgba(91, 82, 240, 0.35);
+        }
+
+        /* ── Tool buttons ── */
+        body.light-mode .upload-menu-item {
+            color: #4a4a6a;
+        }
+
+        body.light-mode .upload-menu-item:hover {
+            background: #f5f5fa;
+            color: #1a1a2e;
+        }
+
+        body.light-mode #upload-menu {
+            background: #ffffff;
+            border-color: var(--border2);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ── Bottom status bar ── */
+        body.light-mode .status-bar {
+            background: #ffffff;
+            border-top: 1px solid var(--border);
+            color: #6a6a8a;
+        }
+
+        body.light-mode .status-dot.active {
+            background: #00a87a;
+            box-shadow: 0 0 6px rgba(0, 168, 122, 0.4);
+        }
+
+        body.light-mode .status-dot.inactive {
+            background: #c0c0d0;
+        }
+
+        body.light-mode #sources-trigger-label {
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            color: var(--primary);
+        }
+
+        /* ── Shortcuts Modal ── */
+        body.light-mode .modal-content {
+            background: #ffffff;
+            border-color: var(--border2);
+            color: var(--text-main);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ── Follow-up chips ── */
+        body.light-mode .followup-chip {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #4a4a6a;
+            box-shadow: var(--shadow-sm);
+        }
+
+        body.light-mode .followup-chip:hover {
+            background: rgba(91, 82, 240, 0.06);
+            border-color: rgba(91, 82, 240, 0.3);
+            color: #5b52f0;
+        }
+
+        /* ── Scrollbar in light mode ── */
+        body.light-mode ::-webkit-scrollbar-track {
+            background: #f0f0f5;
+        }
+
+        body.light-mode ::-webkit-scrollbar-thumb {
+            background: #c8c8dc;
+            border-radius: 10px;
+        }
+
+        body.light-mode ::-webkit-scrollbar-thumb:hover {
+            background: #a0a0c0;
         }
 
         body {
@@ -246,10 +548,18 @@
             opacity: 0;
             transition: opacity 0.2s;
             margin-top: 8px;
+            pointer-events: none;
         }
 
         .ai-message:hover .msg-actions {
             opacity: 1;
+            pointer-events: all;
+        }
+
+        /* ALWAYS show on the very last AI message */
+        .ai-message:last-of-type .msg-actions {
+            opacity: 1;
+            pointer-events: all;
         }
 
         .msg-action-btn {
@@ -942,7 +1252,7 @@
                     class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(0,255,65,0.3)]">
                     <span class="material-symbols-outlined text-sm font-bold">query_stats</span>
                 </div>
-                <h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Mind<span
+                <h1 class="logo-text text-xl font-bold tracking-tight text-slate-900 dark:text-white">Mind<span
                         class="text-primary">X</span></h1>
             </a>
         </div>
@@ -1183,16 +1493,6 @@
                             </div>
                         </div>
 
-                        <div
-                            class="flex items-center gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
-                            <select id="max-sources"
-                                class="bg-transparent border-none p-0 text-[11px] text-slate-500 focus:ring-0 cursor-pointer hover:text-primary transition-colors uppercase tracking-tight">
-                                <option value="5" class="bg-background-dark">5 Sources</option>
-                                <option value="10" selected class="bg-background-dark">10 Sources</option>
-                                <option value="20" class="bg-background-dark">20 Sources</option>
-                            </select>
-                            <span id="time-meta"></span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1355,12 +1655,17 @@
                 chat.messages.push(message);
                 chat.updated_at = new Date().toISOString();
                 chat.message_count = chat.messages.length;
+
+                // Fix: if title is empty or default, regenerate it
+                if (!chat.title || chat.title === 'New Conversation' || chat.title === '' || chat.title === 'Artifact') {
+                    chat.title = message.content.slice(0, 45) + (message.content.length > 45 ? '...' : '');
+                }
             } else {
                 // New chat
                 chats.unshift({
-                    id: chatId, // use id for consistency with local
-                    session_id: chatId, // keep backend compatibility
-                    title: message.content.slice(0, 45),
+                    id: chatId,
+                    session_id: chatId,
+                    title: message.content.slice(0, 45) + (message.content.length > 45 ? '...' : ''),
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                     messages: [message],
@@ -1369,7 +1674,6 @@
                 });
             }
             saveChatsToLocal(chats);
-            // Update in-memory for immediate UI reflect
             allSessions = chats;
             renderHistory(allSessions);
         }
@@ -1395,9 +1699,11 @@
         // INITIALIZATION: Load from local storage immediately
         let allSessions = loadChatsFromLocal();
         // Try to restore last active session
-        let lastActive = localStorage.getItem('mindx_active_chat');
-        let currentSessionId = lastActive || uuid.v4();
-        let activeSessionId = lastActive;
+        // ALWAYS start fresh on page load - never restore last chat
+        let lastActive = null;
+        let currentSessionId = uuid.v4();
+        let activeSessionId = null;
+        localStorage.removeItem('mindx_active_chat');
 
         let currentChatMessages = []; // for export
         let abortController = null; // for stop generating
@@ -1417,13 +1723,28 @@
             document.body.classList.toggle('light-mode');
             const isLight = document.body.classList.contains('light-mode');
             localStorage.setItem('mindx_theme', isLight ? 'light' : 'dark');
-            document.getElementById('theme-icon').textContent = isLight ? 'dark_mode' : 'light_mode';
+            updateToggleIcon(isLight ? 'light' : 'dark');
         }
+
+        function updateToggleIcon(theme) {
+            const icon = document.getElementById('theme-icon');
+            if (icon) {
+                icon.textContent = theme === 'light' ? 'dark_mode' : 'light_mode';
+            }
+            const btn = document.getElementById('theme-toggle');
+            if (btn) {
+                btn.title = theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+            }
+        }
+
         // Restore theme on load
-        if (localStorage.getItem('mindx_theme') === 'light') {
-            document.body.classList.add('light-mode');
-            document.getElementById('theme-icon').textContent = 'dark_mode';
-        }
+        (function () {
+            const savedTheme = localStorage.getItem('mindx_theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+            updateToggleIcon(savedTheme);
+        })();
 
         // ─── Shortcuts Modal ───
         function showShortcutsModal() {
@@ -1765,15 +2086,30 @@
 
         async function handleSearch(initialQuery = null) {
             const input = document.getElementById('search-input');
-            const query = initialQuery || input.value.trim();
+            let query = initialQuery || input.value.trim();
             if (!query) return;
 
-            // Clear input immediately
-            input.value = '';
-            updateCharCounter(input);
-            input.style.height = '';
+            // Multi-question Splitter (and / ? / multiple sentences)
+            // Trigger ONLY if not already in a recursive call
+            if (!initialQuery && query.length > 30) {
+                // Split by ? that aren't at the very end only
+                const parts = query.split('?').filter(p => p.trim().length > 5);
+                if (parts.length > 1) {
+                    input.value = '';
+                    updateCharCounter(input);
+                    for (let p of parts) {
+                        await handleSearch(p.trim() + '?');
+                    }
+                    return;
+                }
+            }
 
-            console.log('🚀 MindX Dashboard v2.0 - Stream Fix Active');
+            // Clear input
+            if (!initialQuery) {
+                input.value = '';
+                updateCharCounter(input);
+                input.style.height = '';
+            }
 
             const maxSources = 10; // Hardcoded default
             const container = document.getElementById('chat-container');
@@ -1898,8 +2234,12 @@
                                     }
                                 } else if (data.type === 'metadata') {
                                     currentSources = data.sources || [];
+                                    const conf = data.confidence_details || {};
+                                    const reason = conf.reason || 'Verified based on source credibility & consensus';
+                                    const conflicts = conf.conflicts ? `\nConflicts: ${conf.conflicts}` : '';
+
                                     document.getElementById('ai-status').innerHTML = `
-                                        <div class="flex items-center gap-1" data-tooltip="${Math.round((data.confidence || 0.85) * 100)}% verified based on source credibility & consensus">
+                                        <div class="flex items-center gap-1" data-tooltip="${reason}${conflicts}">
                                             <span class="material-symbols-outlined text-primary text-[14px]">verified</span>
                                             ${Math.round((data.confidence || 0.85) * 100)}% Confirmed
                                             <span class="material-symbols-outlined text-[12px] opacity-50 ml-1">info</span>
@@ -1928,7 +2268,10 @@
 
                 // ─── Finalize AI bubble ───
                 // Remove cursor
-                aiDiv.innerHTML = `<div class="markdown-body" data-raw="${encodeURIComponent(fullAnswer)}">${formatContent(fullAnswer)}</div>`;
+                const readingTime = Math.max(1, Math.ceil(fullAnswer.trim().split(/\s+/).length / 200));
+                const readingTimeHtml = `<span class="text-[10px] text-slate-500 mt-2 block">${readingTime} min read</span>`;
+
+                aiDiv.innerHTML = `<div class="markdown-body" data-raw="${encodeURIComponent(fullAnswer)}">${formatContent(fullAnswer)}</div>${readingTimeHtml}`;
 
                 // Add inline source chips
                 if (currentSources.length > 0) {
@@ -1992,9 +2335,18 @@
                 try { domain = s.url ? new URL(s.url).hostname.replace('www.', '') : (s.source || 'source'); } catch (e) { }
                 const favicon = s.url ? `<img src="https://www.google.com/s2/favicons?domain=${domain}&sz=12" width="12" height="12" style="border-radius:2px" onerror="this.style.display='none'">` : '';
                 const title = (s.title || domain).slice(0, 28);
-                return `<a href="${s.url || '#'}" target="_blank" rel="noopener" class="source-chip" data-index="${i + 1}" title="${s.title || ''}">\n                    ${favicon}<span class="chip-num">${i + 1}</span><span class="truncate">${title}</span>\n                </a>`;
+
+                // Reliability badge
+                let reliability = '';
+                const score = s.credibility_score || 0.55;
+                if (score >= 0.9) reliability = '<span class="material-symbols-outlined text-[10px] text-primary" title="Scholarly/Academic">school</span>';
+                else if (score >= 0.75) reliability = '<span class="material-symbols-outlined text-[10px] text-blue-400" title="Official/News">verified</span>';
+
+                return `<a href="${s.url || '#'}" target="_blank" rel="noopener" class="source-chip" data-index="${i + 1}" title="${s.title || ''}">
+                    ${favicon}${reliability}<span class="chip-num">${i + 1}</span><span class="truncate">${title}</span>
+                </a>`;
             }).join('');
-            return `<div class="sources-row"><span class="sources-label">🔍 ${sources.length} source${sources.length !== 1 ? 's' : ''}</span>${chips}</div>`;
+            return `<div class="sources-row shadow-sm"><span class="sources-label">🔍 ${sources.length} source${sources.length !== 1 ? 's' : ''}</span>${chips}</div>`;
         }
 
         // ─── Message Action Buttons ───
@@ -2039,8 +2391,20 @@
                 // Find the user message before this AI message
                 const prev = aiDiv.previousElementSibling;
                 if (prev && prev.classList.contains('user-message')) {
-                    document.getElementById('search-input').value = prev.textContent;
+                    const originalQuestion = prev.textContent;
+
+                    // Remove both from UI
+                    prev.remove();
                     aiDiv.remove();
+
+                    // Remove last two messages (User + AI) from local chat object
+                    if (currentChatMessages.length >= 2) {
+                        currentChatMessages.splice(-2, 2);
+                        // Force update persistence
+                        updateLastMessage(currentSessionId, currentChatMessages.length > 0 ? currentChatMessages[currentChatMessages.length - 1].content : '');
+                    }
+
+                    document.getElementById('search-input').value = originalQuestion;
                     handleSearch();
                 }
             };
@@ -2515,6 +2879,9 @@
             if (q) {
                 document.getElementById('search-input').value = q;
                 handleSearch();
+            } else {
+                // ALWAYS start fresh on login — never restore last chat
+                startNewChat();
             }
         });
 

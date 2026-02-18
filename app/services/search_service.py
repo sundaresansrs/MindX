@@ -7,8 +7,10 @@ import asyncio
 import httpx  # type: ignore
 import re
 import logging
+import re
 from typing import List, Dict, Optional, Any, Callable
 from dataclasses import dataclass, field
+from langdetect import detect, LangDetectException # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +66,69 @@ def get_credibility_score(url: str) -> tuple:
         if site in domain:
             return 0.50, "Community"
     return 0.55, "General Web"
+
+
+def is_english_content(text: str) -> bool:
+    """Strictly filter non-English content."""
+    if not text or len(text.strip()) < 20:
+        return False
+    try:
+        lang = detect(text)
+        return lang == 'en'
+    except LangDetectException:
+        return True  # keep if detection fails
+
+
+def filter_results(results: List[Dict]) -> List[Dict]:
+    """
+    Remove non-English results, low quality domains,
+    and results with no snippet.
+    """
+    BLOCKED_DOMAINS = [
+        'zhihu.com', 'baidu.com', 'weibo.com', 'qq.com',
+        'taobao.com', 'bilibili.com', 'sina.com.cn',
+        'tieba.baidu.com', '163.com', 'sohu.com',
+        'douban.com', 'xiaohongshu.com'
+    ]
+
+    filtered = []
+    for r in results:
+        url = r.get('url', '').lower()
+        snippet = r.get('snippet', '')
+        title = r.get('title', '')
+
+        # Block specific domains
+        if any(domain in url for domain in BLOCKED_DOMAINS):
+            logger.info(f"🚫 Blocked domain: {url}")
+            continue
+
+        # Block non-English content
+        combined = (snippet + " " + title).lower()
+        
+        # Aggressive check for common non-English characters (Chinese, Japanese, Korean, Cyrillic)
+        non_en_patterns = [
+            r'[\u4e00-\u9fff]', # Chinese
+            r'[\u3040-\u30ff]', # Japanese
+            r'[\uac00-\ud7af]', # Korean
+            r'[\u0400-\u04ff]'  # Cyrillic
+        ]
+        if any(re.search(pattern, combined) for pattern in non_en_patterns):
+            logger.info(f"🚫 Non-English characters detected, filtering: {title[:40]}")
+            continue
+
+        if not is_english_content(combined):
+            logger.info(f"🚫 Langdetect non-English filtered: {title[:40]}")
+            continue
+
+        # Block results with no snippet or very short ones
+        if len(snippet.strip()) < 30:
+            logger.info(f"🚫 No snippet or too short, skipping: {title[:40]}")
+            continue
+
+        filtered.append(r)
+
+    logger.info(f"✅ {len(filtered)}/{len(results)} results passed filter")
+    return filtered
 
 
 # ============================================================
@@ -242,7 +307,7 @@ class SearchService:
 
     # ─── Main Search Entry Point ─────────────────────────────────────────────
 
-    async def search_web(self, query: str, max_results: int = MAX_RESULTS, deep_fetch: bool = True) -> List[Dict]:
+    async def search_web(self, query: str, max_results: int = MAX_RESULTS, deep_fetch: bool = True, max_full_pages: Optional[int] = None) -> List[Dict]:
         """
         Main search: SearXNG → DuckDuckGo fallback → Wikipedia → Jina deep fetch.
         Returns list of source dicts sorted by credibility.
@@ -266,16 +331,18 @@ class SearchService:
             wiki_results = await self._search_wikipedia(query, client)
             all_results.extend(wiki_results)
 
-            # Deduplicate and sort by credibility
+            # Deduplicate and filter results
             all_results = self.filter_chinese_results(all_results)
+            all_results = filter_results(all_results)
             unique = self.deduplicate_sources(all_results)
             unique.sort(key=lambda x: x.get("credibility_score", 0.5), reverse=True)
 
             # Deep fetch full content for top results via Jina
             if deep_fetch and unique:
+                fetch_limit = max_full_pages if max_full_pages is not None else MAX_FULL_PAGES
                 fetch_tasks = [
                     self._fetch_full_content(r["url"], client)
-                    for r in unique[:MAX_FULL_PAGES]  # type: ignore
+                    for r in unique[:fetch_limit]  # type: ignore
                 ]
                 full_contents = await asyncio.gather(*fetch_tasks)
                 for i, content in enumerate(full_contents):
@@ -284,17 +351,21 @@ class SearchService:
                         logger.info(f"Jina fetched full content for: {unique[i]['title'][:50]}")
 
             return unique[:max_results]  # type: ignore
+        
+        return [] # Fallback
 
-    async def search_multiple_queries(self, queries: List[str], max_results_per_query: int = 10) -> List[Dict]:
+    async def search_multiple_queries(self, queries: List[str], max_results_per_query: int = 10, max_full_pages: Optional[int] = None) -> List[Dict]:
         """
         Search multiple queries in parallel and aggregate results.
         Used by the quality pipeline for expanded query search.
         """
-        tasks = [self.search_web(q, max_results=max_results_per_query, deep_fetch=False) for q in queries]
+        tasks = [self.search_web(q, max_results=max_results_per_query, deep_fetch=True, max_full_pages=max_full_pages) for q in queries]
         results_nested = await asyncio.gather(*tasks)
 
         all_results: List[Dict] = []
         for results in results_nested:
             all_results.extend(results)  # type: ignore
 
+        all_results = self.filter_chinese_results(all_results)
+        all_results = filter_results(all_results)
         return self.deduplicate_sources(all_results)  # type: ignore

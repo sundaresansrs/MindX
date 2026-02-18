@@ -35,10 +35,14 @@ class VectorService:
             else:
                 filters.append(Document.session_id == None) # Default to global/no-session
                 
+            # Use string representation and explicit cast to avoid operator errors
+            vec_str = "[" + ",".join(map(str, query_vec)) + "]"
+            from sqlalchemy import text
+            
             stmt = select(Document).where(
                 *filters
             ).order_by(
-                Document.embedding.cosine_distance(query_vec)
+                text(f"embedding <=> '{vec_str}'::vector")
             ).limit(limit)
             
             results = self.db.scalars(stmt).all()
@@ -58,6 +62,7 @@ class VectorService:
             
         except Exception as e:
             logger.error(f"Vector search failed: {e}")
+            self.db.rollback()
             return []
 
     async def ingest_document(self, content: str, user_id: Any, source_url: Optional[str] = None, session_id: Optional[str] = None) -> Document:

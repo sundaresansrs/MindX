@@ -3,6 +3,7 @@ import asyncio
 from itertools import islice
 from app.services.llm_service import LLMService # type: ignore
 from app.services.search_service import SearchService # type: ignore
+from app.services.query_intelligence import QueryIntelligence # type: ignore
 import logging
 import time
 from sqlalchemy.orm import Session # type: ignore
@@ -30,42 +31,51 @@ class QualityPipeline:
     # PASS 1 — RAW ANSWER GENERATION (SMART MODEL)
     # ════════════════════════════════════════════════
     PASS1_SYSTEM = """
-You are a research analyst for MindX AI. CITATION IS YOUR MOST IMPORTANT JOB.
+You are the Fact Synthesis Engine for MindX AI. Your role is purely objective.
+You are "Silent" — you have no personality, no greetings, and no meta-talk.
 
-STRICT RULES:
-- Write raw prose — do NOT format, do NOT use markdown.
-- Every single factual claim MUST have a citation immediately after it.
-- Format: fact [N] — the number goes RIGHT AFTER the fact, before punctuation.
-- Example: "Q-learning was developed in 1989 [1] and is widely used today [2]."
-- If a list item is a fact, it gets a citation: "Playing games like Go [3]"
-- Never summarize a source without citing it.
-- If sources conflict, mention both and cite both.
-- Write in English only — ignore any foreign language sources.
-- Never grouped citations at the end of paragraphs.
-- Keep the answer thorough and factual.
+CRITICAL INSTRUCTIONS:
+1. CITATION IS MANDATORY: Every single factual claim MUST have a citation immediatey after it using [N] format.
+2. RELEVANCE: If provided search results are irrelevant, ignore them and answer from internal knowledge using [General Knowledge]. Never mention the search results are missing.
+3. NO FORMATTING: Write in raw prose ONLY. No markdown, no bolding, no lists. That is the job of the next pass.
+4. ENGLISH ONLY: Strictly output in English.
+5. NO REPETITION: Do not repeat the user's question.
+6. CONFLICTS: If sources conflict, state both views and cite both.
+
+FACTUAL SYNTHESIS STYLE:
+"Primary research indicates X [1]. However, secondary analysis suggests Y [2]."
 """
 
     # ════════════════════════════════════════════════
     # PASS 2 — STRUCTURE & DISPLAY FORMATTING (SMART MODEL)
     # ════════════════════════════════════════════════
     PASS2_SYSTEM = """
-You are the display formatter for MindX AI. 
-HIGHEST PRIORITY RULE: Never delete, move, or modify any [N] citation. Every [N] from the raw answer must appear in your output in the same position.
+You are the Expert Presentation Layer for MindX AI. Your goal is to transform raw factual data into a premium, scannable, and highly professional response.
 
-FORMATTING RULES:
-1. TLDR LINE: Start with one italic summary sentence. Then add a blank line.
-2. PROSE PARAGRAPHS: Conversational prose, max 3-4 sentences per paragraph. Blank line between.
-3. HEADERS: 
-   - Any sentence that introduces a list MUST be a ## header or end with a colon.
-   - Section titles like "Applications" or "Popular Algorithms" must use ## header.
-4. BOLD: 
-   - Key technical terms and proper nouns must ALWAYS be wrapped in **bold**.
-   - Lead-in sentences like "Some popular algorithms include:" must be **bold**.
-5. CITATIONS: You MUST preserve every single [N] citation exactly where it appears. Never move or delete any.
-6. LISTS: Numbered for steps, bullets for features/comparisons. Default to prose.
-7. NEVER: list sources at end, use __1__, say "In conclusion", or repeat the question.
+USER INTENT: {intent}
 
-Return ONLY the formatted answer.
+PRESENTATION PRINCIPLES:
+1. DIRECTNESS: Start immediately with the answer. No padding, no filler.
+2. STRUCTURE: Use headers (##), bold terms, and lists to make the answer scannable.
+3. TLDR: Always include a 1-sentence italicized summary after the opening statement.
+4. NO CITATIONS: Do NOT include any [N] or __N__ markers. They will be handled by the UI.
+5. PREMIUM FORMATTING:
+   - Use `code blocks` for chemical formulas, math, or technical identifiers.
+   - Use markdown tables for comparisons.
+   - Use bolding for key entities and technical terms.
+   - Separate long paragraphs into smaller, digestible chunks.
+
+INTENT-SPECIFIC LAYOUTS:
+- factual/person/definition: Direct answer -> TLDR -> 2-3 deep paragraphs -> "Key Facts" list -> Bottom Line.
+- comparison: Summary -> TLDR -> Comparison Table -> Differentiating factors list.
+- howto: Summary -> TLDR -> Step-by-step numbered list -> Safety/Pro-tips block.
+- news/current: Summary -> TLDR -> Timeline or event summary -> Impact analysis.
+
+STRICT RULES:
+- Never use citation numbers.
+- Never repeat the question.
+- Never use generic AI phrasing like "As of my last update".
+- Maintain a highly sophisticated, expert tone (think Scientific American or The Economist).
 """
 
     # ════════════════════════════════════════════════
@@ -86,8 +96,23 @@ Rules: score (0-100), level (high/medium/low based on score). Deduct for foreign
     # FOLLOW-UP SUGGESTIONS (FAST MODEL)
     # ════════════════════════════════════════════════
     FOLLOWUP_SYSTEM = """
-Generate exactly 3 smart follow-up questions. Return ONLY a JSON array of 3 strings.
-Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"]
+You generate deep-dive follow-up questions for MindX AI.
+
+Your goal is to suggest 3 questions that help the user explore the topic 
+at a deeper level or from a complementary angle.
+
+STRICT RULES:
+1. Context-Specific: Suggestions MUST refer to specific entities or 
+   concepts mentioned in the provided answer.
+2. Deep Dive: Avoid generic "What else?" or "Tell me more" style.
+3. High Interest: Choose questions that a curious researcher would actually ask.
+4. Format: Return ONLY a JSON array of exactly 3 strings.
+
+Example:
+If answer is about "Oxidation of Iron", suggestions could be:
+["How does salinity affect the rate of iron oxidation?", 
+ "What are the common industrial methods for preventing rust?", 
+ "Can oxidation occur in a vacuum with other oxidizing agents?"]
 """
     
     def __init__(self, db: Session, use_reranking: bool = False):
@@ -95,6 +120,7 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
         self.llm_service = LLMService()
         self.search_service = SearchService()
         self.vector_service = VectorService(db)
+        self.query_intel = QueryIntelligence()
         self.use_reranking = use_reranking
 
         
@@ -122,35 +148,17 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
         """
         history = history or []
         
-        # Stage 0: Contextual Query Enhancement
-        # If there's history, rewrite the query to be standalone
-        enhanced_query = query
-        if history:
-            # Truncate history answers to keep the prompt lean and prevent hangs
-            slim_history = []
-            for h in history[-3:]: # type: ignore
-                slim_history.append({
-                    "query": h.get("query", ""),
-                    "answer": (h.get("answer", "")[:200] + "...") if len(h.get("answer", "")) > 200 else h.get("answer", "")
-                })
-
-            enhance_prompt = f"""Given the following conversation history and a follow-up question, rewrite the follow-up question to be a standalone search query.
-            If the question is already standalone, return it as is.
-            
-            History:
-            {slim_history}
-            
-            Follow-up: {query}
-            Standalone Query:"""
-            try:
-                llm_response = await self.llm_service.generate_response(enhance_prompt)
-                enhanced_query = str(llm_response).strip().strip('"')
-                logger.info(f"Enhanced Query: {enhanced_query}")
-            except Exception as e:
-                logger.error(f"Query enhancement failed: {e}")
-
-        query_to_search = enhanced_query
-
+        # Stage 0: Context Resolution & Semantic Analysis
+        # Resolve pronouns/references first
+        resolved_query = await self.query_intel.resolve_context_references(query, history)
+        
+        # Semantically analyze the resolved query
+        intelligence = await self.query_intel.analyze_query(resolved_query, history)
+        enhanced_query = resolved_query
+        
+        # If intelligence suggests optimized queries, use them
+        expanded_queries = intelligence.get("optimized_queries", [resolved_query])
+        
         start_time = time.time()
         
         try:
@@ -167,12 +175,14 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
                     }
                 }
             
-            # Stage 1: Query Enhancement
-            if not fast_mode:
-                logger.info("Stage 1: Query Enhancement")
-                expanded_queries = await self.expand_query(query)
-            else:
-                expanded_queries = [query]
+            # Stage 1: Expansion (already handled by Intelligence if not fast_mode)
+            if expanded_queries == [resolved_query]:
+                logger.info("Stage 1: One-shot Query Optimization")
+                optimized = await self.query_intel.optimize_query_for_search(resolved_query)
+                expanded_queries = [optimized]
+            elif not fast_mode:
+                logger.info("Stage 1: Multi-query Expansion")
+                expanded_queries = await self.expand_query(enhanced_query)
             
             # Stage 2: Multi-Source Retrieval (Web + Vector)
             logger.info("Stage 2: Multi-Source Retrieval")
@@ -233,18 +243,28 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
             # ════════════════════════════════════════════════
             
             # Pass 1: Accuracy (Silent)
-            logger.info("Pipeline Pass 1: Fact Extraction")
-            raw_answer = await self.llm_service.generate_response(
-                prompt=f"Context:\n{context}\n\nQuestion: {query}",
-                system_prompt=self.PASS1_SYSTEM,
+            is_relevant = await self.check_context_relevance(query, context)
+            if not is_relevant:
+                logger.warning("Search context irrelevant. Using model knowledge fallback.")
+                context = "The search results are unrelated. Answer from your own knowledge using [General Knowledge] citations."
+
+            messages = await self.llm_service.build_messages_with_history(
+                question=query,
+                context=context,
+                chat_history=history
+            )
+            
+            raw_answer = await self.llm_service.generate_chat_completion(
+                messages=messages,
                 model=self.llm_service.SMART_MODEL
             )
 
             # Pass 2 & 3 & Followups (Parallel)
             logger.info("Pipeline Pass 2 & 3: Formatting & Scoring")
+            intent = intelligence.get("intent", "factual")
             formatted_answer_task = self.llm_service.generate_response(
                 prompt=f"Raw answer to format:\n\n{raw_answer}",
-                system_prompt=self.PASS2_SYSTEM,
+                system_prompt=self.PASS2_SYSTEM.format(intent=intent),
                 model=self.llm_service.SMART_MODEL
             )
             confidence_task = self._pass3_score(query, raw_answer, sources_to_use)
@@ -308,37 +328,52 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
                 yield {"type": "token", "content": token}
             return
 
-        # Stage 0: Context Enhancement
-        enhanced_query = query
-        if history:
-            yield {"type": "status", "stage": 0, "content": "Analyzing conversation history..."}
-            
-            # Truncate history answers for Stage 0
-            slim_history = []
-            for h in history[-3:]: # type: ignore
-                slim_history.append({
-                    "query": h.get("query", ""),
-                    "answer": (h.get("answer", "")[:200] + "...") if len(h.get("answer", "")) > 200 else h.get("answer", "")
-                })
-
-            enhance_prompt = f"Given conversation history and follow-up, rewrite to standalone query.\nHistory: {slim_history}\nFollow-up: {query}\nStandalone Query:"
-            try:
-                # Add a smaller timeout specifically for context enhancement
-                llm_response = await asyncio.wait_for(self.llm_service.generate_response(enhance_prompt), timeout=10.0)
-                enhanced_query = str(llm_response).strip().strip('"')
-            except Exception as e:
-                logger.warning(f"Context enhancement failed, using original query: {e}")
-
+        # Stage 0: Intent & Context Analysis
+        yield {"type": "status", "stage": 0, "content": "Analyzing conversation intent..."}
+        
+        # Resolve pronouns/references first
+        resolved_query = await self.query_intel.resolve_context_references(query, history)
+        
+        # Semantically analyze the resolved query
+        intelligence = await self.query_intel.analyze_query(resolved_query, history)
+        enhanced_query = resolved_query
+        
+        # Personalization: If intelligence suggests optimized queries, use them
+        expanded_queries = intelligence.get("optimized_queries", [resolved_query])
+        
+        # Reliability: Determine deep fetch requirements
+        # If not fast_mode and query is factual/academic, fetch more content
+        deep_fetch_count = 5 if not fast_mode else 2
+        
         try:
-            # Stage 1: Expansion
-            if not fast_mode:
-                yield {"type": "status", "content": "Expanding search queries..." if not history else "Refining search queries..."}
+            # If search disabled, use LLM-only mode (existing behavior)
+            if not use_search:
+                yield {"type": "status", "stage": 0, "content": "Search disabled, using LLM-only mode..."}
+                async for token in self.llm_service.stream_response(query):
+                    yield {"type": "token", "content": token}
+                yield {
+                    "type": "metadata",
+                    "sources": [],
+                    "confidence": 0.5,
+                    "web_search_performed": False,
+                    "documents_found": False,
+                    "processing_time": time.time() - start_time
+                }
+                yield {"type": "final", "content": "Complete"}
+                return
+
+            # Stage 1: Expansion (already handled by Intelligence if not fast_mode)
+            if expanded_queries == [resolved_query]:
+                yield {"type": "status", "content": "Optimizing search intent..."}
+                optimized = await self.query_intel.optimize_query_for_search(resolved_query)
+                expanded_queries = [optimized]
+            elif not fast_mode:
+                # Fallback to older expansion if intelligence was too simple
+                yield {"type": "status", "content": "Expanding search queries..."}
                 expanded_queries = await self.expand_query(enhanced_query)
-            else:
-                expanded_queries = [enhanced_query]
             
-            # Stage 2: Parallel Retrieval
-            yield {"type": "status", "stage": 2, "content": "Parallelizing retrieval..."}
+            # Stage 2: Multi-Source Retrieval
+            yield {"type": "status", "stage": 2, "content": "Searching scholarly & web databases..."}
             
             web_task = self.search_service.search_multiple_queries(
                 expanded_queries, 
@@ -363,19 +398,20 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
                 yield {"type": "status", "stage": 2, "content": "Search slow; proceeding with limited results..."}
                 web_results, vector_results = [], [] # Fallback to empty if both timed out
             
-            # Stage 3: RRF (Ranking)
-            yield {"type": "status", "stage": 3, "content": "Applying neural ranking (RRF)..."}
+            # Stage 3: Neural Ranking (RRF)
+            yield {"type": "status", "stage": 3, "content": "Ranking results by credibility..."}
             ranked_results = self.apply_rrf([vector_results, web_results])
             sources_to_use = ranked_results[:max_sources]
             
-            # Stage 4: Chunking
-            yield {"type": "status", "stage": 4, "content": "Processing semantic chunks..."}
+            # Stage 4: Semantic Intelligence
+            yield {"type": "status", "stage": 4, "content": "Synthesizing multi-source evidence..."}
             chunks = self.semantic_chunk(sources_to_use)
+            context = "\n\n".join(chunks)
             
-            # Stage 5+6 (Consensus/Consistency - simplified for speed if fast_mode)
-            yield {"type": "status", "stage": 5, "content": "Sourcing intelligence..."}
+            # Stage 5+6 (Consensus/Consistency)
+            yield {"type": "status", "stage": 5, "content": "Checking factual consensus..."}
             
-            yield {"type": "status", "stage": 6, "content": "Finalizing verification..."}
+            yield {"type": "status", "stage": 6, "content": "Verifying multi-turn grounding..."}
             
             # Send initial metadata "packet" with source information
             logger.info(f"RAG Pipeline: Found {len(web_results)} web results, {len(vector_results)} vector results")
@@ -392,10 +428,19 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
             yield {"type": "status", "stage": 5, "content": "Analyzing and citing sources..."}
             
             # Pass 1: Silent Accuracy Generation
-            context = "\n\n".join(chunks[:12])
-            raw_answer = await self.llm_service.generate_response(
-                prompt=f"Context:\n{context}\n\nQuestion: {query}",
-                system_prompt=self.PASS1_SYSTEM,
+            is_relevant = await self.check_context_relevance(query, context)
+            if not is_relevant:
+                logger.warning("Search context irrelevant. Using model knowledge fallback.")
+                context = "The search results are unrelated. Answer from your own knowledge using [General Knowledge] citations."
+
+            messages = await self.llm_service.build_messages_with_history(
+                question=query,
+                context=context,
+                chat_history=history
+            )
+            
+            raw_answer = await self.llm_service.generate_chat_completion(
+                messages=messages,
                 model=self.llm_service.SMART_MODEL
             )
             
@@ -406,14 +451,22 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
             confidence_task = self._pass3_score(query, raw_answer, sources_to_use)
             followups_task = self._generate_followups(query, raw_answer)
 
+            intent = intelligence.get("intent", "factual")
             full_formatted = ""
             async for token in self.llm_service.stream_response(
                 prompt=f"Raw answer:\n\n{raw_answer}",
-                system_prompt=self.PASS2_SYSTEM,
+                system_prompt=self.PASS2_SYSTEM.format(intent=intent),
                 model=self.llm_service.SMART_MODEL
             ):
+                # Clean token if it contains a snippet of a citation bracket
+                # This is tricky mid-stream, so we'll just append and yield as is
+                # The prompt should prevent them, but strip_citations_from_display
+                # will be used for final verification and UI display fixes
                 full_formatted += token
                 yield {"type": "token", "content": token}
+
+            # Final clean-up of the formatted answer to ensure NO citations leak
+            full_formatted = self.strip_citations_from_display(full_formatted)
 
             # Repair dropped citations after stream (for metadata/final answer logic)
             # Note: We can't easily repair the live stream tokens, but we can fix the final result
@@ -440,20 +493,31 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
 
     def apply_rrf(self, results_groups: List[List[Dict]], k: int = 60) -> List[Dict]:
         """
-        Reciprocal Rank Fusion (RRF) to merge multiple ranked lists.
-        Higher k reduces importance of top results. Default 60 is common.
+        Reciprocal Rank Fusion (RRF) with Credibility Weighting.
+        Boosts academic and official sources.
         """
-        scores = {}
-        docs = {}
+        scores: Dict[str, float] = {}
+        docs: Dict[str, Dict] = {}
         
         for group in results_groups:
             for rank, doc in enumerate(group):
-                # Use URL or Title as ID
-                doc_id = doc.get("url") or doc.get("href") or doc.get("title")
+                doc_id = str(doc.get("url") or doc.get("href") or doc.get("title"))
                 if not doc_id: continue
                 
-                score = 1.0 / (k + rank + 1)
-                scores[doc_id] = scores.get(doc_id, 0.0) + score
+                # Base RRF score
+                base_score = 1.0 / (k + rank + 1)
+                
+                # Apply credibility weight
+                # SearchService provides credibility_score (0.5 to 0.95)
+                # We normalize and amplify this
+                cred_score = float(doc.get("credibility_score", 0.55))
+                weight = 1.0
+                if cred_score >= 0.90: weight = 2.0  # Academic/Scholar
+                elif cred_score >= 0.75: weight = 1.3 # Official/News
+                
+                final_score = base_score * weight
+                scores[doc_id] = scores.get(doc_id, 0.0) + final_score
+                
                 if doc_id not in docs:
                     docs[doc_id] = doc
         
@@ -608,6 +672,21 @@ Final Answer:"""
             logger.error(f"Consistency check failed: {e}")
             return answers[0] if answers else ""
 
+    def strip_citations_from_display(self, text: str) -> str:
+        """
+        Remove all inline citation markers from the displayed answer.
+        This is a critical cleanup pass to ensure premium look.
+        """
+        import re
+        # Remove [1], [2], [1,2], [1-3] style
+        text = re.sub(r'\s*\[\d+(?:,\s*\d+)*(?:-\d+)*\]', '', text)
+        # Remove __1__, __2__ style  
+        text = re.sub(r'\s*__\d+__', '', text)
+        # Remove floating numbers that might be leaked citations
+        text = re.sub(r'(?<=\s)\d+(?=\s|[.,!?]|$)', '', text)
+        return text.strip()
+        return text.strip()
+
     def verify_citations(self, raw: str, formatted: str) -> str:
         """
         If Pass 2 dropped any citations, re-inject them at the bottom as a safety measure.
@@ -627,6 +706,23 @@ Final Answer:"""
             formatted += repair_note
         
         return formatted
+
+
+    async def check_context_relevance(self, question: str, context: str) -> bool:
+        """
+        Quick check: are these search results actually relevant
+        to the question? If not, skip RAG and use model knowledge.
+        """
+        try:
+            context_snippet = "".join(islice(context, 1000))
+            response = await self.llm_service.generate_response(
+                prompt=f"Are these search results relevant to answering: '{question}'?\n\nResults preview: {context_snippet}",
+                system_prompt="Answer only 'yes' or 'no'.",
+                model=self.llm_service.FAST_MODEL
+            )
+            return 'yes' in response.lower()
+        except:
+            return True # Default to yes if LLM check fails
 
     async def verify_facts(self, answer: str, sources: List[Dict]) -> Dict:
         """

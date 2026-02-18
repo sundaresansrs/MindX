@@ -74,14 +74,14 @@ async def test_stream():
                             break
                         print(f"Chunk {chunk_count}: {data[:100]}...")
                         
-                        if chunk_count >= 5:  # Just show first 5 chunks
+                        if chunk_count >= 20:  # Show more chunks
                             print("\n✅ Stream is working! (stopping early)")
                             break
             
             if chunk_count == 0:
                 print("❌ No data received from stream")
             else:
-                print(f"\n✅ Received {chunk_count} chunks")
+                print(f"\n✅ Total chunks received: {chunk_count}")
                 
     except Exception as e:
         print(f"❌ Error: {e}")

@@ -1,4 +1,4 @@
-import requests
+import httpx
 import time
 
 BASE_URL = "http://localhost:8000"
@@ -12,12 +12,14 @@ def get_token():
         "password": "password123",
         "account_type": "personal"
     }
-    s_resp = requests.post(f"{BASE_URL}/auth/signup", json=payload)
-    print(f"Signup response: {s_resp.status_code} - {s_resp.text}")
+    with httpx.Client() as client:
+        s_resp = client.post(f"{BASE_URL}/auth/signup", json=payload)
+        print(f"Signup response: {s_resp.status_code} - {s_resp.text}")
     
     print("Logging in to get token...")
-    resp = requests.post(f"{BASE_URL}/auth/login", data={"username": email, "password": "password123"})
-    print(f"Login response: {resp.status_code} - {resp.text}")
+    with httpx.Client() as client:
+        resp = client.post(f"{BASE_URL}/auth/login", data={"username": email, "password": "password123"})
+        print(f"Login response: {resp.status_code} - {resp.text}")
     if resp.status_code == 200:
         return resp.json()["access_token"]
 
@@ -38,7 +40,8 @@ def test_hybrid_flow():
         "text": "The secret code for MindX is ALPHA-DELTA-NINER. This information is only available in the local vector store.",
         "url": "internal://test-doc"
     }
-    requests.post(f"{BASE_URL}/documents/ingest", json=ingest_payload)
+    with httpx.Client() as client:
+        client.post(f"{BASE_URL}/documents/ingest", json=ingest_payload)
     
     # Wait for DB commit/reload
     time.sleep(1)
@@ -49,7 +52,8 @@ def test_hybrid_flow():
         "query": "What is the secret code for MindX?",
         "use_search": True
     }
-    resp = requests.post(f"{BASE_URL}/qa/search", json=qa_payload, headers=headers)
+    with httpx.Client(timeout=30.0) as client:
+        resp = client.post(f"{BASE_URL}/qa/search", json=qa_payload, headers=headers)
     
     if resp.status_code == 200:
         result = resp.json()
@@ -64,6 +68,8 @@ def test_hybrid_flow():
             print("FAILURE: Hybrid RAG did not retrieve local document.")
     else:
         print(f"QA Failed: {resp.status_code} - {resp.text}")
+        with open("verification_result.txt", "w") as f:
+            f.write(resp.text)
 
 if __name__ == "__main__":
     test_hybrid_flow()
