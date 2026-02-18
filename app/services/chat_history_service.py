@@ -172,6 +172,16 @@ class ChatHistoryService:
         self.db.commit()
         return deleted > 0
 
+    # ─── Update answer specifically (for streaming sync) ─────────────────────
+
+    def update_answer(self, record_id: int, answer: str, source: Optional[str] = None):
+        data = {"answer": answer, "updated_at": func.now()}
+        if source:
+            data["source"] = source
+            
+        self.db.query(ChatHistory).filter(ChatHistory.id == record_id).update(data)
+        self.db.commit()
+
     # ─── Check if session has any messages (for auto-title trigger) ───────────
 
     def is_first_message(self, user_id: int, session_id: str) -> bool:

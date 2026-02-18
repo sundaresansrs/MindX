@@ -90,13 +90,23 @@ class CompanyPipeline:
         max_sources: int = 15,
         fast_mode: bool = False,
     ):
-        """Stream search results and save history at the end."""
+        """Stream search results and save history incrementally."""
         is_first = self.history.is_first_message(self.user.id, session_id) if session_id else False
 
         history_records = []
         if session_id:
             history_records = self.history.get_by_session(self.user.id, session_id)
         history_context = [{"query": r.query, "answer": r.answer} for r in history_records]
+
+        # LAYER 2 PERSISTENCE: Save record immediately so it exists in history if user refreshes mid-stream
+        placeholder_answer = "..." 
+        record = self.history.save(
+            user_id=self.user.id,
+            query=query,
+            answer=placeholder_answer,
+            source="0",
+            session_id=session_id,
+        )
 
         full_answer = ""
         metadata = {}
@@ -116,13 +126,12 @@ class CompanyPipeline:
                 metadata = chunk
             yield chunk
 
+        # Update record with final response
         if full_answer:
-            self.history.save(
-                user_id=self.user.id,
-                query=query,
+            self.history.update_answer(
+                record_id=record.id,
                 answer=full_answer,
                 source=str(len(metadata.get("sources", []))),
-                session_id=session_id,
             )
             if is_first and session_id:
                 asyncio.create_task(self._generate_title(session_id, query))
