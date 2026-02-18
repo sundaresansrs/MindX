@@ -176,6 +176,68 @@
             position: relative;
         }
 
+        .ai-message * {
+            box-sizing: border-box;
+        }
+
+        .ai-message p {
+            margin: 0 0 12px 0;
+        }
+
+        .ai-message p:last-child {
+            margin-bottom: 0;
+        }
+
+        .ai-message li>p {
+            margin: 0;
+            /* kill p margin inside li — list spacing fix */
+        }
+
+        .ai-message ul,
+        .ai-message ol {
+            margin: 8px 0 12px 0;
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .ai-message li {
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+        }
+
+        .ai-message h2 {
+            font-size: 17px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 20px 0 8px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            letter-spacing: -0.3px;
+        }
+
+        .ai-message h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #e0e0f0;
+            margin: 16px 0 6px 0;
+        }
+
+        .ai-message strong {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        /* Lead-in sentences before lists */
+        .ai-message p:has(+ ul),
+        .ai-message p:has(+ ol) {
+            color: #c0c0d0;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
         /* Message hover actions */
         .msg-actions {
             display: flex;

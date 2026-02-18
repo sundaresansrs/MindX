@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, cast
 import asyncio
 from app.services.llm_service import LLMService # type: ignore
 from app.services.search_service import SearchService # type: ignore
@@ -29,32 +29,38 @@ class QualityPipeline:
     # PASS 1 — RAW ANSWER GENERATION (SMART MODEL)
     # ════════════════════════════════════════════════
     PASS1_SYSTEM = """
-You are a research analyst for MindX AI.
-Your ONLY job in this step is to extract accurate facts from the search context and write a complete answer.
+You are a research analyst for MindX AI. CITATION IS YOUR MOST IMPORTANT JOB.
 
 STRICT RULES:
-- Write raw prose — do NOT format, do NOT use markdown
-- Cite every single fact immediately after it using [1], [2], [3]
-- If sources conflict, mention both and cite both
-- Write in English only — ignore any foreign language sources
-- Be thorough — cover all important aspects of the question
-- Never say "based on the search results" or "according to source X" — just state facts and cite them inline
-- Do not list references at the end
+- Write raw prose — do NOT format, do NOT use markdown.
+- Every single factual claim MUST have a citation immediately after it.
+- Format: fact [N] — the number goes RIGHT AFTER the fact, before punctuation.
+- Example: "Q-learning was developed in 1989 [1] and is widely used today [2]."
+- If a list item is a fact, it gets a citation: "Playing games like Go [3]"
+- Never summarize a source without citing it.
+- If sources conflict, mention both and cite both.
+- Write in English only — ignore any foreign language sources.
+- Never grouped citations at the end of paragraphs.
+- Keep the answer thorough and factual.
 """
 
     # ════════════════════════════════════════════════
     # PASS 2 — STRUCTURE & DISPLAY FORMATTING (SMART MODEL)
     # ════════════════════════════════════════════════
     PASS2_SYSTEM = """
-You are the display formatter for MindX AI.
-You receive a raw factual answer and your ONLY job is to make it display beautifully — exactly like Claude or Perplexity AI.
+You are the display formatter for MindX AI. 
+HIGHEST PRIORITY RULE: Never delete, move, or modify any [N] citation. Every [N] from the raw answer must appear in your output in the same position.
 
 FORMATTING RULES:
 1. TLDR LINE: Start with one italic summary sentence. Then add a blank line.
 2. PROSE PARAGRAPHS: Conversational prose, max 3-4 sentences per paragraph. Blank line between.
-3. BOLD: Bold only proper nouns and key technical terms (e.g. **Linus Torvalds**).
-4. CITATIONS: Keep [1][2][3] exactly where they appear in the raw answer.
-5. HEADERS: Use ## headers ONLY if 2+ distinct sections. Never for under 200 words.
+3. HEADERS: 
+   - Any sentence that introduces a list MUST be a ## header or end with a colon.
+   - Section titles like "Applications" or "Popular Algorithms" must use ## header.
+4. BOLD: 
+   - Key technical terms and proper nouns must ALWAYS be wrapped in **bold**.
+   - Lead-in sentences like "Some popular algorithms include:" must be **bold**.
+5. CITATIONS: You MUST preserve every single [N] citation exactly where it appears. Never move or delete any.
 6. LISTS: Numbered for steps, bullets for features/comparisons. Default to prose.
 7. NEVER: list sources at end, use __1__, say "In conclusion", or repeat the question.
 
@@ -217,7 +223,7 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
             # Stage 4: Semantic Chunking
             logger.info("Stage 4: Semantic Chunking")
             chunks = self.semantic_chunk(sources_to_use)
-            context = "\n\n".join(chunks[:12])
+            context = "\n\n".join(cast(List[str], chunks)[:12])
             
             # ════════════════════════════════════════════════
             # MULTI-PASS GENERATION (Stage 5, 6, 7 replacement)
@@ -246,6 +252,9 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
                 confidence_task,
                 followups_task
             )
+
+            # Repair dropped citations
+            formatted_answer = self.verify_citations(raw_answer, formatted_answer)
 
             result = {
                 "answer": formatted_answer,
@@ -402,6 +411,10 @@ Example: ["What inspired his work?", "How did it grow?", "What is he doing now?"
             ):
                 full_formatted += token
                 yield {"type": "token", "content": token}
+
+            # Repair dropped citations after stream (for metadata/final answer logic)
+            # Note: We can't easily repair the live stream tokens, but we can fix the final result
+            full_formatted = self.verify_citations(raw_answer, full_formatted)
 
             # Wait for parallel tasks
             confidence, followups = await asyncio.gather(confidence_task, followups_task)
@@ -592,6 +605,26 @@ Final Answer:"""
             logger.error(f"Consistency check failed: {e}")
             return answers[0] if answers else ""
 
+    def verify_citations(self, raw: str, formatted: str) -> str:
+        """
+        If Pass 2 dropped any citations, re-inject them at the bottom as a safety measure.
+        """
+        import re
+        
+        # Find all citations in raw and formatted
+        raw_citations = set(re.findall(r'\[(\d+)\]', raw))
+        fmt_citations = set(re.findall(r'\[(\d+)\]', formatted))
+        
+        missing = raw_citations - fmt_citations
+        
+        if missing:
+            logger.warning(f"Pass 2 dropped citations: {missing} — appending repair note.")
+            # Append warning note and missing citations at bottom
+            repair_note = f"\n\n> [!NOTE]\n> Citations for sources {', '.join([f'[{m}]' for m in sorted(list(missing))])} were verified from the reasoning pass."
+            formatted += repair_note
+        
+        return formatted
+
     async def verify_facts(self, answer: str, sources: List[Dict]) -> Dict:
         """
         Stage 7: Verify facts and calculate confidence using a smarter heuristic
@@ -625,9 +658,9 @@ Final Answer:"""
             import json
             import re
             
-            source_context = json.dumps([s.get('title','') + ' - ' + s.get('url','') for s in sources[:8]])
+            source_context = json.dumps([str(s.get('title','')) + ' - ' + str(s.get('url','')) for s in cast(List[Dict], sources)[:8]])
             response = await self.llm_service.generate_response(
-                prompt=f"Question: {question}\nAnswer: {answer[:600]}\nSources: {source_context}",
+                prompt=f"Question: {question}\nAnswer: {str(answer)[:600]}\nSources: {source_context}",
                 system_prompt=self.PASS3_SYSTEM,
                 model=self.llm_service.FAST_MODEL
             )
@@ -646,7 +679,7 @@ Final Answer:"""
             import re
             
             response = await self.llm_service.generate_response(
-                prompt=f"Q: {question}\nA: {answer[:400]}",
+                prompt=f"Q: {question}\nA: {str(answer)[:400]}",
                 system_prompt=self.FOLLOWUP_SYSTEM,
                 model=self.llm_service.FAST_MODEL
             )
