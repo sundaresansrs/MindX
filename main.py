@@ -68,16 +68,7 @@ app.include_router(documents.router, prefix="/api", tags=["Documents"])
 app.include_router(chats.router, prefix="/chats", tags=["Chats"])
 app.include_router(voice.router, prefix="/api", tags=["Voice"])
 app.include_router(upload.router, prefix="/api", tags=["Upload"])
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# API routers
-app.include_router(auth.router)
-app.include_router(qa.router)
-app.include_router(documents.router)
-app.include_router(chats.router)
-app.include_router(voice.router)
 
 @app.on_event("startup")
 def on_startup():

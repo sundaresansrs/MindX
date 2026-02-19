@@ -13,5 +13,10 @@
     "typeCheckingMode": "basic",
     "useLibraryCodeForTypes": true,
     "reportMissingImports": true,
-    "reportMissingTypeStubs": false
+    "reportMissingTypeStubs": false,
+    "extraPaths": [
+        ".",
+        "./app",
+        "./.venv/Lib/site-packages"
+    ]
 }

@@ -1,9 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from app.services.file_processor import FileProcessor
-from app.services.vector_service import VectorService
-from app.services.web_search import WebSearchService
-from app.services.groq_client import GroqClient
-import shutil
+from app.services.llm_service import LLMService
 import os
 import uuid
 import logging
@@ -119,13 +116,14 @@ Instructions:
 
     # 3. Call LLM
     try:
-        response = await GroqClient.chat_completion(
-            messages=[{"role": "user", "content": system_prompt}],
-            model=model,
-            temperature=0.3
+        llm = LLMService()
+        answer = await llm.generate_response(
+            prompt=system_prompt,
+            model=model
         )
+            
         return {
-            "answer": response["content"],
+            "answer": answer,
             "sources": [{"source": f"File: {file_data['filename']}", "snippet": "Context from uploaded file"}]
         }
     except Exception as e:

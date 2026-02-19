@@ -11,7 +11,7 @@ from app.schemas import UserCreate, Token
 from app.utils.security import hash_password, verify_password
 from app.utils.jwt import create_access_token, oauth2_scheme, SECRET_KEY, ALGORITHM
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(tags=["auth"])
 
 
 @router.post("/signup", response_model=Token)
