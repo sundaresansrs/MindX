@@ -8,6 +8,7 @@ pgvector==0.4.2
 python-jose[cryptography]==3.5.0
 bcrypt==5.0.0
 python-multipart==0.0.22
+aiofiles==24.1.0
 requests==2.32.5
 python-dotenv==1.2.1
 duckduckgo_search==8.1.1

@@ -85,44 +85,76 @@ def filter_results(results: List[Dict]) -> List[Dict]:
     and results with no snippet.
     """
     BLOCKED_DOMAINS = [
+        # Chinese Portals & Search
         'zhihu.com', 'baidu.com', 'weibo.com', 'qq.com',
         'taobao.com', 'bilibili.com', 'sina.com.cn',
         'tieba.baidu.com', '163.com', 'sohu.com',
+        'toutiao.com', 'pan.baidu.com', 'zhuanlan.zhihu.com',
+        
+        # Chinese Tech Spam / Aggregators
         'csdn.net', 'jianshu.com', 'douban.com',
-        'xiaohongshu.com'
+        'xiaohongshu.com', 'gitee.com', 'iteye.com',
+        'oschina.net', 'cnblogs.com', '51cto.com',
+        'aliyun.com', 'tencent.com', 'juejin.cn',
+        
+        # Generic Spam / Low Quality
+        'pinterest.com', 'softonic.com', 'cnet.com' 
     ]
 
     from langdetect import detect # type: ignore
 
     filtered = []
+    seen_domains = set()
+    
     for r in results:
         url = r.get('url', '').lower()
         snippet = r.get('snippet', '')
         title = r.get('title', '')
+        
+        if not url: continue
 
-        # 1. Block Chinese domains
+        # 1. Block known spam/non-English domains
         if any(domain in url for domain in BLOCKED_DOMAINS):
             logger.info(f"🚫 Blocked domain: {url}")
             continue
+        
+        # Extra check for .cn domains
+        if ".cn/" in url or url.endswith(".cn"):
+            logger.info(f"🚫 Blocked .cn domain: {url}")
+            continue
 
-        # 2. Block non-English content
+        # 2. Block non-English content (Chinese/Hindi/etc tokens)
+        if re.search(r'[\u4e00-\u9fff]', title + snippet): # Chinese
+            logger.info(f"🚫 Blocked Chinese characters in: {title[:30]}")
+            continue
+            
         try:
             # Combine title and snippet for better detection
             combined = (title + " " + snippet).strip()
-            if len(combined) > 30:
+            if len(combined) > 40:
                 if detect(combined) != 'en':
-                    logger.info(f"🚫 Detected non-English content: {title[:40]}")
+                    logger.info(f"🚫 Detected non-English content ({detect(combined)}): {title[:40]}")
                     continue
         except:
             pass
 
-        # 3. Block results with no snippet
+        # 3. Block results with tiny snippets
         if len(snippet.strip()) < 30:
             continue
+            
+        # 4. Domain-based Deduplication (keep first found)
+        try:
+            match = re.search(r'https?://([^/]+)', url)
+            domain = match.group(1).lower() if match else url
+            if domain in seen_domains:
+                continue
+            seen_domains.add(domain)
+        except:
+            pass
 
         filtered.append(r)
 
-    logger.info(f"✅ {len(filtered)}/{len(results)} results passed English filter")
+    logger.info(f"✅ {len(filtered)}/{len(results)} results passed filters")
     return filtered
 
 
@@ -187,24 +219,19 @@ class SearchService:
             from duckduckgo_search import DDGS  # type: ignore
 
             def sync_search() -> List[Dict]:
-                with DDGS() as ddgs:  # type: ignore
-                    # Newer ddgs versions use 'text' with different parameters or just changed internal structure
-                    # The warning suggested 'ddgs' package, let's ensure we use it correctly
-                    results = []
-                    search_results = ddgs.text(
+                with DDGS() as ddgs:
+                    # Simplify arguments for better compatibility
+                    results = ddgs.text(
                         query,
-                        region='wt-wt', 
-                        safesearch='off',
                         max_results=max_results
                     )
-                    return list(search_results)
+                    return list(results)
 
             fn: Callable[[], List[Dict]] = sync_search
-            raw: List[Dict] = await asyncio.wait_for(asyncio.to_thread(fn), timeout=15.0)  # type: ignore
+            raw: List[Dict] = await asyncio.wait_for(asyncio.to_thread(fn), timeout=15.0)
             
             results = []
             for item in raw:
-                # Key names might have changed: 'href' -> 'href', 'body' -> 'body'
                 url = item.get("href") or item.get("link", "")
                 title = item.get("title", "")
                 snippet = item.get("body") or item.get("snippet", "")
@@ -261,10 +288,15 @@ class SearchService:
             "format": "json",
             "srprop": "snippet"
         }
+        # Wikipedia requires a proper User-Agent
+        headers = {
+            "User-Agent": "MindX-AI/1.0 (Research Assistant; contact@example.com)"
+        }
         try:
             response = await client.get(
                 "https://en.wikipedia.org/w/api.php",
                 params=params,
+                headers=headers,
                 timeout=REQUEST_TIMEOUT
             )
             data = response.json()
@@ -288,14 +320,24 @@ class SearchService:
     # ─── Deduplication ───────────────────────────────────────────────────────
 
     def deduplicate_sources(self, results: List[Dict]) -> List[Dict]:
-        seen_urls = set()
+        seen_domains = set()
         deduplicated: List[Dict] = []
         for result in results:
             url = result.get("url", "")
-            if url and url not in seen_urls:
-                seen_urls.add(url)
+            if not url: continue
+            
+            try:
+                # Extract domain
+                match = re.search(r'https?://([^/]+)', url)
+                domain = match.group(1).lower() if match else url
+                
+                if domain not in seen_domains:
+                    seen_domains.add(domain)
+                    deduplicated.append(result)
+            except:
                 deduplicated.append(result)
-        return deduplicated  # type: ignore
+                
+        return deduplicated
 
     def filter_chinese_results(self, results: List[Dict]) -> List[Dict]:
         """Strictly remove results with Chinese characters or .cn domains."""

@@ -20,6 +20,7 @@ class ChatHistoryService:
         source: str,
         session_id: Optional[str] = None,
         title: Optional[str] = None,
+        confidence: Optional[int] = None,
     ):
         sid: Any = session_id
         if session_id and isinstance(session_id, str):
@@ -28,12 +29,19 @@ class ChatHistoryService:
             except ValueError:
                 sid = None
 
-        # Count existing messages in this session to update message_count
+        # Count existing messages and versions
         existing_count = 0
+        latest_version = 0
         if sid:
             existing_count = (
                 self.db.query(func.count(ChatHistory.id))
                 .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == sid)
+                .scalar()
+                or 0
+            )
+            latest_version = (
+                self.db.query(func.max(ChatHistory.version))
+                .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == sid, ChatHistory.query == query)
                 .scalar()
                 or 0
             )
@@ -46,6 +54,8 @@ class ChatHistoryService:
             session_id=sid,
             title=title,
             message_count=existing_count + 1,
+            version=latest_version + 1,
+            confidence=confidence
         )
         self.db.add(record)
         self.db.commit()
@@ -213,10 +223,12 @@ class ChatHistoryService:
 
     # ─── Update answer specifically (for streaming sync) ─────────────────────
 
-    def update_answer(self, record_id: int, answer: str, source: Optional[str] = None):
-        data = {"answer": answer, "updated_at": func.now()}
+    def update_answer(self, record_id: int, answer: str, source: Optional[str] = None, confidence: Optional[int] = None):
+        data: Dict[str, Any] = {"answer": answer, "updated_at": func.now()}
         if source:
             data["source"] = source
+        if confidence is not None:
+            data["confidence"] = confidence
             
         self.db.query(ChatHistory).filter(ChatHistory.id == record_id).update(data)
         self.db.commit()

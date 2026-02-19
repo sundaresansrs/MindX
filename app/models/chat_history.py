@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey  # type: ignore
+from sqlalchemy.dialects.postgresql import UUID  # type: ignore
+from sqlalchemy.sql import func  # type: ignore
 
-from app.database import Base
+from app.database import Base  # type: ignore
 
 
 class ChatHistory(Base):
@@ -23,3 +23,5 @@ class ChatHistory(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_pinned = Column(Integer, default=0)  # 0 for false, 1 for true (SQLite friendly)
+    version = Column(Integer, default=1)   # version number for this query in this session
+    confidence = Column(Integer, nullable=True) # Confidence percentage

@@ -59,8 +59,9 @@ class QueryIntelligence:
             recent = list(islice(chat_history, max(0, len(chat_history)-6), len(chat_history)))
             context_block = "\n\nRecent conversation:\n"
             for msg in recent:
-                role = "User" if msg['role'] == 'user' else "MindX"
-                context_block += f"{role}: {msg['content'][:200]}\n"
+                role = "User" if msg.get('role') == 'user' else "MindX"
+                content_val = str(msg.get('content') or "")
+                context_block += f"{role}: {content_val[0:200]}\n"
 
         try:
             response = await self.client.chat.completions.create(
@@ -114,8 +115,8 @@ class QueryIntelligence:
         # Take up to 6 turns (user + ai pairs)
         for m in list(islice(chat_history, max(0, len(chat_history)-6), len(chat_history))):
             role = "User" if str(m.get('role', '')).lower() == 'user' else "MindX"
-            content = str(m.get('content', ''))
-            recent_context_list.append(f"{role}: {content[:300]}")
+            content_val = str(m.get('content') or "")
+            recent_context_list.append(f"{role}: {content_val[0:300]}")
         recent_context = "\n".join(recent_context_list)
 
         try:
@@ -172,16 +173,13 @@ Rules:
                         "content": """Convert this question into 3 search engine queries.
 
 CRITICAL RULES:
-- Keep the ACTUAL TOPIC words — never replace them with synonyms.
-- "making tea" stays as "making tea" — do NOT convert to "prepare beverage".
-- "father of physics" stays as "father of physics" — do NOT convert to "physics founder".
-- Do not extract abstract concepts like "prepare" or "definition" if the user is asking for a process.
+- STRICT TOPIC PRESERVATION: NEVER replace the actual topic words with synonyms. 
+- Example: "making tea" -> MUST use "making tea". (Do NOT use "preparing beverages", "brewing", etc.)
+- Example: "key principles" -> MUST use "key principles".
+- No conversational filler (how to, tell me, etc. in optimizations).
+- If the topic is technical, add domain-specific keywords (e.g. "documentation", "API").
 - Queries must be 3-6 words, English only.
 - Return ONLY a JSON array of 3 strings.
-
-Example:
-Input: "explain about the process of making tea"
-Output: ["how to make tea steps", "tea making process complete guide", "brewing tea method explained"]
 """
                     },
                     {

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, qa, documents, chats
+from app.routers import auth, qa, documents, chats, voice
 from app.database import engine, Base
 import app.models.user
 import app.models.chat_history
@@ -67,6 +67,7 @@ app.include_router(auth.router)
 app.include_router(qa.router)
 app.include_router(documents.router)
 app.include_router(chats.router)
+app.include_router(voice.router)
 
 @app.on_event("startup")
 def on_startup():

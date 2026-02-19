@@ -1,0 +1,569 @@
+INFO:     Will watch for changes in these directories: ['C:\\MindX']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [21336] using StatReload
+INFO:     Started server process [15668]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Connecting to database: localhost:5432/mindx
+Creating database tables and enabling vector extension...
+Database ready.
+INFO:     127.0.0.1:58263 - "GET /chats HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:55665 - "GET /dashboard_v2.html HTTP/1.1" 200 OK
+ERROR:main:Unhandled Exception in /qa/history: (psycopg2.errors.UndefinedColumn) column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.title AS chat_history_title, chat_history.message_count AS chat_history_message_count, chat_history.created_at AS chat_history_created_at, chat_history.updated_at AS chat_history_updated_at, chat_history.is_pinned AS chat_history_is_pinned, chat_history.version AS chat_history_version, chat_history.confidence AS chat_history_confidence 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id = %(session_id_1)s::UUID ORDER BY chat_history.created_at ASC]
+[parameters: {'user_id_1': 4, 'session_id_1': UUID('4f9d94ea-aa2d-4d77-8dc2-0eaa417b90fd')}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MindX\main.py", line 44, in catch_exceptions_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 105, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\routers\qa.py", line 104, in get_history
+    history = service.get_by_session(user_id=current_user.id, session_id=session_id)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\services\chat_history_service.py", line 138, in get_by_session
+    .all()
+     ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.title AS chat_history_title, chat_history.message_count AS chat_history_message_count, chat_history.created_at AS chat_history_created_at, chat_history.updated_at AS chat_history_updated_at, chat_history.is_pinned AS chat_history_is_pinned, chat_history.version AS chat_history_version, chat_history.confidence AS chat_history_confidence 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id = %(session_id_1)s::UUID ORDER BY chat_history.created_at ASC]
+[parameters: {'user_id_1': 4, 'session_id_1': UUID('4f9d94ea-aa2d-4d77-8dc2-0eaa417b90fd')}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+INFO:     127.0.0.1:57171 - "GET /qa/history?session_id=4f9d94ea-aa2d-4d77-8dc2-0eaa417b90fd HTTP/1.1" 500 Internal Server Error
+ERROR:main:Unhandled Exception in /chats: (psycopg2.errors.UndefinedColumn) column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.title AS chat_history_title, chat_history.message_count AS chat_history_message_count, chat_history.created_at AS chat_history_created_at, chat_history.updated_at AS chat_history_updated_at, chat_history.is_pinned AS chat_history_is_pinned, chat_history.version AS chat_history_version, chat_history.confidence AS chat_history_confidence 
+FROM chat_history JOIN (SELECT max(chat_history.id) AS max_id 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id IS NOT NULL GROUP BY chat_history.session_id) AS anon_1 ON chat_history.id = anon_1.max_id ORDER BY chat_history.is_pinned DESC, chat_history.updated_at DESC 
+ LIMIT %(param_1)s]
+[parameters: {'user_id_1': 4, 'param_1': 100}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MindX\main.py", line 44, in catch_exceptions_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 105, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\routers\chats.py", line 72, in list_chats
+    sessions = service.get_sessions_list(user_id=current_user.id, limit=limit)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\services\chat_history_service.py", line 99, in get_sessions_list
+    .all()
+     ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.title AS chat_history_title, chat_history.message_count AS chat_history_message_count, chat_history.created_at AS chat_history_created_at, chat_history.updated_at AS chat_history_updated_at, chat_history.is_pinned AS chat_history_is_pinned, chat_history.version AS chat_history_version, chat_history.confidence AS chat_history_confidence 
+FROM chat_history JOIN (SELECT max(chat_history.id) AS max_id 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id IS NOT NULL GROUP BY chat_history.session_id) AS anon_1 ON chat_history.id = anon_1.max_id ORDER BY chat_history.is_pinned DESC, chat_history.updated_at DESC 
+ LIMIT %(param_1)s]
+[parameters: {'user_id_1': 4, 'param_1': 100}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+INFO:     127.0.0.1:55665 - "GET /chats HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:55665 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55665 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55665 - "GET /dashboard_v2.html HTTP/1.1" 200 OK
+ERROR:main:Unhandled Exception in /qa/history: (psycopg2.errors.UndefinedColumn) column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.title AS chat_history_title, chat_history.message_count AS chat_history_message_count, chat_history.created_at AS chat_history_created_at, chat_history.updated_at AS chat_history_updated_at, chat_history.is_pinned AS chat_history_is_pinned, chat_history.version AS chat_history_version, chat_history.confidence AS chat_history_confidence 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id = %(session_id_1)s::UUID ORDER BY chat_history.created_at ASC]
+[parameters: {'user_id_1': 4, 'session_id_1': UUID('9147d92f-8afb-4295-893a-84dcbd2e711c')}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MindX\main.py", line 44, in catch_exceptions_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 105, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\routers\qa.py", line 104, in get_history
+    history = service.get_by_session(user_id=current_user.id, session_id=session_id)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\services\chat_history_service.py", line 138, in get_by_session
+    .all()
+     ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.title AS chat_history_title, chat_history.message_count AS chat_history_message_count, chat_history.created_at AS chat_history_created_at, chat_history.updated_at AS chat_history_updated_at, chat_history.is_pinned AS chat_history_is_pinned, chat_history.version AS chat_history_version, chat_history.confidence AS chat_history_confidence 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id = %(session_id_1)s::UUID ORDER BY chat_history.created_at ASC]
+[parameters: {'user_id_1': 4, 'session_id_1': UUID('9147d92f-8afb-4295-893a-84dcbd2e711c')}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+INFO:     127.0.0.1:55665 - "GET /qa/history?session_id=9147d92f-8afb-4295-893a-84dcbd2e711c HTTP/1.1" 500 Internal Server Error
+ERROR:main:Unhandled Exception in /chats: (psycopg2.errors.UndefinedColumn) column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.title AS chat_history_title, chat_history.message_count AS chat_history_message_count, chat_history.created_at AS chat_history_created_at, chat_history.updated_at AS chat_history_updated_at, chat_history.is_pinned AS chat_history_is_pinned, chat_history.version AS chat_history_version, chat_history.confidence AS chat_history_confidence 
+FROM chat_history JOIN (SELECT max(chat_history.id) AS max_id 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id IS NOT NULL GROUP BY chat_history.session_id) AS anon_1 ON chat_history.id = anon_1.max_id ORDER BY chat_history.is_pinned DESC, chat_history.updated_at DESC 
+ LIMIT %(param_1)s]
+[parameters: {'user_id_1': 4, 'param_1': 100}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\MindX\main.py", line 44, in catch_exceptions_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\MindX\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 105, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\fastapi\routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\routers\chats.py", line 72, in list_chats
+    sessions = service.get_sessions_list(user_id=current_user.id, limit=limit)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\app\services\chat_history_service.py", line 99, in get_sessions_list
+    .all()
+     ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\MindX\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column chat_history.is_pinned does not exist
+LINE 1: ...at_history.updated_at AS chat_history_updated_at, chat_histo...
+                                                             ^
+
+[SQL: SELECT chat_history.id AS chat_history_id, chat_history.user_id AS chat_history_user_id, chat_history.session_id AS chat_history_session_id, chat_history.query AS chat_history_query, chat_history.answer AS chat_history_answer, chat_history.source AS chat_history_source, chat_history.title AS chat_history_title, chat_history.message_count AS chat_history_message_count, chat_history.created_at AS chat_history_created_at, chat_history.updated_at AS chat_history_updated_at, chat_history.is_pinned AS chat_history_is_pinned, chat_history.version AS chat_history_version, chat_history.confidence AS chat_history_confidence 
+FROM chat_history JOIN (SELECT max(chat_history.id) AS max_id 
+FROM chat_history 
+WHERE chat_history.user_id = %(user_id_1)s AND chat_history.session_id IS NOT NULL GROUP BY chat_history.session_id) AS anon_1 ON chat_history.id = anon_1.max_id ORDER BY chat_history.is_pinned DESC, chat_history.updated_at DESC 
+ LIMIT %(param_1)s]
+[parameters: {'user_id_1': 4, 'param_1': 100}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+INFO:     127.0.0.1:57171 - "GET /chats HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:56122 - "GET /dashboard_v2.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51563 - "GET /qa/history?session_id=9147d92f-8afb-4295-893a-84dcbd2e711c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56122 - "GET /chats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56122 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56122 - "POST /qa/stream HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:app.services.quality_pipeline:Expanded to 4 queries
+INFO:app.services.search_service:SearXNG unavailable (All connection attempts failed), will use DuckDuckGo
+INFO:app.services.search_service:SearXNG unavailable (All connection attempts failed), will use DuckDuckGo
+INFO:app.services.search_service:SearXNG unavailable (All connection attempts failed), will use DuckDuckGo
+INFO:app.services.search_service:SearXNG unavailable (All connection attempts failed), will use DuckDuckGo
+C:\MindX\app\services\search_service.py:197: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  with DDGS() as ddgs:  # type: ignore
+C:\MindX\app\services\search_service.py:197: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  with DDGS() as ddgs:  # type: ignore
+C:\MindX\app\services\search_service.py:197: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  with DDGS() as ddgs:  # type: ignore
+C:\MindX\app\services\search_service.py:197: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
+  with DDGS() as ddgs:  # type: ignore
+INFO:primp:response: https://www.bing.com/search?q=Tamil+Nadu+chief+minister+name+2024 200
+INFO:primp:response: https://www.bing.com/search?q=Who+is+the+current+chief+minister+of+Tamilnadu 200
+INFO:primp:response: https://www.bing.com/search?q=Chief+ministers+of+Tamil+Nadu+recent+updates 200
+INFO:primp:response: https://www.bing.com/search?q=Current+Tamil+Nadu+state+government+leader 200
+INFO:app.services.search_service:DuckDuckGo returned 0 results for: Tamil Nadu chief minister name 2024
+INFO:app.services.search_service:DuckDuckGo returned 0 results for: Current Tamil Nadu state government leader
+INFO:app.services.search_service:DuckDuckGo returned 0 results for: Chief ministers of Tamil Nadu recent updates
+INFO:app.services.search_service:DuckDuckGo returned 0 results for: Who is the current chief minister of Tamilnadu
+INFO:httpx:HTTP Request: GET https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=Current+Tamil+Nadu+state+government+leader&srlimit=3&format=json&srprop=snippet "HTTP/1.1 403 Forbidden"
+WARNING:app.services.search_service:Wikipedia error: Expecting value: line 1 column 1 (char 0)
+INFO:app.services.search_service:\u2705 0/0 results passed English filter
+INFO:httpx:HTTP Request: GET https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=Tamil+Nadu+chief+minister+name+2024&srlimit=3&format=json&srprop=snippet "HTTP/1.1 403 Forbidden"
+WARNING:app.services.search_service:Wikipedia error: Expecting value: line 1 column 1 (char 0)
+INFO:app.services.search_service:\u2705 0/0 results passed English filter
+INFO:httpx:HTTP Request: GET https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=Chief+ministers+of+Tamil+Nadu+recent+updates&srlimit=3&format=json&srprop=snippet "HTTP/1.1 403 Forbidden"
+WARNING:app.services.search_service:Wikipedia error: Expecting value: line 1 column 1 (char 0)
+INFO:app.services.search_service:\u2705 0/0 results passed English filter
+INFO:httpx:HTTP Request: GET https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=Who+is+the+current+chief+minister+of+Tamilnadu&srlimit=3&format=json&srprop=snippet "HTTP/1.1 403 Forbidden"
+WARNING:app.services.search_service:Wikipedia error: Expecting value: line 1 column 1 (char 0)
+INFO:app.services.search_service:\u2705 0/0 results passed English filter
+INFO:app.services.search_service:\u2705 0/0 results passed English filter
+INFO:app.services.quality_pipeline:RAG Pipeline: Found 0 web results, 0 vector results
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+ERROR:asyncio:Task exception was never retrieved
+future: <Task finished name='Task-67' coro=<MemoryService.extract_and_store_facts() done, defined at C:\MindX\app\services\memory_service.py:25> exception=KeyError('"facts"')>
+Traceback (most recent call last):
+  File "C:\MindX\app\services\memory_service.py", line 27, in extract_and_store_facts
+    prompt = self.EXTRACTION_PROMPT.format(query=query, answer=answer)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: '"facts"'
+INFO:     127.0.0.1:56122 - "PATCH /chats/0ac9ec80-2567-4afb-9250-42a3b4ab2918 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56122 - "GET /chats HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+WARNING:  StatReload detected changes in 'app\services\quality_pipeline.py'. Reloading...
+Starting MindX Server on port 8000...

@@ -9,7 +9,7 @@ from PIL import Image
 import io
 import pypdf
 import pytesseract
-import easyocr
+# import easyocr
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -73,15 +73,16 @@ class UploadService:
                     logger.debug(f"Pytesseract execution failed: {e}")
 
             # Tier 2: EasyOCR
-            try:
-                # Optimized: Only init reader once if possible, but here we stay simple for stability
-                reader = easyocr.Reader(['en'], gpu=False) # GPU False for broader compatibility
-                results = reader.readtext(np.array(img))
-                text = " ".join([res[1] for res in results])
-                if text.strip():
-                    return text
-            except Exception as e:
-                logger.debug(f"EasyOCR failed: {e}")
+            # try:
+            #     # Optimized: Only init reader once if possible, but here we stay simple for stability
+            #     import easyocr
+            #     reader = easyocr.Reader(['en'], gpu=False) # GPU False for broader compatibility
+            #     results = reader.readtext(np.array(img))
+            #     text = " ".join([res[1] for res in results])
+            #     if text.strip():
+            #         return text
+            # except Exception as e:
+            #     logger.debug(f"EasyOCR failed: {e}")
 
             # Fallback: Metadata + Warning
             msg = f"Image file processed ({img.format}, {img.size})."

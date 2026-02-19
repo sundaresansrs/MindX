@@ -1,4 +1,5 @@
 import asyncio
+from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 
 from app.services.chat_history_service import ChatHistoryService
@@ -43,7 +44,7 @@ class PersonalPipeline:
     async def search(
         self,
         query: str,
-        session_id: str = None,
+        session_id: Optional[str] = None,
         use_search: bool = True,
         max_sources: int = 20,
         fast_mode: bool = False,
@@ -54,7 +55,11 @@ class PersonalPipeline:
         history_records = []
         if session_id:
             history_records = self.history.get_by_session(self.user.id, session_id)
-        history_context = [{"query": r.query, "answer": r.answer} for r in history_records]
+        
+        history_context = []
+        for r in history_records:
+            history_context.append({"role": "user", "content": r.query})
+            history_context.append({"role": "assistant", "content": r.answer})
 
         result = await self.quality_pipeline.process_query(
             query=query,
@@ -72,6 +77,7 @@ class PersonalPipeline:
             answer=result["answer"],
             source=str(result["metadata"].get("sources_used", 0)),
             session_id=session_id,
+            confidence=int(result.get("confidence", 0) * 100) if isinstance(result.get("confidence"), float) else result.get("confidence")
         )
 
         # Auto-title: fire in background after first message
@@ -96,7 +102,12 @@ class PersonalPipeline:
         history_records = []
         if session_id:
             history_records = self.history.get_by_session(self.user.id, session_id)
-        history_context = [{"query": r.query, "answer": r.answer} for r in history_records]
+            
+        history_context = []
+        for r in history_records:
+            history_context.append({"role": "user", "content": r.query})
+            history_context.append({"role": "assistant", "content": r.answer})
+
 
         # LAYER 2 PERSISTENCE: Save record immediately so it exists in history if user refreshes mid-stream
         placeholder_answer = "..." 
@@ -128,10 +139,14 @@ class PersonalPipeline:
 
         # Update record with final response
         if full_answer:
+            confidence_val = metadata.get("confidence", 0.7)
+            final_confidence = int(confidence_val * 100) if isinstance(confidence_val, float) else confidence_val
+            
             self.history.update_answer(
                 record_id=record.id,
                 answer=full_answer,
                 source=str(len(metadata.get("sources", []))),
+                confidence=final_confidence
             )
             # Auto-title: fire in background after first message
             if is_first and session_id:
