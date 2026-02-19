@@ -732,6 +732,49 @@
             background: var(--primary-soft) !important;
             border-color: var(--primary) !important;
         }
+
+        /* ─── Source Tooltip (Task 28) ─── */
+        .source-chip-link {
+            position: relative;
+        }
+
+        .source-tooltip {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            z-index: 100;
+            min-width: 260px;
+            max-width: 340px;
+            background: var(--surface-dark, #1a1f2e);
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #94a3b8;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            animation: tooltipIn 0.15s ease;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .source-chip-link:hover .source-tooltip {
+            display: block;
+        }
+
+        @keyframes tooltipIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 
@@ -1606,10 +1649,19 @@
             list.className = 'flex flex-col gap-2.5';
 
             list.innerHTML = sources.map((s, i) => {
-                const domain = s.source || (s.url ? new URL(s.url).hostname.replace('www.', '') : 'Source');
+                let domain = 'Source';
+                try {
+                    domain = s.source || (s.url ? new URL(s.url).hostname.replace('www.', '') : 'Source');
+                } catch (e) { domain = s.source || 'Source'; }
+                const snippetText = (s.snippet || s.description || '').substring(0, 120);
+                const tooltipHtml = snippetText
+                    ? `<span class="source-tooltip">${snippetText}…<br><span class="text-primary/60 text-[9px] font-mono mt-1 block truncate">${s.url || ''}</span></span>`
+                    : `<span class="source-tooltip"><span class="text-primary/60 text-[9px] font-mono">${s.url || domain}</span></span>`;
                 return `
                     <a href="${s.url || '#'}" target="_blank" 
-                       class="flex items-start gap-3 group px-1">
+                       rel="noopener noreferrer"
+                       class="source-chip-link flex items-start gap-3 group px-1 relative">
+                        ${tooltipHtml}
                         <span class="text-[10px] font-bold text-primary/40 bg-primary/5 size-5 flex items-center justify-center rounded border border-primary/10 group-hover:text-primary group-hover:border-primary/30 transition-all">${i + 1}</span>
                         <div class="flex flex-col">
                             <span class="text-[13px] font-semibold text-slate-300 group-hover:text-primary transition-colors">${s.title || 'Untitled Source'}</span>
