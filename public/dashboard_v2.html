@@ -919,18 +919,8 @@
                         <p class="text-lg font-semibold text-slate-500">How can MindX help you today?</p>
                         <p class="text-sm text-slate-600">Secure, AI-powered research at your fingertips.</p>
 
-                        <!-- Example Chips inside container -->
-                        <div class="flex flex-wrap justify-center gap-2 pt-8 max-w-lg">
-                            <button onclick="searchChip(this)"
-                                class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Who
-                                founded Netflix?</button>
-                            <button onclick="searchChip(this)"
-                                class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Explain
-                                quantum physics</button>
-                            <button onclick="searchChip(this)"
-                                class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest
-                                Zepto news</button>
-                        </div>
+                        <!-- Dynamic Starter Chips (Task 36) -->
+                        <div id="starter-chips" class="flex flex-wrap justify-center gap-2 pt-8 max-w-2xl"></div>
                     </div>
                 </div>
             </div>
@@ -1317,7 +1307,67 @@
         }
 
 
+        // ─── Dynamic Starter Chips (Task 36) ───
+        const STARTER_CHIP_POOL = [
+            // Technology
+            "Who is the CEO of OpenAI?",
+            "How does quantum computing work?",
+            "What is the latest iPhone model?",
+            "Explain large language models",
+            "Best programming languages in 2026",
+            // Science
+            "What causes the Northern Lights?",
+            "How big is the observable universe?",
+            "Explain CRISPR gene editing",
+            "Latest Mars mission updates",
+            "What is dark matter?",
+            // Business & Finance
+            "What is Zepto's valuation?",
+            "How do interest rates affect inflation?",
+            "Top AI startups to watch in 2026",
+            "What is a hedge fund?",
+            "India's GDP growth rate",
+            // History & Culture
+            "Who founded Netflix?",
+            "History of the internet",
+            "What caused World War I?",
+            "Timeline of space exploration",
+            "Who invented the telephone?",
+            // Health & Science
+            "Health benefits of intermittent fasting",
+            "How vaccines work",
+            "Symptoms of vitamin D deficiency",
+            "Latest cancer research breakthroughs",
+            "How to improve sleep quality",
+            // How-To
+            "How to learn Python fast",
+            "Explain quantum physics simply",
+            "How to start investing in stocks",
+            "Best practices for REST API design",
+            "How is AI changing healthcare?",
+        ];
+
+        function initStarterChips() {
+            const container = document.getElementById('starter-chips');
+            if (!container) return;
+
+            // Pick 5 random questions
+            const pool = [...STARTER_CHIP_POOL];
+            const picked = [];
+            for (let i = 0; i < 5 && pool.length > 0; i++) {
+                const idx = Math.floor(Math.random() * pool.length);
+                picked.push(pool.splice(idx, 1)[0]);
+            }
+
+            container.innerHTML = picked.map((q, i) => `
+                <button onclick="searchChip(this)" 
+                    class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all opacity-0"
+                    style="animation: chipFadeIn 0.4s ease ${i * 80}ms forwards;">${q}</button>
+            `).join('');
+        }
+
         // ─── Add to Sidebar History ───
+
         function addToHistory(query) {
             searchHistory.unshift(query);
             if (searchHistory.length > 10) searchHistory.pop();
@@ -2396,6 +2446,7 @@
             initSessionRecovery();
             initOnboarding();
             initOfflineDetection();
+            initStarterChips();
 
             // Initialize Voice & TTS
             window.voice = new VoiceManager();
