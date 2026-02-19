@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.services.chat_history_service import ChatHistoryService
 from app.services.quality_pipeline import QualityPipeline
+from app.services.memory_service import MemoryService
+from app.services.llm_service import LLMService
 
 
 class PersonalPipeline:
@@ -16,6 +18,7 @@ class PersonalPipeline:
         self.user = user
         self.history = ChatHistoryService(db)
         self.quality_pipeline = QualityPipeline(db=db, use_reranking=False)
+        self.memory = MemoryService(db=db, llm_service=LLMService())
 
     # ─── Auto-title generation ────────────────────────────────────────────────
 
@@ -61,6 +64,11 @@ class PersonalPipeline:
             history_context.append({"role": "user", "content": r.query})
             history_context.append({"role": "assistant", "content": r.answer})
 
+        # ── Personal Memory Injection (Task 31) ──────────────────────────────
+        user_context = await self.memory.get_user_context(self.user.id, query)
+        if user_context:
+            history_context.insert(0, {"role": "system", "content": user_context})
+
         result = await self.quality_pipeline.process_query(
             query=query,
             user=self.user,
@@ -80,9 +88,17 @@ class PersonalPipeline:
             confidence=int(result.get("confidence", 0) * 100) if isinstance(result.get("confidence"), float) else result.get("confidence")
         )
 
+        # ── Async Background Tasks ────────────────────────────────────────────
         # Auto-title: fire in background after first message
         if is_first and session_id:
             asyncio.create_task(self._generate_title(session_id, query))
+
+        # Extract and store personal facts from this exchange (Task 31)
+        asyncio.create_task(self.memory.extract_and_store_facts(
+            user_id=self.user.id,
+            query=query,
+            answer=result["answer"]
+        ))
 
         return result
 
@@ -91,7 +107,7 @@ class PersonalPipeline:
     async def stream(
         self,
         query: str,
-        session_id: str = None,
+        session_id: Optional[str] = None,
         use_search: bool = True,
         max_sources: int = 15,
         fast_mode: bool = False,
@@ -108,6 +124,10 @@ class PersonalPipeline:
             history_context.append({"role": "user", "content": r.query})
             history_context.append({"role": "assistant", "content": r.answer})
 
+        # ── Personal Memory Injection (Task 31) ──────────────────────────────
+        user_context = await self.memory.get_user_context(self.user.id, query)
+        if user_context:
+            history_context.insert(0, {"role": "system", "content": user_context})
 
         # LAYER 2 PERSISTENCE: Save record immediately so it exists in history if user refreshes mid-stream
         placeholder_answer = "..." 
@@ -148,6 +168,14 @@ class PersonalPipeline:
                 source=str(len(metadata.get("sources", []))),
                 confidence=final_confidence
             )
+            # ── Async Background Tasks ────────────────────────────────────────
             # Auto-title: fire in background after first message
             if is_first and session_id:
                 asyncio.create_task(self._generate_title(session_id, query))
+
+            # Extract and store personal facts from this exchange (Task 31)
+            asyncio.create_task(self.memory.extract_and_store_facts(
+                user_id=self.user.id,
+                query=query,
+                answer=full_answer
+            ))
