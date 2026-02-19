@@ -764,6 +764,79 @@
             display: block;
         }
 
+        /* ─── Layout Fixes (Task 37) ─── */
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            /* Prevent body scroll */
+        }
+
+        .app-wrapper {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* Sidebar remains mostly same but ensure it doesn't shrink */
+        aside {
+            flex-shrink: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* Main Area */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            /* Main container doesn't scroll */
+            min-width: 0;
+            position: relative;
+        }
+
+        /* Messages Area - SCROLLS */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 24px 0 20px;
+            display: flex;
+            flex-direction: column;
+            scroll-behavior: smooth;
+        }
+
+        /* Input Area - FIXED at bottom */
+        .input-area {
+            flex-shrink: 0;
+            background: var(--background-dark);
+            border-top: 1px solid var(--border-dark);
+            padding: 16px 24px 24px;
+            /* More padding at bottom */
+            z-index: 20;
+            position: relative;
+        }
+
+        .input-wrap {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-dark);
+            border-radius: 16px;
+            padding: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .input-wrap:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
         @keyframes tooltipIn {
             from {
                 opacity: 0;
@@ -837,25 +910,42 @@
         </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden">
-        <!-- Sidebar: Recent Conversations -->
+    <!-- Dynamic Layout Wrapper (Task 37) -->
+    <div class="app-wrapper">
+
+        <!-- Sidebar -->
         <aside id="sidebar"
-            class="fixed inset-y-0 left-0 z-40 w-72 border-r border-border-dark glass transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300 ease-in-out flex flex-col">
-            <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div class="p-6 pb-2">
-                    <!-- New Chat Button at the very top -->
-                    <button id="btn-new-chat"
-                        class="w-full flex items-center px-4 py-3 mb-6 text-sm font-medium text-slate-100 hover:text-white bg-white/5 hover:bg-white/10 border border-border-dark rounded-xl transition-all group">
+            class="fixed inset-y-0 left-0 z-40 w-64 bg-background-dark border-r border-border-dark transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col">
+            <div class="p-4 flex items-center justify-between">
+                <div class="flex items-center gap-3 px-2">
+                    <div
+                        class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(0,255,65,0.3)]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight text-white">MindX <span
+                            class="text-primary">v2.0</span></span>
+                </div>
+            </div>
+
+            <div class="p-4 flex-1 flex flex-col min-h-0">
+                <div class="mb-6">
+                    <button onclick="startNewChat()"
+                        class="w-full h-10 flex items-center justify-center rounded-lg bg-primary text-background-dark text-sm font-bold hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all group">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                            class="mr-3 text-primary group-hover:rotate-90 transition-transform">
+                            class="mr-3 text-background-dark group-hover:rotate-90 transition-transform">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                         New Chat
                     </button>
 
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-4 mt-6">
                         <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500">Chat History</h2>
                         <button onclick="bulkDeleteSessions()"
                             class="text-[10px] font-bold text-slate-600 hover:text-red-400 transition-colors uppercase tracking-wider">Clear
@@ -883,7 +973,8 @@
 
         <!-- Main Content Area -->
         <main class="flex-1 flex flex-col bg-background-dark overflow-hidden relative">
-            <!-- In-Chat Search (Sticky) -->
+
+            <!-- In-Chat Search (Absolute Top Right) -->
             <div id="in-chat-search-bar" class="in-chat-search">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5" class="text-slate-500">
@@ -900,9 +991,9 @@
                     </svg></button>
             </div>
 
-            <!-- Chat Container (Scrollable) -->
-            <div id="chat-scroller" class="flex-1 overflow-y-auto no-scrollbar pt-8 px-6">
-                <div id="chat-container" class="max-w-4xl mx-auto flex flex-col">
+            <!-- Messages Area (Scrolls) -->
+            <div id="messagesArea" class="messages-area">
+                <div id="chat-container" class="max-w-3xl mx-auto w-full flex flex-col gap-6">
                     <!-- Empty State -->
                     <div id="empty-state"
                         class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
@@ -922,302 +1013,144 @@
                         <!-- Dynamic Starter Chips (Task 36) -->
                         <div id="starter-chips" class="flex flex-wrap justify-center gap-2 pt-8 max-w-2xl"></div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Input Section (Fixed at bottom) -->
-            <div class="p-6 bg-transparent pb-10">
-                <div class="max-w-4xl mx-auto">
-                    <!-- Voice Status Bar -->
-                    <div class="voice-status-bar" id="voiceStatusBar" style="display:none">
-                        <div class="voice-status-inner">
-                            <div class="voice-wave" id="voiceWave">
-                                <span></span><span></span><span></span>
-                                <span></span><span></span>
+
+
+
+                    <!-- Loading State (hidden by default) -->
+                    <section id="loading-state"
+                        class="hidden border border-border-dark bg-surface-dark/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-6">
+                        <div class="relative flex items-center justify-center size-16">
+                            <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                            <div
+                                class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin">
                             </div>
-                            <span id="voiceStatusText">Listening...</span>
-                            <button class="text-[10px] font-bold text-slate-500 hover:text-white ml-2"
-                                onclick="voice.stopRecording()">
-                                CANCEL
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- File Preview Zone (Above Input) -->
-                    <div id="file-list-preview" class="flex flex-wrap gap-2 mb-3"></div>
-
-                    <div class="chat-input-container p-2 flex flex-col">
-                        <div class="flex items-end gap-2 px-2">
-                            <!-- File Upload Trigger & Menu -->
-                            <div class="relative mb-1">
-                                <button onclick="toggleUploadMenu(event)"
-                                    class="p-2 text-slate-400 hover:text-primary cursor-pointer transition-colors flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path
-                                            d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48">
-                                        </path>
-                                    </svg>
-                                </button>
-
-                                <div id="upload-menu" class="upload-menu">
-                                    <div class="upload-menu-item" onclick="triggerFileUpload('.pdf,.docx,.doc')">
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path
-                                                        d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z">
-                                                    </path>
-                                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                                </svg>
-                                                Documents
-                                            </div>
-                                            <span class="text-[9px] text-slate-500 ml-7">.pdf, .docx, .doc</span>
-                                        </div>
-                                    </div>
-                                    <div class="upload-menu-item" onclick="triggerFileUpload('.xlsx,.xls,.csv')">
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M3 3h18v18H3z"></path>
-                                                    <path d="M21 9H3"></path>
-                                                    <path d="M21 15H3"></path>
-                                                    <path d="M12 3v18"></path>
-                                                </svg>
-                                                Spreadsheets
-                                            </div>
-                                            <span class="text-[9px] text-slate-500 ml-7">.xlsx, .xls, .csv</span>
-                                        </div>
-                                    </div>
-                                    <div class="upload-menu-item" onclick="triggerFileUpload('.png,.jpg,.jpeg,.webp')">
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                                </svg>
-                                                Images
-                                            </div>
-                                            <span class="text-[9px] text-slate-500 ml-7">.png, .jpg, .webp</span>
-                                        </div>
-                                    </div>
-                                    <div class="upload-menu-item" onclick="triggerFileUpload('.txt,.md')">
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path
-                                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
-                                                    </path>
-                                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                                    <polyline points="10 9 9 9 8 9"></polyline>
-                                                </svg>
-                                                Text Files
-                                            </div>
-                                            <span class="text-[9px] text-slate-500 ml-7">.txt, .md</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <input type="file" id="chat-file-upload" class="hidden" multiple
-                                    onchange="handleFileUpload(event)" />
-                            </div>
-
-                            <!-- Mic Button -->
-                            <button class="mic-btn mb-1" id="micBtn" title="Click to speak — or say 'Hey MindX'">
-                                <svg id="micIcon" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                                    <line x1="12" y1="19" x2="12" y2="23" />
-                                    <line x1="8" y1="23" x2="16" y2="23" />
-                                </svg>
-                            </button>
-
-                            <textarea id="search-input"
-                                class="flex-1 bg-transparent border-none text-white placeholder:text-slate-500 focus:ring-0 py-3 text-base resize-none no-scrollbar max-h-[200px]"
-                                placeholder="Message MindX..." rows="1"
-                                oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
-                                onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); handleSearch(); }"></textarea>
-
-                            <button id="search-btn" onclick="handleSearch()"
-                                class="bg-primary hover:bg-primary/90 text-background-dark size-10 rounded-xl flex items-center justify-center transition-all active:scale-90 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <line x1="12" y1="19" x2="12" y2="5"></line>
-                                    <polyline points="5 12 12 5 19 12"></polyline>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Bottom Controls -->
-                    <div class="flex items-center justify-between mt-3 px-4">
-                        <div class="flex items-center gap-6">
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <div class="relative">
-                                    <input type="checkbox" id="fast-mode-toggle" class="sr-only peer"
-                                        onchange="toggleModeLabel()">
-                                    <div
-                                        class="w-8 h-4 bg-white/10 rounded-full peer peer-checked:bg-primary/30 transition-all border border-white/5">
-                                    </div>
-                                    <div
-                                        class="absolute left-0.5 top-0.5 w-3 h-3 bg-slate-500 rounded-full peer-checked:translate-x-4 peer-checked:bg-primary transition-all">
-                                    </div>
-                                </div>
-                                <span id="mode-label"
-                                    class="text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-tight">Deep
-                                    Search</span>
-                            </label>
-
-                            <div class="h-3 w-[1px] bg-white/10"></div>
-
-                            <div id="ai-status"
-                                class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
-                                <span class="size-1.5 bg-primary/40 rounded-full"></span>
-                                MindX Intelligent
-                            </div>
-                        </div>
-                    </div>
-                </div>
-        </main>
-
-        <!-- Loading State (hidden by default) -->
-        <section id="loading-state"
-            class="hidden border border-border-dark bg-surface-dark/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-6">
-            <div class="relative flex items-center justify-center size-16">
-                <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
-                <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin">
-                </div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="text-primary">
-                    <path d="M12 2a5 5 0 0 0-5 5v1h10V7a5 5 0 0 0-5-5z"></path>
-                    <path d="M17 12V8H7v4a5 5 0 1 0 10 0z"></path>
-                    <path d="M5 12a7 7 0 1 0 14 0h-2a5 5 0 1 1-10 0H5z"></path>
-                </svg>
-            </div>
-            <div class="space-y-2">
-                <p class="text-lg font-semibold text-white">Synthesizing Results</p>
-                <div id="pipeline-stages" class="flex flex-col gap-1">
-                    <div id="stage-1" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        <span>Query Enhancement</span>
-                    </div>
-                    <div id="stage-2" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        <span>Web & Vector Retrieval</span>
-                    </div>
-                    <div id="stage-3" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        <span>Dynamic Re-ranking</span>
-                    </div>
-                    <div id="stage-4" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        <span>Semantic Chunking</span>
-                    </div>
-                    <div id="stage-5" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        <span>Answer Generation</span>
-                    </div>
-                    <div id="stage-6" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        <span>Consistency Optimization</span>
-                    </div>
-                    <div id="stage-7" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        <span>Fact Verification</span>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- AI Answer Card (hidden by default) -->
-        <article id="answer-section" class="hidden space-y-6">
-            <div class="bg-surface-dark border border-border-dark rounded-2xl overflow-hidden shadow-xl">
-                <div class="p-8 space-y-4">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="bg-primary/20 p-1.5 rounded-lg flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round" class="text-primary">
-                                <path
-                                    d="m12 3 1.912 5.886 6.19 0-5.008 3.638 1.912 5.886L12 14.772l-5.007 3.638 1.912-5.886L3.898 8.886l6.19 0L12 3z" />
+                                <path d="M12 2a5 5 0 0 0-5 5v1h10V7a5 5 0 0 0-5-5z"></path>
+                                <path d="M17 12V8H7v4a5 5 0 1 0 10 0z"></path>
+                                <path d="M5 12a7 7 0 1 0 14 0h-2a5 5 0 1 1-10 0H5z"></path>
                             </svg>
                         </div>
-                        <span class="text-sm font-bold tracking-wide text-primary uppercase">AI Answer</span>
-                    </div>
-                    <div id="answer-body"
-                        class="prose prose-invert max-w-none text-slate-300 space-y-4 leading-relaxed">
-                        <!-- Answer content injected here -->
-                    </div>
-                </div>
-                <!-- Metadata Bar -->
-                <div
-                    class="bg-background-dark/50 border-t border-border-dark px-8 py-4 flex flex-wrap gap-4 items-center">
-                    <div
-                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
-                            class="text-primary">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        <span id="meta-confidence">--% Confidence</span>
-                    </div>
-                    <div
-                        class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full ml-auto">
-                        <div class="size-1.5 bg-primary rounded-full animate-pulse mr-1"></div>
-                        <span id="meta-mode">Hybrid Mode Active</span>
-                    </div>
-                </div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="text-primary">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path
-                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
-                    </path>
-                    <path d="M2.17 12h19.66"></path>
-                </svg>
-                <span id="meta-mode">Hybrid Mode</span>
+                        <div class="space-y-2">
+                            <p class="text-lg font-semibold text-white">Synthesizing Results</p>
+                            <div id="pipeline-stages" class="flex flex-col gap-1">
+                                <div id="stage-1" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                    <span>Query Enhancement</span>
+                                </div>
+                                <div id="stage-2" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                    <span>Web & Vector Retrieval</span>
+                                </div>
+                                <div id="stage-3" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                    <span>Dynamic Re-ranking</span>
+                                </div>
+                                <div id="stage-4" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                    <span>Semantic Chunking</span>
+                                </div>
+                                <div id="stage-5" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                    <span>Answer Generation</span>
+                                </div>
+                                <div id="stage-6" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                    <span>Consistency Optimization</span>
+                                </div>
+                                <div id="stage-7" class="flex items-center justify-center gap-2 text-slate-600 text-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                    <span>Fact Verification</span>
+                                </div>
+                            </div>
 
+                        </div>
+                    </section>
+
+                    <!-- AI Answer Card (hidden by default) -->
+                    <article id="answer-section" class="hidden space-y-6">
+                        <div class="bg-surface-dark border border-border-dark rounded-2xl overflow-hidden shadow-xl">
+                            <div class="p-8 space-y-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="bg-primary/20 p-1.5 rounded-lg flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" class="text-primary">
+                                            <path
+                                                d="m12 3 1.912 5.886 6.19 0-5.008 3.638 1.912 5.886L12 14.772l-5.007 3.638 1.912-5.886L3.898 8.886l6.19 0L12 3z" />
+                                        </svg>
+                                    </div>
+                                    <span class="text-sm font-bold tracking-wide text-primary uppercase">AI
+                                        Answer</span>
+                                </div>
+                                <div id="answer-body"
+                                    class="prose prose-invert max-w-none text-slate-300 space-y-4 leading-relaxed">
+                                    <!-- Answer content injected here -->
+                                </div>
+                            </div>
+                            <!-- Metadata Bar -->
+                            <div
+                                class="bg-background-dark/50 border-t border-border-dark px-8 py-4 flex flex-wrap gap-4 items-center">
+                                <div
+                                    class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                        stroke-linejoin="round" class="text-primary">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span id="meta-confidence">--% Confidence</span>
+                                </div>
+                                <div
+                                    class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full ml-auto">
+                                    <div class="size-1.5 bg-primary rounded-full animate-pulse mr-1"></div>
+                                    <span id="meta-mode">Hybrid Mode Active</span>
+                                </div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-primary">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path
+                                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                                </path>
+                                <path d="M2.17 12h19.66"></path>
+                            </svg>
+                            <span id="meta-mode">Hybrid Mode</span>
+
+                        </div>
+                </div>
             </div>
-    </div>
-    </div>
-    </article>
+            </article>
 
 
     </div>
@@ -1226,6 +1159,174 @@
     <footer class="max-w-4xl mx-auto px-6 py-12 border-t border-border-dark text-center">
         <p class="text-slate-600 text-xs">MindX AI Search Engine • Powered by Groq • © 2026</p>
     </footer>
+    </div>
+    </div>
+
+    <!-- Input Area (Fixed Bottom) -->
+    <div class="input-area">
+        <div class="max-w-3xl mx-auto w-full">
+            <!-- Voice Status Bar -->
+            <div class="voice-status-bar" id="voiceStatusBar" style="display:none">
+                <div class="voice-status-inner">
+                    <div class="voice-wave" id="voiceWave">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span>
+                    </div>
+                    <span id="voiceStatusText">Listening...</span>
+                    <button class="text-[10px] font-bold text-slate-500 hover:text-white ml-2"
+                        onclick="voice.stopRecording()">
+                        CANCEL
+                    </button>
+                </div>
+            </div>
+
+            <!-- File Preview Zone (Above Input) -->
+            <div id="file-list-preview" class="flex flex-wrap gap-2 mb-3"></div>
+
+            <div class="input-wrap">
+                <div class="flex items-end gap-2 px-2 w-full">
+                    <!-- File Upload Trigger & Menu -->
+                    <div class="relative mb-1 flex-shrink-0">
+                        <button onclick="toggleUploadMenu(event)"
+                            class="p-2 text-slate-400 hover:text-primary cursor-pointer transition-colors flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                                </path>
+                            </svg>
+                        </button>
+
+                        <div id="upload-menu" class="upload-menu">
+                            <div class="upload-menu-item" onclick="triggerFileUpload('.pdf,.docx,.doc')">
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path
+                                                d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z">
+                                            </path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        Documents
+                                    </div>
+                                    <span class="text-[9px] text-slate-500 ml-7">.pdf, .docx, .doc</span>
+                                </div>
+                            </div>
+                            <div class="upload-menu-item" onclick="triggerFileUpload('.xlsx,.xls,.csv')">
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 3h18v18H3z"></path>
+                                            <path d="M21 9H3"></path>
+                                            <path d="M21 15H3"></path>
+                                            <path d="M12 3v18"></path>
+                                        </svg>
+                                        Spreadsheets
+                                    </div>
+                                    <span class="text-[9px] text-slate-500 ml-7">.xlsx, .xls, .csv</span>
+                                </div>
+                            </div>
+                            <div class="upload-menu-item" onclick="triggerFileUpload('.png,.jpg,.jpeg,.webp')">
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                        Images
+                                    </div>
+                                    <span class="text-[9px] text-slate-500 ml-7">.png, .jpg, .webp</span>
+                                </div>
+                            </div>
+                            <div class="upload-menu-item" onclick="triggerFileUpload('.txt,.md')">
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                            </path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            <polyline points="10 9 9 9 8 9"></polyline>
+                                        </svg>
+                                        Text Files
+                                    </div>
+                                    <span class="text-[9px] text-slate-500 ml-7">.txt, .md</span>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="chat-file-upload" class="hidden" multiple
+                            onchange="handleFileUpload(event)" />
+                    </div>
+
+                    <!-- Mic Button -->
+                    <button class="mic-btn mb-1" id="micBtn" title="Click to speak — or say 'Hey MindX'">
+                        <svg id="micIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                            <line x1="12" y1="19" x2="12" y2="23" />
+                            <line x1="8" y1="23" x2="16" y2="23" />
+                        </svg>
+                    </button>
+
+                    <textarea id="search-input"
+                        class="flex-1 bg-transparent border-none text-white placeholder:text-slate-500 focus:ring-0 py-3 text-base resize-none no-scrollbar max-h-[200px]"
+                        placeholder="Message MindX..." rows="1"
+                        oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                        onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); handleSearch(); }"></textarea>
+
+                    <button id="search-btn" onclick="handleSearch()"
+                        class="bg-primary hover:bg-primary/90 text-background-dark size-10 rounded-xl flex items-center justify-center transition-all active:scale-90 mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                            <polyline points="5 12 12 5 19 12"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bottom Controls -->
+            <div class="flex items-center justify-between mt-3 px-4">
+                <div class="flex items-center gap-6">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="relative">
+                            <input type="checkbox" id="fast-mode-toggle" class="sr-only peer"
+                                onchange="toggleModeLabel()">
+                            <div
+                                class="w-8 h-4 bg-white/10 rounded-full peer peer-checked:bg-primary/30 transition-all border border-white/5">
+                            </div>
+                            <div
+                                class="absolute left-0.5 top-0.5 w-3 h-3 bg-slate-500 rounded-full peer-checked:translate-x-4 peer-checked:bg-primary transition-all">
+                            </div>
+                        </div>
+                        <span id="mode-label"
+                            class="text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-tight">Deep
+                            Search</span>
+                    </label>
+
+                    <div class="h-3 w-[1px] bg-white/10"></div>
+
+                    <div id="ai-status"
+                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
+                        <span class="size-1.5 bg-primary/40 rounded-full"></span>
+                        MindX Intelligent
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     </main>
     </div>
 
@@ -1307,7 +1408,171 @@
         }
 
 
-        // ─── Dynamic Starter Chips (Task 36) ───
+        // ─── File Upload Manager (Task 40) ───
+        class FileUploadManager {
+            constructor() {
+                this.uploadedFiles = []; // Stores {id, name, type, preview}
+                this.initListeners();
+            }
+
+            initListeners() {
+                // File Input
+                const fileInput = document.getElementById('chat-file-upload');
+                if (fileInput) {
+                    fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+                }
+
+                // Drag & Drop on Body
+                document.body.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    document.body.classList.add('drag-active');
+                });
+
+                document.body.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    if (e.clientX === 0 && e.clientY === 0) {
+                        document.body.classList.remove('drag-active');
+                    }
+                });
+
+                document.body.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    document.body.classList.remove('drag-active');
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        this.uploadFiles(e.dataTransfer.files);
+                    }
+                });
+
+                // Paste Event
+                document.addEventListener('paste', (e) => {
+                    if (e.clipboardData && e.clipboardData.files.length > 0) {
+                        e.preventDefault();
+                        this.uploadFiles(e.clipboardData.files);
+                    }
+                });
+            }
+
+            handleFileSelect(event) {
+                const files = event.target.files;
+                if (files.length > 0) {
+                    this.uploadFiles(files);
+                }
+            }
+
+            async uploadFiles(fileList) {
+                // Show generalized loading (can be refined)
+                const previewZone = document.getElementById('file-list-preview');
+
+                for (let file of fileList) {
+                    // Create Optimistic UI Chip
+                    const tempId = 'temp-' + Date.now();
+                    this.renderChip(file.name, true, tempId);
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const token = localStorage.getItem('mindx_token');
+                        const response = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            // Replace temp chip with real one
+                            this.removeChip(tempId);
+                            this.uploadedFiles.push(data);
+                            this.renderChip(data.filename, false, data.file_id);
+
+                            // Add system message about upload
+                            // addMessageToChat('system', `Uploaded ${data.filename}`);
+                        } else {
+                            throw new Error('Upload failed');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        this.removeChip(tempId);
+                        alert(`Failed to upload ${file.name}`);
+                    }
+                }
+            }
+
+            renderChip(filename, isLoading, id) {
+                const previewZone = document.getElementById('file-list-preview');
+                const chip = document.createElement('div');
+                chip.id = `file-chip-${id}`;
+                chip.className = `inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${isLoading ? 'bg-surface-dark/50 border-border-dark text-slate-400 animate-pulse' : 'bg-primary/10 border-primary/20 text-primary'}`;
+
+                chip.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <span class="max-w-[150px] truncate">${filename}</span>
+                    <button onclick="fileManager.removeFile('${id}')" class="hover:text-red-400 transition-colors ml-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                `;
+                previewZone.appendChild(chip);
+            }
+
+            removeFile(id) {
+                this.uploadedFiles = this.uploadedFiles.filter(f => f.file_id !== id);
+                this.removeChip(id);
+            }
+
+            removeChip(id) {
+                const el = document.getElementById(`file-chip-${id}`);
+                if (el) el.remove();
+            }
+
+            getAttachedFileContext() {
+                // If files are attached, we might want to guide the RAG mode
+                return this.uploadedFiles.length > 0;
+            }
+
+            getAttachedFiles() {
+                return this.uploadedFiles;
+            }
+
+            clear() {
+                this.uploadedFiles = [];
+                document.getElementById('file-list-preview').innerHTML = '';
+            }
+        }
+
+        const fileManager = new FileUploadManager();
+
+
+        // ─── Auto-Resize Textarea (Task 37) ───
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            });
+        }
+
+        function scrollToBottom() {
+            const messagesArea = document.getElementById('messagesArea');
+            if (messagesArea) {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+        }
+
+        // Call scroll to bottom on load and mutations
+        window.addEventListener('load', scrollToBottom);
+
+        // Observer to keep scroll at bottom when content changes
+        const observer = new MutationObserver(() => {
+            scrollToBottom();
+        });
+        const chatContainer = document.getElementById('chat-container');
+        if (chatContainer) {
+            observer.observe(chatContainer, { childList: true, subtree: true });
+        }
         const STARTER_CHIP_POOL = [
             // Technology
             "Who is the CEO of OpenAI?",
@@ -1739,129 +2004,133 @@
             const maxSources = 10; // Defaulting to 10
             const container = document.getElementById('chat-container');
             const emptyState = document.getElementById('empty-state');
-
             if (emptyState) emptyState.remove();
 
             // Append User Message Bubble (SKIP if retry)
             if (!isRetry) {
-                const userDiv = document.createElement('div');
-                userDiv.className = 'message-bubble user-message';
-                userDiv.textContent = query;
-                container.appendChild(userDiv);
+                // User message is already added at the top of handleSearch
             }
 
-            // Append AI Loading Bubble (Typing Indicator)
-            const aiDiv = document.createElement('div');
-            aiDiv.className = 'message-bubble ai-message';
-            aiDiv.innerHTML = `
-                <div class="flex items-center gap-2 py-1 px-1">
-                    <div class="flex gap-1.5 item-center">
-                        <span class="size-1.5 bg-primary/60 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-                        <span class="size-1.5 bg-primary/60 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-                        <span class="size-1.5 bg-primary/60 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
-                    </div>
-                    <span class="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-2">MindX is thinking</span>
-                </div>`;
-            container.appendChild(aiDiv);
-            scrollToBottom();
+            // Reset UI
+            input.value = '';
+            input.style.height = 'auto';
+            document.getElementById('starter-chips')?.remove();
 
-            const startTime = Date.now();
+            // Allow file-only submission
+            if (!query && fileManager.uploadedFiles.length > 0) {
+                addMessageToChat('user', `Analyzing ${fileManager.uploadedFiles.length} file(s)...`);
+            } else {
+                addMessageToChat('user', query);
+                addToHistory(query);
+            }
 
+            // Check if we have files attached
+            const attachedFiles = fileManager.getAttachedFiles();
+
+            if (attachedFiles.length > 0) {
+                // Handle File Chat (RAG)
+                // For this version, we'll chat with the first file
+                // Future: Support multi-file chat
+                const fileId = attachedFiles[0].file_id;
+
+                showLoadingState();
+
+                try {
+                    const token = localStorage.getItem('mindx_token');
+                    const formData = new FormData();
+                    formData.append('message', query || "Summarize this file");
+                    formData.append('file_id', fileId);
+
+                    const response = await fetch('/api/chat-with-file', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        hideLoadingState();
+                        addMessageToChat('ai', data.answer);
+                        // Clear files after successful chat? Or keep them?
+                        // For now keep them to allow follow-up
+                    } else {
+                        throw new Error('File chat failed');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    hideLoadingState();
+                    addMessageToChat('ai', "I encountered an error analyzing the file. Please try again.");
+                }
+                return;
+            }
+
+            // Standard Chat Flow
+            showLoadingState();
+            /* ... existing search logic ... */
+
+            // Build Context
+            let context = [];
+            const history = document.querySelectorAll('.message-bubble');
+            history.forEach(msg => {
+                const role = msg.classList.contains('user-message') ? 'user' : 'assistant';
+                context.push({ role, content: msg.innerText });
+            });
+            // Keep last 6 messages
+            if (context.length > 6) context = context.slice(-6);
+
+            /* ... API Call ... */
             try {
-                const response = await fetch('/qa/stream', {
+                const token = localStorage.getItem('mindx_token');
+                // Use fetch to stream or get JSON
+                // Re-using existing /api/chat logic but modernized
+
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token,
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
                         query: query,
+                        web_search: webSearchEnabled,
                         session_id: currentSessionId,
-                        use_search: true,
-                        max_sources: parseInt(maxSources),
-                        fast_mode: document.getElementById('fast-mode-toggle').checked
-                    }),
+                        chat_history: context
+                    })
                 });
 
-                if (!response.ok) throw new Error('Streaming failed');
+                if (!response.ok) throw new Error('API Error');
 
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let fullAnswer = "";
-                let streamComplete = false;
+                const data = await response.json();
+                hideLoadingState();
 
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done || streamComplete) break;
+                // Show Answer
+                addMessageToChat('ai', data.answer);
 
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const raw = line.substring(6);
-                            if (raw === '[DONE]') {
-                                console.log('✅ [DONE] received, setting streamComplete=true');
-                                streamComplete = true;
-                                break;
-                            }
-                            try {
-                                const data = JSON.parse(raw);
-                                if (data.type === 'token') {
-                                    fullAnswer += data.content;
-
-                                    // Artifact Detection (Code Blocks)
-                                    const codeBlockRegex = /```(\w*)\n([\s\S]*?)(?:```|$)/g;
-                                    const matches = Array.from(fullAnswer.matchAll(codeBlockRegex));
-
-                                    if (matches.length > 0) {
-                                        const lastMatch = matches[matches.length - 1];
-                                        const lang = lastMatch[1] || 'text';
-                                        const content = lastMatch[2];
-
-                                        // Auto-open sidebar for non-trivial code blocks
-                                        if (content.length > 60) {
-                                            const title = "Generated " + (lang.charAt(0).toUpperCase() + lang.slice(1) || "Code");
-                                            openArtifact(content, lang, title);
-                                        }
-                                    }
-
-                                    aiDiv.innerHTML = `<div class="markdown-body">${marked.parse(fullAnswer)}</div>`;
-                                } else if (data.type === 'status') {
-                                    if (data.stage) animateStage(data.stage);
-                                    aiDiv.innerHTML = `
-                                        <div class="flex items-center gap-3">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-primary"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-                                            <span class="text-xs font-bold uppercase tracking-tight text-slate-500">${data.content}</span>
-                                        </div>`;
-                                } else if (data.type === 'metadata') {
-                                    // Update metadata display - Revert to default status
-                                    document.getElementById('ai-status').innerHTML = `
-                                        <span class="size-1.5 bg-primary/40 rounded-full"></span>
-                                        MindX Intelligent
-                                    `;
-
-                                    // Render inline source chips with confidence badge below the current AI message
-                                    renderSourceChips(aiDiv, data.sources, data.confidence);
-                                } else if (data.type === 'error') {
-                                    aiDiv.innerHTML = `
-                                        <div class="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                                            <div>
-                                                <p class="text-xs font-bold text-red-500 uppercase">System Error</p>
-                                                <p class="text-sm text-slate-400 mt-1">${data.content}</p>
-                                            </div>
-                                        </div>`;
-                                    streamComplete = true;
-                                    break;
-                                }
-                            } catch (e) {
-                                console.warn('JSON parse error in stream:', e);
-                            }
-                        }
-                    }
-                    scrollToBottom();
+                // Show Sources
+                if (data.sources && data.sources.length) {
+                    const lastMsg = document.querySelector('#chat-container .ai-message:last-child');
+                    if (lastMsg) renderSourceChips(lastMsg, data.sources, data.confidence);
                 }
+
+                // Update history sidebar
+                fetchHistory();
+
+                // Remove thinking indicator
+                if (typeof aiDiv !== 'undefined') aiDiv.remove();
+
+                // Artifact Detection & Auto-Open
+                const codeBlockRegex = /```(\w*)\n([\s\S]*?)(?:```|$)/g;
+                const matches = Array.from(data.answer.matchAll(codeBlockRegex));
+                if (matches.length > 0) {
+                    const lastMatch = matches[matches.length - 1];
+                    const content = lastMatch[2];
+                    if (content.length > 60) {
+                        const lang = lastMatch[1] || 'text';
+                        openArtifact(content, lang, "Generated Code");
+                    }
+                }
+
+                scrollToBottom();
 
                 // Finalize UI
                 if (searchHistory.length === 0 || !searchHistory.find(s => s.id === currentSessionId)) {

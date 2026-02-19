@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, qa, documents, chats, voice
+from app.routers import auth, qa, documents, chats, voice, upload
 from app.database import engine, Base
 import app.models.user
 import app.models.chat_history
@@ -58,6 +58,16 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(qa.router, prefix="/api", tags=["QA"])
+app.include_router(documents.router, prefix="/api", tags=["Documents"])
+app.include_router(chats.router, prefix="/chats", tags=["Chats"])
+app.include_router(voice.router, prefix="/api", tags=["Voice"])
+app.include_router(upload.router, prefix="/api", tags=["Upload"])
     allow_methods=["*"],
     allow_headers=["*"],
 )
