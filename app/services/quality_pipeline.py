@@ -178,8 +178,8 @@ If answer is about "Oxidation of Iron", suggestions could be:
             # Stage 1: Expansion (already handled by Intelligence if not fast_mode)
             if expanded_queries == [resolved_query]:
                 logger.info("Stage 1: One-shot Query Optimization")
-                optimized = await self.query_intel.optimize_query_for_search(resolved_query, history)
-                expanded_queries = [optimized]
+                optimized = await self.query_intel.optimize_query_for_search(resolved_query, intelligence)
+                expanded_queries = optimized
             elif not fast_mode:
                 logger.info("Stage 1: Multi-query Expansion")
                 expanded_queries = await self.expand_query(enhanced_query)
