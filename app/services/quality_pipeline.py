@@ -306,7 +306,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
             result = {
                 "answer": formatted_answer,
                 "sources": sources_to_use,
-                "confidence": confidence.get("score", 0.7) / 100.0,
+                "confidence": confidence.get("score", 70) / 100.0,
                 "confidence_details": confidence,
                 "followups": followups,
                 "metadata": {
