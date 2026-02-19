@@ -116,6 +116,7 @@ def get_chat(
                 "role_user": m.query,
                 "role_assistant": m.answer,
                 "source": m.source,
+                "confidence": m.confidence,
                 "created_at": m.created_at.isoformat() if m.created_at else None,
             }
             for m in messages
