@@ -159,6 +159,12 @@ If answer is about "Oxidation of Iron", suggestions could be:
         # If intelligence suggests optimized queries, use them
         expanded_queries = intelligence.get("optimized_queries", [resolved_query])
         
+        # Check if search is needed (Pre-RAG Relevance)
+        search_check = await self.query_intel.needs_search(resolved_query)
+        if not search_check.get("needs_search", True):
+            logger.info(f"Skipping search: {search_check.get('reason')}")
+            use_search = False
+        
         start_time = time.time()
         
         try:
@@ -347,6 +353,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
             logger.info("Fast Path (Stream): Greeting detected, bypassing RAG")
             async for token in self.llm_service.stream_response(query):
                 yield {"type": "token", "content": token}
+            yield {"type": "final", "content": "Complete"}
             return
 
         # Stage 0: Intent & Context Analysis
@@ -354,6 +361,13 @@ If answer is about "Oxidation of Iron", suggestions could be:
         
         # Resolve pronouns/references first
         resolved_query = await self.query_intel.resolve_context_references(query, history)
+        
+        # Check if search is needed (Pre-RAG Relevance)
+        search_check = await self.query_intel.needs_search(resolved_query)
+        if not search_check.get("needs_search", True):
+            logger.info(f"Skipping search (Stream): {search_check.get('reason')}")
+            use_search = False
+
         
         # Semantically analyze the resolved query
         intelligence = await self.query_intel.analyze_query(resolved_query, history)

@@ -1,7 +1,7 @@
 import json
 import re
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from groq import AsyncGroq
 import os
 from itertools import islice
@@ -39,6 +39,29 @@ Focus on:
 
 Example: "Can you tell me more about how photosynthesis works in deep sea plants?" 
 Output: photosynthesis mechanism deep sea flora official research
+"""
+
+NEEDS_SEARCH_PROMPT = """
+Analyze if this query requires external information (RAG/Web Search) or can be answered by the LLM directly.
+
+NEEDS SEARCH (true):
+- Factual questions ("Who is CEO of Google?", "Latest news on AI")
+- Comparison ("Claude vs GPT-4")
+- Technical documentation ("How to use React useEffect")
+- Unknown entities ("What is MindX?")
+
+NO SEARCH (false):
+- Greetings ("Hi", "Hello", "Thanks")
+- Creative writing ("Write a poem", "Draft an email")
+- General knowledge logic ("What is 2+2?", "Explain the concept of love")
+- Code generation specific to known algorithms ("Write a fibonacci function")
+- Follow-up conversation not requiring new facts ("Start over", "Clear context")
+
+Return ONLY JSON:
+{
+  "needs_search": true,
+  "reason": "short explanation"
+}
 """
 
 class QueryIntelligence:
@@ -208,3 +231,25 @@ CRITICAL RULES:
         except Exception as e:
             logger.error(f"Query optimization failed: {e}")
             return [question]
+
+    async def needs_search(self, question: str) -> Dict[str, Any]:
+        """
+        Determine if the user query requires external info (RAG).
+        Returns { "needs_search": bool, "reason": str }
+        """
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.FAST_MODEL,
+                temperature=0.0,
+                max_tokens=100,
+                messages=[
+                    {"role": "system", "content": NEEDS_SEARCH_PROMPT},
+                    {"role": "user", "content": f"Query: {question}"}
+                ]
+            )
+            raw = response.choices[0].message.content.strip()
+            raw = re.sub(r'```json|```', '', raw).strip()
+            return json.loads(raw)
+        except Exception as e:
+            logger.error(f"Needs search check failed: {e}")
+            return {"needs_search": True, "reason": "Error fallback"}
