@@ -53,6 +53,7 @@ class ChatHistoryService:
             source=source,
             session_id=sid,
             title=title,
+            preview=query[:100] + ("..." if len(query) > 100 else ""),
             message_count=existing_count + 1,
             version=latest_version + 1,
             confidence=confidence
@@ -113,7 +114,8 @@ class ChatHistoryService:
             )
             result.append({
                 "session_id": str(row.session_id),
-                "title": row.title or row.query[:40] + ("…" if len(row.query) > 40 else ""),
+                "title": row.title or (row.query[:40] + ("…" if len(row.query) > 40 else "")),
+                "preview": row.preview or (row.query[:60] + ("…" if len(row.query) > 60 else "")),
                 "message_count": count,
                 "last_query": row.query[:60],
                 "is_pinned": bool(row.is_pinned),

@@ -1,12 +1,11 @@
 {
-    "venv": ".venv",
-    "venvPath": ".",
     "include": [
         "app",
-        "main.py"
+        "*.py"
     ],
     "exclude": [
-        "**/__pycache__"
+        "**/__pycache__",
+        ".venv"
     ],
     "pythonVersion": "3.12",
     "pythonPlatform": "Windows",
@@ -14,9 +13,10 @@
     "useLibraryCodeForTypes": true,
     "reportMissingImports": true,
     "reportMissingTypeStubs": false,
+    "venvPath": "C:/MindX",
+    "venv": ".venv",
     "extraPaths": [
-        ".",
-        "./app",
-        "./.venv/Lib/site-packages"
+        "C:/MindX",
+        "C:/MindX/app"
     ]
 }

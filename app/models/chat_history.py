@@ -15,6 +15,7 @@ class ChatHistory(Base):
 
     query = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
+    preview = Column(Text, nullable=True)          # snippet for sidebar
 
     source = Column(String, nullable=True)          # web / vector / hybrid
     title = Column(String(120), nullable=True)       # auto-generated from first message

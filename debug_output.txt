@@ -1,2 +1,0 @@
-C:\MindX\app\services\search_service.py:18: RuntimeWarning: This package (`duckduckgo_search`) has been renamed to `ddgs`! Use `pip install ddgs` instead.
-  self.ddgs = DDGS()

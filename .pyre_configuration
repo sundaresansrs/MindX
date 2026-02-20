@@ -1,9 +1,12 @@
 {
   "source_directories": [
-    "C:/MindX/app"
+    "C:/MindX"
   ],
   "search_path": [
-    "C:/MindX",
     "C:/MindX/.venv/Lib/site-packages"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    ".venv"
   ]
 }
