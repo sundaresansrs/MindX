@@ -5,6 +5,7 @@ from itertools import islice
 from app.services.llm_service import LLMService # type: ignore
 from app.services.search_service import SearchService # type: ignore
 from app.services.query_intelligence import QueryIntelligence # type: ignore
+from app.services.mode_classifier import ModeClassifier # type: ignore
 import logging
 import time
 import re
@@ -60,7 +61,7 @@ STRICT STRUCTURE RULES:
    Example: "*Developing a next-generation RAG pipeline for research intelligence.*"
 3. HEADERS: Use `##` for major sections and `###` for sub-sections. Use descriptive, bold titles.
 4. BOLDING: Bold every key entity, technical term, and critical conclusion on first mention.
-5. LISTS: Use bullet points (•) for grouped items and numbered lists ONLY for specific step-by-step sequences.
+5. POINTED LISTS: Use bullet points (•) for information lists or fact groupings. Use numbered lists (1, 2, 3) for specific sequences, rankings, or step-by-step instructions. PRIORITIZE LISTS over dense paragraphs for readability.
 6. TYPOGRAPHY: Ensure proper spacing between headers and paragraphs for maximum readability.
 
 ABSOLUTE PROHIBITIONS:
@@ -72,7 +73,7 @@ ABSOLUTE PROHIBITIONS:
 STRUCTURE BY INTENT: {intent}
 {intent_guidelines}
 
-Your goal is a premium, dense, yet readable academic-grade report.
+Your goal is a premium, dense, yet readable academic-grade report with clear, pointed sections.
 """
 
     PASS3_SYSTEM = """
@@ -120,6 +121,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
         self.search_service = SearchService()
         self.vector_service = VectorService(db)
         self.query_intel = QueryIntelligence()
+        self.mode_classifier = ModeClassifier()
         self.memory_service = MemoryService(db, self.llm_service)
         self.use_reranking = use_reranking
 
@@ -147,30 +149,41 @@ If answer is about "Oxidation of Iron", suggestions could be:
             max_sources: Maximum sources to include in answer
         """
         history = history or []
+        start_time = time.time()
         
-        # Stage 0: Context Resolution & Semantic Analysis
-        # Resolve pronouns/references first
-        resolved_query = await self.query_intel.resolve_context_references(query, history)
+        # Stage 0: Mode Classification (SEARCH / CHAT / HYBRID)
+        mode = await self.mode_classifier.classify(query, history)
+        logger.info(f"Mode classified: {mode} for query: {query[:60]}")  # type: ignore
         
-        # Semantically analyze the resolved query
+        # Resolve pronouns/references early so even CHAT mode has context
+        resolved_query = query
+        if mode == "HYBRID" or (history and len(history) >= 2):
+            resolved_query = await self.query_intel.resolve_context_references(query, history)
+        
+        # CHAT mode: skip all search, direct LLM with history
+        if mode == "CHAT":
+            answer = await self.llm_service.generate_response(resolved_query, history=history)
+            return {
+                "answer": answer,
+                "sources": [],
+                "confidence": 0.5,
+                "metadata": {
+                    "mode": "chat",
+                    "processing_time": time.time() - start_time
+                }
+            }
+        
+        # Semantically analyze the resolved query (for SEARCH/HYBRID)
         intelligence = await self.query_intel.analyze_query(resolved_query, history)
         enhanced_query = resolved_query
         
         # If intelligence suggests optimized queries, use them
         expanded_queries = intelligence.get("optimized_queries", [resolved_query])
         
-        # Check if search is needed (Pre-RAG Relevance)
-        search_check = await self.query_intel.needs_search(resolved_query)
-        if not search_check.get("needs_search", True):
-            logger.info(f"Skipping search: {search_check.get('reason')}")
-            use_search = False
-        
-        start_time = time.time()
-        
         try:
-            # If search disabled, use LLM-only mode (existing behavior)
+            # If search disabled, use LLM-only mode (existing behavior) with history
             if not use_search:
-                answer = await self.llm_service.generate_response(query)
+                answer = await self.llm_service.generate_response(resolved_query, history=history)
                 return {
                     "answer": answer,
                     "sources": [],
@@ -190,10 +203,10 @@ If answer is about "Oxidation of Iron", suggestions could be:
                 logger.info("Stage 1: Multi-query Expansion")
                 expanded_queries = await self.expand_query(enhanced_query)
             
-            # Stage 2: Multi-Source Retrieval (Web + Vector)
+            # Stage 2: Multi-Source Retrieval (Web + Vector + Specialized)
             logger.info("Stage 2: Multi-Source Retrieval")
             
-            # Fetch results in parallel (same as stream)
+            # Fetch results in parallel (web + vector + specialized)
             web_task = self.search_service.search_multiple_queries(
                 expanded_queries, 
                 max_results_per_query=5 if fast_mode else 15
@@ -204,21 +217,22 @@ If answer is about "Oxidation of Iron", suggestions could be:
                 session_id=session_id,
                 limit=10
             )
+            specialized_task = self.search_service.search_specialized(query)
 
             # Parallel Retrieve with timeout
             memory_task = self.memory_service.get_user_context(user.id, query)
             try:
-                web_results, vector_results, user_mem_context = await asyncio.wait_for(
-                    asyncio.gather(web_task, vector_task, memory_task),
+                web_results, vector_results, specialized_results, user_mem_context = await asyncio.wait_for(
+                    asyncio.gather(web_task, vector_task, specialized_task, memory_task),
                     timeout=25.0
                 )
             except asyncio.TimeoutError:
                 logger.warning("Pipeline process_query retrieval timed out.")
-                web_results, vector_results, user_mem_context = [], [], ""
+                web_results, vector_results, specialized_results, user_mem_context = [], [], [], ""
 
             
             # Combine results using RRF (Premium Ranking)
-            ranked_results = self.apply_rrf([vector_results, web_results])
+            ranked_results = self.apply_rrf([vector_results, web_results, specialized_results])
             
             if not ranked_results:
                 # Fallback to LLM-only if no search results
@@ -261,8 +275,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
             messages = await self.llm_service.build_messages_with_history(
                 question=query,
                 context=context,
-                chat_history=history
-            ,
+                chat_history=history,
                 system_prompt=self.PASS1_SYSTEM
             )
             
@@ -345,31 +358,35 @@ If answer is about "Oxidation of Iron", suggestions could be:
         history = history or []
         start_time = time.time()
         
-        # Fast Path Detection - Only for greetings, NOT factual questions
-        greeting_words = ["hi", "hello", "hey", "thanks", "thank you", "who are you", "help"]
-        is_greeting = any(query.lower().strip() == word or query.lower().startswith(word + " ") for word in greeting_words)
+        # Stage 0: Mode Classification (SEARCH / CHAT / HYBRID)
+        mode = await self.mode_classifier.classify(query, history)
+        logger.info(f"Mode classified (stream): {mode} for query: {query[:60]}")  # type: ignore
         
-        if is_greeting and len(query.split()) < 5:
-            logger.info("Fast Path (Stream): Greeting detected, bypassing RAG")
-            async for token in self.llm_service.stream_response(query):
+        # Resolve pronouns/references early
+        resolved_query = query
+        if mode == "HYBRID" or (history and len(history) >= 2):
+            resolved_query = await self.query_intel.resolve_context_references(query, history)
+
+        # CHAT mode: bypass all search, stream directly from LLM with history
+        if mode == "CHAT":
+            logger.info("CHAT mode: Bypassing RAG pipeline entirely, streaming with history")
+            async for token in self.llm_service.stream_response(resolved_query, history=history):
                 yield {"type": "token", "content": token}
+            yield {
+                "type": "metadata",
+                "sources": [],
+                "confidence": 0.5,
+                "web_search_performed": False,
+                "documents_found": False,
+                "processing_time": time.time() - start_time
+            }
             yield {"type": "final", "content": "Complete"}
             return
 
         # Stage 0: Intent & Context Analysis
         yield {"type": "status", "stage": 0, "content": "Analyzing conversation intent..."}
         
-        # Resolve pronouns/references first
-        resolved_query = await self.query_intel.resolve_context_references(query, history)
-        
-        # Check if search is needed (Pre-RAG Relevance)
-        search_check = await self.query_intel.needs_search(resolved_query)
-        if not search_check.get("needs_search", True):
-            logger.info(f"Skipping search (Stream): {search_check.get('reason')}")
-            use_search = False
-
-        
-        # Semantically analyze the resolved query
+        # Semantically analyze the resolved query (for SEARCH/HYBRID)
         intelligence = await self.query_intel.analyze_query(resolved_query, history)
         enhanced_query = resolved_query
         
@@ -381,10 +398,10 @@ If answer is about "Oxidation of Iron", suggestions could be:
         deep_fetch_count = 5 if not fast_mode else 2
         
         try:
-            # If search disabled, use LLM-only mode (existing behavior)
+            # If search disabled, use LLM-only mode (existing behavior) with history
             if not use_search:
                 yield {"type": "status", "stage": 0, "content": "Search disabled, using LLM-only mode..."}
-                async for token in self.llm_service.stream_response(query):
+                async for token in self.llm_service.stream_response(resolved_query, history=history):
                     yield {"type": "token", "content": token}
                 yield {
                     "type": "metadata",
@@ -421,22 +438,23 @@ If answer is about "Oxidation of Iron", suggestions could be:
                 limit=5 if fast_mode else 10
             )
             memory_task = self.memory_service.get_user_context(user.id, enhanced_query)
+            specialized_task = self.search_service.search_specialized(enhanced_query)
             
             # Yielding status while gathering with a strict timeout
             try:
-                web_results, vector_results, user_mem_context = await asyncio.wait_for(
-                    asyncio.gather(web_task, vector_task, memory_task),
+                web_results, vector_results, user_mem_context, specialized_results = await asyncio.wait_for(
+                    asyncio.gather(web_task, vector_task, memory_task, specialized_task),
                     timeout=25.0 # 25s total for combined retrieval
                 )
                 yield {"type": "status", "stage": 2, "content": "Retrieval complete."}
             except asyncio.TimeoutError:
                 logger.warning("Retrieval stage timed out. Proceeding with limited data.")
                 yield {"type": "status", "stage": 2, "content": "Search slow; proceeding with limited results..."}
-                web_results, vector_results, user_mem_context = [], [], "" # Fallback to empty if both timed out
+                web_results, vector_results, user_mem_context, specialized_results = [], [], "", []
             
             # Stage 3: Neural Ranking (RRF)
             yield {"type": "status", "stage": 3, "content": "Ranking results by credibility..."}
-            ranked_results = self.apply_rrf([vector_results, web_results])
+            ranked_results = self.apply_rrf([vector_results, web_results, specialized_results])
             sources_to_use = ranked_results[:max_sources]
             
             # Stage 4: Semantic Intelligence
@@ -477,8 +495,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
             messages = await self.llm_service.build_messages_with_history(
                 question=query,
                 context=context,
-                chat_history=history
-            ,
+                chat_history=history,
                 system_prompt=self.PASS1_SYSTEM
             )
             

@@ -363,7 +363,7 @@
             if (!query) return;
             const token = localStorage.getItem('mindx_token');
             if (token) {
-                window.location.href = '/dashboard_v2.html?q=' + encodeURIComponent(query);
+                window.location.href = '/dashboard.html?q=' + encodeURIComponent(query);
             } else {
                 window.location.href = '/signup.html?q=' + encodeURIComponent(query);
             }

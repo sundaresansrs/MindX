@@ -22,7 +22,8 @@ class LLMService:
         prompt: str,
         context: str | None = None,
         model: str | None = None,
-        system_prompt: str | None = None, # New parameter
+        system_prompt: str | None = None,
+        history: Optional[List[Dict]] = None,
     ) -> str:
         messages = []
 
@@ -37,6 +38,10 @@ class LLMService:
                     f"{context}"
                 )
             })
+        
+        if history:
+            for m in history:
+                messages.append(m)
 
         messages.append({
             "role": "user",
@@ -57,6 +62,7 @@ class LLMService:
         context: str | None = None,
         model: str | None = None,
         system_prompt: str | None = None,
+        history: Optional[List[Dict]] = None,
     ):
         messages = []
         if system_prompt:
@@ -66,6 +72,10 @@ class LLMService:
                 "role": "system",
                 "content": f"You are a helpful assistant. Use this context if relevant:\n\n{context}"
             })
+        
+        if history:
+            for m in history:
+                messages.append(m)
         
         messages.append({"role": "user", "content": prompt})
 

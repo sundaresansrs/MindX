@@ -53,7 +53,11 @@ def login(
         )
 
     token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "full_name": user.full_name
+    }
 
 
 # ✅ USED BY QA ROUTER

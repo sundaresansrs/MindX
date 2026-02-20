@@ -4,6 +4,7 @@ from typing import Optional, List
 class Token(BaseModel):
     access_token: str
     token_type: str
+    full_name: Optional[str] = None
 
 class UserCreate(BaseModel):
     email: str

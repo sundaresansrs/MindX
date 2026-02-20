@@ -228,7 +228,7 @@ class SearchService:
                     return list(results)
 
             fn: Callable[[], List[Dict]] = sync_search
-            raw: List[Dict] = await asyncio.wait_for(asyncio.to_thread(fn), timeout=15.0)
+            raw: List[Dict] = await asyncio.wait_for(asyncio.to_thread(fn), timeout=15.0)  # type: ignore
             
             results = []
             for item in raw:
@@ -419,3 +419,259 @@ class SearchService:
         all_results = self.filter_chinese_results(all_results)
         all_results = filter_results(all_results)
         return self.deduplicate_sources(all_results)  # type: ignore
+
+    # ============================================================
+    # LAYER 3: SPECIALIZED SEARCH SOURCES
+    # ============================================================
+
+    def detect_search_intent(self, query: str) -> List[str]:
+        """
+        Heuristic intent classifier — determines which specialized
+        sources to query based on keyword signals.
+        Returns a list of intents: 'news', 'academic', 'code', 'forum'.
+        """
+        q = query.lower()
+        intents = []
+
+        news_signals = [
+            "latest", "news", "today", "breaking", "update",
+            "announced", "released", "launched", "report",
+        ]
+        if any(w in q for w in news_signals):
+            intents.append("news")
+
+        academic_signals = [
+            "paper", "research", "study", "journal", "arxiv",
+            "scholar", "peer-reviewed", "thesis", "citation",
+            "academic", "doi", "pubmed",
+        ]
+        if any(w in q for w in academic_signals):
+            intents.append("academic")
+
+        code_signals = [
+            "github", "repo", "repository", "open source",
+            "library", "package", "npm", "pip install", "crate",
+            "framework", "sdk", "api docs",
+        ]
+        if any(w in q for w in code_signals):
+            intents.append("code")
+
+        forum_signals = [
+            "reddit", "discussion", "forum", "opinion",
+            "hacker news", "hn", "community", "thread",
+            "experience", "best practices",
+        ]
+        if any(w in q for w in forum_signals):
+            intents.append("forum")
+
+        return intents
+
+    async def search_specialized(
+        self, query: str, intents: Optional[List[str]] = None
+    ) -> List[Dict]:
+        """
+        Dispatch to specialized sources based on detected intents.
+        Should be called in parallel with the primary search.
+        """
+        if intents is None:
+            intents = self.detect_search_intent(query)
+
+        if not intents:
+            return []
+
+        tasks = []
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+            for intent in intents:
+                if intent == "news":
+                    tasks.append(self._search_hackernews(query, client))
+                elif intent == "academic":
+                    tasks.append(self._search_semantic_scholar(query, client))
+                elif intent == "code":
+                    tasks.append(self._search_github(query, client))
+                elif intent == "forum":
+                    tasks.append(self._search_reddit(query, client))
+                    tasks.append(self._search_hackernews(query, client))
+
+            if not tasks:
+                return []
+
+            try:
+                results_nested = await asyncio.wait_for(
+                    asyncio.gather(*tasks, return_exceptions=True),
+                    timeout=10.0,
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Specialized search timed out")
+                return []
+
+        all_results: List[Dict] = []
+        for result in results_nested:
+            if isinstance(result, list):
+                all_results.extend(result)
+            elif isinstance(result, Exception):
+                logger.warning(f"Specialized source error: {result}")
+
+        return all_results
+
+    # ── Semantic Scholar (free, no key) ──
+
+    async def _search_semantic_scholar(
+        self, query: str, client: httpx.AsyncClient, limit: int = 5
+    ) -> List[Dict]:
+        """Search Semantic Scholar for academic papers."""
+        try:
+            resp = await client.get(
+                "https://api.semanticscholar.org/graph/v1/paper/search",
+                params={
+                    "query": query,
+                    "limit": limit,
+                    "fields": "title,url,abstract,year,citationCount,authors",
+                },
+                timeout=8.0,
+            )
+            if resp.status_code != 200:
+                return []
+
+            data = resp.json()
+            results = []
+            for paper in data.get("data", []):
+                authors = ", ".join(
+                    a.get("name", "") for a in list(paper.get("authors") or [])[:3]  # type: ignore
+                )
+                snippet = paper.get("abstract") or ""
+                if len(snippet) > 500:
+                    snippet = snippet[:500] + "..."
+
+                results.append({
+                    "title": paper.get("title", ""),
+                    "url": paper.get("url") or f"https://api.semanticscholar.org/CorpusID:{paper.get('paperId','')}",
+                    "snippet": snippet,
+                    "source": "Semantic Scholar",
+                    "credibility_score": 0.92,
+                    "metadata": {
+                        "year": paper.get("year"),
+                        "citations": paper.get("citationCount", 0),
+                        "authors": authors,
+                    },
+                })
+            logger.info(f"Semantic Scholar: {len(results)} papers found")
+            return results
+
+        except Exception as e:
+            logger.warning(f"Semantic Scholar search failed: {e}")
+            return []
+
+    # ── GitHub (public search, no key) ──
+
+    async def _search_github(
+        self, query: str, client: httpx.AsyncClient, limit: int = 5
+    ) -> List[Dict]:
+        """Search GitHub repositories."""
+        try:
+            resp = await client.get(
+                "https://api.github.com/search/repositories",
+                params={
+                    "q": query,
+                    "sort": "stars",
+                    "order": "desc",
+                    "per_page": limit,
+                },
+                headers={"Accept": "application/vnd.github.v3+json"},
+                timeout=8.0,
+            )
+            if resp.status_code != 200:
+                return []
+
+            data = resp.json()
+            results = []
+            for repo in data.get("items", []):
+                results.append({
+                    "title": repo.get("full_name", ""),
+                    "url": repo.get("html_url", ""),
+                    "snippet": repo.get("description") or "No description",
+                    "source": "GitHub",
+                    "credibility_score": 0.80,
+                    "metadata": {
+                        "stars": repo.get("stargazers_count", 0),
+                        "language": repo.get("language"),
+                        "updated": repo.get("updated_at"),
+                    },
+                })
+            logger.info(f"GitHub: {len(results)} repos found")
+            return results
+
+        except Exception as e:
+            logger.warning(f"GitHub search failed: {e}")
+            return []
+
+    # ── Hacker News (Algolia, free) ──
+
+    async def _search_hackernews(
+        self, query: str, client: httpx.AsyncClient, limit: int = 5
+    ) -> List[Dict]:
+        """Search Hacker News via the Algolia API."""
+        try:
+            resp = await client.get(
+                "https://hn.algolia.com/api/v1/search",
+                params={"query": query, "hitsPerPage": limit, "tags": "story"},
+                timeout=8.0,
+            )
+            if resp.status_code != 200:
+                return []
+
+            data = resp.json()
+            results = []
+            for hit in data.get("hits", []):
+                url = hit.get("url") or f"https://news.ycombinator.com/item?id={hit.get('objectID','')}"
+                results.append({
+                    "title": hit.get("title", ""),
+                    "url": url,
+                    "snippet": f"{hit.get('title','')} — {hit.get('num_comments', 0)} comments, {hit.get('points', 0)} points",
+                    "source": "Hacker News",
+                    "credibility_score": 0.70,
+                })
+            logger.info(f"HN: {len(results)} stories found")
+            return results
+
+        except Exception as e:
+            logger.warning(f"HN search failed: {e}")
+            return []
+
+    # ── Reddit (public JSON, no key) ──
+
+    async def _search_reddit(
+        self, query: str, client: httpx.AsyncClient, limit: int = 5
+    ) -> List[Dict]:
+        """Search Reddit via the public JSON API."""
+        try:
+            resp = await client.get(
+                "https://www.reddit.com/search.json",
+                params={"q": query, "sort": "relevance", "limit": limit, "t": "year"},
+                headers={"User-Agent": "MindX/1.0"},
+                timeout=8.0,
+            )
+            if resp.status_code != 200:
+                return []
+
+            data = resp.json()
+            results = []
+            for child in data.get("data", {}).get("children", []):
+                post = child.get("data", {})
+                results.append({
+                    "title": post.get("title", ""),
+                    "url": f"https://reddit.com{post.get('permalink', '')}",
+                    "snippet": (post.get("selftext") or post.get("title", ""))[:300],
+                    "source": "Reddit",
+                    "credibility_score": 0.55,
+                    "metadata": {
+                        "subreddit": post.get("subreddit"),
+                        "score": post.get("score", 0),
+                        "num_comments": post.get("num_comments", 0),
+                    },
+                })
+            logger.info(f"Reddit: {len(results)} posts found")
+            return results
+
+        except Exception as e:
+            logger.warning(f"Reddit search failed: {e}")
+            return []

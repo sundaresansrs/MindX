@@ -111,13 +111,22 @@ def signup_page():
 def dashboard_page():
     return FileResponse(BASE_DIR / "public" / "dashboard.html")
 
+@app.get("/index.html")
+def index_page():
+    return FileResponse(BASE_DIR / "public" / "index.html")
+
+
+@app.get("/dashboard_v2.html")
+def dashboard_v2_redirect():
+    # Redirect old V2 users to the unified dashboard
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/dashboard.html")
+
+
 @app.get("/stream_test.html")
 def stream_test_page():
     return FileResponse(BASE_DIR / "public" / "stream_test.html")
 
-@app.get("/dashboard_v2.html")
-def dashboard_v2_page():
-    return FileResponse(BASE_DIR / "public" / "dashboard_v2.html")
 
 # Serve static assets (CSS, JS, images)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
