@@ -190,7 +190,29 @@
             display: flex;
             flex-direction: column;
             scroll-behavior: smooth;
+            align-items: center;
+            /* Fix 2: Center content */
         }
+
+        /* Fix 4: File Menu Positioning */
+        .upload-menu {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            z-index: 100;
+            display: none;
+            background: #1e1e24;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 200px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .upload-menu.active {
+            display: block;
+        }
+
 
         /* Input Area - FIXED at bottom */
         .input-area {
@@ -378,23 +400,26 @@
             <div id="messagesArea" class="messages-area">
                 <div id="chat-container" class="max-w-3xl mx-auto w-full flex flex-col gap-6">
                     <!-- Empty State -->
-                    <div id="empty-state"
-                        class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                            class="text-primary opacity-40">
-                            <path
-                                d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z">
-                            </path>
-                            <path
-                                d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z">
-                            </path>
-                        </svg>
-                        <p class="text-lg font-semibold text-slate-500">How can MindX help you today?</p>
-                        <p class="text-sm text-slate-600">Secure, AI-powered research at your fingertips.</p>
+                    <!-- Empty State (Wrapped for Fix 2) -->
+                    <div style="flex:1; display:flex; align-items:center; justify-content:center; width:100%;">
+                        <div id="empty-state"
+                            class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-primary opacity-40">
+                                <path
+                                    d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z">
+                                </path>
+                                <path
+                                    d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z">
+                                </path>
+                            </svg>
+                            <p class="text-lg font-semibold text-slate-500">How can MindX help you today?</p>
+                            <p class="text-sm text-slate-600">Secure, AI-powered research at your fingertips.</p>
 
-                        <!-- Dynamic Starter Chips (Task 36) -->
-                        <div id="starter-chips" class="flex flex-wrap justify-center gap-2 pt-8 max-w-2xl"></div>
+                            <!-- Dynamic Starter Chips (Task 36) -->
+                            <div id="starter-chips" class="flex flex-wrap justify-center gap-2 pt-8 max-w-2xl"></div>
+                        </div>
                     </div>
 
 
@@ -717,6 +742,139 @@
         // ─── State ───
         let webSearchEnabled = true;
         let searchHistory = [];
+        let allChats = []; // Fix 3
+
+        // Fix 3: Local History Logic
+
+        function loadChatsFromLocal() {
+            try {
+                const raw = localStorage.getItem('mindx_chats');
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveChatsToLocal(chats) {
+            localStorage.setItem('mindx_chats', JSON.stringify(chats));
+        }
+
+        // Fix 5: Render Sidebar with Timestamps
+        function renderSidebar(chats) {
+            const nav = document.getElementById('search-history');
+            if (!nav) return;
+
+            if (!chats || chats.length === 0) {
+                nav.innerHTML = '<p class="text-xs text-slate-600 px-3 py-2">No history</p>';
+                return;
+            }
+
+            nav.innerHTML = chats.map(chat => {
+                // Fix 5: Specific HTML structure with timestamp
+                return `
+                <div class="group relative w-full mb-1">
+                    <button onclick="loadChat('${chat.id}')" class="w-full flex items-start px-4 py-3 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group text-left">
+                        <div class="mr-3 text-lg opacity-70">💬</div>
+                        <div class="flex-1 overflow-hidden">
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                                <span class="truncate font-bold tracking-tight">${chat.title || 'Untitled Chat'}</span>
+                                <span style="font-size:10px; color:#444; font-family:monospace; flex-shrink:0;">
+                                    ${timeAgo(chat.updatedAt || chat.createdAt || new Date())}
+                                </span>
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-normal truncate mt-0.5 opacity-60">
+                                ${(chat.preview || 'No preview available').substring(0, 60)}
+                            </div>
+                        </div>
+                    </button>
+                    <button onclick="deleteChat('${chat.id}', event)" class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 hover:text-red-400 transition-colors bg-background-dark/80 rounded-lg shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        // Helper to load a specific chat from local
+        function loadChat(id) {
+            currentSessionId = id;
+            localStorage.setItem('currentSessionId', id);
+            const chats = loadChatsFromLocal();
+            const chat = chats.find(c => c.id === id);
+            if (chat) {
+                // Clear existing
+                const container = document.getElementById('chat-container');
+                container.innerHTML = '';
+                // Render messages
+                chat.messages.forEach(msg => {
+                    addMessageToChat(msg.role, msg.content, false); // false = don't save again
+                });
+            }
+        }
+
+        // Helper to delete chat
+        function deleteChat(id, e) {
+            if (e) e.stopPropagation();
+            if (!confirm('Delete this chat?')) return;
+            const chats = loadChatsFromLocal().filter(c => c.id !== id);
+            saveChatsToLocal(chats);
+            renderSidebar(chats);
+            if (id === currentSessionId) startNewChat();
+        }
+
+        // Update addMessageToChat to save to local
+        window.addMessageToChat = function (role, content, save = true) {
+            const container = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message-bubble ${role === 'user' ? 'user-message' : 'ai-message'}`;
+
+            if (role === 'ai') {
+                msgDiv.innerHTML = `<div class="markdown-body">${marked.parse(content)}</div>`;
+            } else {
+                msgDiv.textContent = content;
+            }
+            container.appendChild(msgDiv);
+
+            if (save) {
+                if (!currentSessionId) {
+                    currentSessionId = uuid.v4();
+                    localStorage.setItem('currentSessionId', currentSessionId);
+                }
+
+                let chat = allChats.find(c => c.id === currentSessionId);
+                if (!chat) {
+                    chat = {
+                        id: currentSessionId,
+                        title: role === 'user' ? content.substring(0, 40) : 'New Chat',
+                        messages: [],
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        preview: content.substring(0, 60)
+                    };
+                    allChats.unshift(chat);
+                }
+
+                chat.messages.push({ role, content, timestamp: new Date() });
+                chat.updatedAt = new Date();
+                if (role === 'user') {
+                    chat.preview = content.substring(0, 60);
+                    if (chat.title === 'New Chat') chat.title = content.substring(0, 40);
+                }
+
+                saveChatsToLocal(allChats);
+                renderSidebar(allChats);
+                scrollToBottom();
+            }
+
+            // Highlight code if AI
+            if (role === 'ai') {
+                setTimeout(() => {
+                    Prism.highlightAllUnder(msgDiv);
+                    renderMermaidDiagrams(msgDiv);
+                    addMessageActions(container, null);
+                }, 50);
+            }
+        };
+
 
         // ─── Auth Check ───
         const token = localStorage.getItem('mindx_token');
@@ -2093,7 +2251,11 @@
 
         // ─── Initial Load ───
         window.addEventListener('DOMContentLoaded', () => {
-            fetchHistory();
+            // Fix 3: Load Local History Immediately
+            allChats = loadChatsFromLocal();
+            renderSidebar(allChats);
+
+            // fetchHistory(); // Disable API history for now to prioritize local fixes as requested
             restoreActiveChat();
             initSessionRecovery();
             initOnboarding();
