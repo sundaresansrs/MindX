@@ -609,9 +609,9 @@
                         <div id="empty-state" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); border-radius: 20px; padding: 40px 32px; text-align: center; max-width: 500px; display: flex; flex-direction: column; align-items: center;">
                             <p style="font-size: 24px; font-weight: 900; color: white; margin: 0 0 12px;">How can MindX help you today?</p>
                             <p style="font-size: 14px; color: #888; margin: 0 0 20px; max-width: 400px;">Your private AI researcher. Ask complex questions, analyze documents, or explore the web.</p>
-                            <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 20px;">
-                                <button onclick="document.getElementById('search-input').focus()" style="padding: 10px 20px; background: #00FF41; color: #000; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 12px; transition: all 0.2s;" onmouseover="this.style.background='#00ff6a'" onmouseout="this.style.background='#00FF41'">Start Researching</button>
-                                <button onclick="triggerFileUpload('.pdf,.docx,.txt')" style="padding: 10px 20px; background: transparent; color: #999; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; cursor: pointer; font-size: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='#00FF41'; this.style.color='#00FF41'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'; this.style.color='#999'">Upload Files</button>
+                            <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+                                <button onclick="document.getElementById('search-input').focus()" style="padding: 10px 20px; background: #00FF41; color: #000; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 12px; transition: all 0.2s;" onmouseover="this.style.background='#00ff6a'" onmouseout="this.style.background='#00FF41'">✨ Ask Anything</button>
+                                <button onclick="triggerFileUpload('.pdf,.docx,.txt')" style="padding: 10px 20px; background: transparent; color: #999; border: 1px solid rgba(0,255,65,0.3); border-radius: 10px; cursor: pointer; font-size: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='#00FF41'; this.style.color='#00FF41'; this.style.background='rgba(0,255,65,0.05)'" onmouseout="this.style.borderColor='rgba(0,255,65,0.3)'; this.style.color='#999'; this.style.background='transparent'">📂 Bring Files</button>
                             </div>
                             <div id="starter-chips" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 450px;"></div>
                         </div>
@@ -665,7 +665,7 @@
                     
                     <!-- File Upload Button -->
                     <div style="position: relative; margin-bottom: 4px;">
-                        <button onclick="toggleUploadMenu(event)" style="background: transparent; border: none; color: #999; cursor: pointer; padding: 8px; transition: color 0.2s; font-size: 16px;">📎</button>
+                        <button onclick="toggleUploadMenu(event)" style="background: transparent; border: none; color: #999; cursor: pointer; padding: 8px; transition: all 0.2s; font-size: 18px; hover:color:#00FF41;" onmouseover="this.style.color='#00FF41'; this.style.transform='scale(1.1)'" onmouseout="this.style.color='#999'; this.style.transform='scale(1)'">📎</button>
                         <input type="file" id="chat-file-upload" style="display: none;" multiple onchange="handleFileUpload(event)" />
                         <div id="upload-menu" class="upload-menu" style="position: absolute; bottom: 100%; left: 0; z-index: 100; display: none; background: #1e1e24; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 8px; min-width: 200px; margin-bottom: 8px;">
                             <div class="upload-menu-item" onclick="triggerFileUpload('.pdf,.docx,.doc'); event.stopPropagation();" style="padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; color: #ddd; transition: background 0.2s; border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -688,7 +688,7 @@
                     </div>
 
                     <!-- Mic Button -->
-                    <button class="mic-btn" id="micBtn" style="background: transparent; border: none; cursor: pointer; color: #999; padding: 8px; margin-bottom: 4px; transition: all 0.2s; font-size: 16px;">🎤</button>
+                    <button class="mic-btn" id="micBtn" style="background: transparent; border: none; cursor: pointer; color: #999; padding: 8px; margin-bottom: 4px; transition: all 0.2s; font-size: 18px;" onmouseover="this.style.color='#00FF41'; this.style.transform='scale(1.1)'" onmouseout="this.style.color='#999'; this.style.transform='scale(1)'">🎤</button>
 
                     <!-- Search Input -->
                     <textarea id="search-input" class="no-scrollbar" placeholder="Message MindX..." style="flex: 1; background: transparent; border: none; color: white; outline: none; resize: none; max-height: 150px; font-size: 14px; font-family: inherit; color: white;" rows="1" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); handleSearch(); }"></textarea>
@@ -700,7 +700,7 @@
                     </style>
 
                     <!-- Send Button -->
-                    <button id="search-btn" onclick="handleSearch()" style="background: #00FF41; color: #000; border: none; border-radius: 10px; width: 40px; height: 40px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-bottom: 4px; flex-shrink: 0;">↑</button>
+                    <button id="search-btn" onclick="handleSearch()" style="background: #00FF41; color: #000; border: none; border-radius: 10px; width: 40px; height: 40px; cursor: pointer; font-weight: 900; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-bottom: 4px; flex-shrink: 0; font-size: 22px; line-height: 1;" onmouseover="this.style.background='#00ff6a'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='#00FF41'; this.style.transform='scale(1)'">⬆</button>
                 </div>
 
                 <!-- Mode Toggles -->
