@@ -253,6 +253,37 @@
                 transform: translateY(0);
             }
         }
+
+        .dark-mode-toggle .sun-icon {
+            display: none;
+        }
+
+        .dark-mode-toggle .moon-icon {
+            display: block;
+        }
+
+        html.dark .dark-mode-toggle .sun-icon {
+            display: block;
+        }
+
+        html.dark .dark-mode-toggle .moon-icon {
+            display: none;
+        }
+
+        /* Unified Sidebar History Styling */
+        .history-item-active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .history-group-label {
+            padding: 12px 16px 4px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
     </style>
 </head>
 
@@ -604,6 +635,39 @@
             <!-- File Preview Zone (Above Input) -->
             <div id="file-list-preview" class="flex flex-wrap gap-2 mb-3"></div>
 
+            <!-- Mode Selectors (Task 35) -->
+            <div class="flex items-center gap-3 mb-3 px-2">
+                <div
+                    class="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="intelligent-mode-toggle" class="sr-only peer" checked
+                            onchange="toggleModeLabel()">
+                        <div
+                            class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary">
+                        </div>
+                    </label>
+                    <span id="mode-label" class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Deep
+                        Search</span>
+                </div>
+
+                <div
+                    class="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="fast-mode-toggle" class="sr-only peer" onchange="toggleModeLabel()">
+                        <div
+                            class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-yellow-500">
+                        </div>
+                    </label>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Fast Mode</span>
+                </div>
+
+                <div id="ai-status"
+                    class="ml-auto flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 border border-primary/20 px-3 py-1.5 rounded-xl">
+                    <span class="size-1.5 bg-primary rounded-full animate-pulse"></span>
+                    MindX Intelligent Mode
+                </div>
+            </div>
+
             <div class="input-wrap">
                 <div class="flex items-end gap-2 px-2 w-full">
                     <!-- File Upload Trigger & Menu -->
@@ -718,43 +782,6 @@
                 </div>
             </div>
 
-            <!-- Bottom Controls -->
-            <div class="flex items-center justify-between mt-3 px-4">
-                <div class="flex items-center gap-6">
-                    <label class="flex items-center gap-2 cursor-pointer group">
-                        <div class="relative">
-                            <input type="checkbox" id="fast-mode-toggle" class="sr-only peer"
-                                onchange="toggleModeLabel()">
-                            <div
-                                class="w-8 h-4 bg-white/10 rounded-full peer peer-checked:bg-primary/30 transition-all border border-white/5">
-                            </div>
-                            <div
-                                class="absolute left-0.5 top-0.5 w-3 h-3 bg-slate-500 rounded-full peer-checked:translate-x-4 peer-checked:bg-primary transition-all">
-                            </div>
-                        </div>
-                        <span id="mode-label"
-                            class="text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-tight">Deep
-                            Search</span>
-                    </label>
-
-                    <div class="h-3 w-[1px] bg-white/10"></div>
-
-                    <label class="flex items-center gap-2 cursor-pointer group">
-                        <div class="relative">
-                            <input type="checkbox" id="intelligent-mode-toggle" class="sr-only peer" checked>
-                            <div
-                                class="w-8 h-4 bg-white/10 rounded-full peer peer-checked:bg-primary/30 transition-all border border-white/5">
-                            </div>
-                            <div
-                                class="absolute left-0.5 top-0.5 w-3 h-3 bg-slate-500 rounded-full peer-checked:translate-x-4 peer-checked:bg-primary transition-all">
-                            </div>
-                        </div>
-                        <span
-                            class="text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors uppercase tracking-tight">MindX
-                            Intelligent</span>
-                    </label>
-                </div>
-            </div>
         </div>
     </div>
     </main>
@@ -762,431 +789,195 @@
 
     <script>
         // ─── State ───
+        let currentSessionId = localStorage.getItem('currentSessionId');
+        if (!currentSessionId || currentSessionId === 'null') {
+            currentSessionId = uuid.v4();
+            localStorage.setItem('currentSessionId', currentSessionId);
+        }
         let webSearchEnabled = true;
-        let searchHistory = [];
-        let allChats = []; // Fix 3
+        let activeSessionData = []; // Stores grouped messages for versioning
 
-        // Fix 3: Local History Logic
-
-        function loadChatsFromLocal() {
-            try {
-                const raw = localStorage.getItem('mindx_chats');
-                return raw ? JSON.parse(raw) : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveChatsToLocal(chats) {
-            localStorage.setItem('mindx_chats', JSON.stringify(chats));
-        }
-
-        // Fix 5: Render Sidebar with Timestamps
-        function renderSidebar(chats) {
-            const nav = document.getElementById('search-history');
-            if (!nav) return;
-
-            if (!chats || chats.length === 0) {
-                nav.innerHTML = '<p class="text-xs text-slate-600 px-3 py-2">No history</p>';
-                return;
-            }
-
-            nav.innerHTML = chats.map(chat => {
-                // Fix 5: Specific HTML structure with timestamp
-                return `
-                <div class="group relative w-full mb-1">
-                    <button onclick="loadChat('${chat.id}')" class="w-full flex items-start px-4 py-3 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group text-left">
-                        <div class="mr-3 text-lg opacity-70">💬</div>
-                        <div class="flex-1 overflow-hidden">
-                            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                                <span class="truncate font-bold tracking-tight">${chat.title || 'Untitled Chat'}</span>
-                                <span style="font-size:10px; color:#444; font-family:monospace; flex-shrink:0;">
-                                    ${timeAgo(chat.updatedAt || chat.createdAt || new Date())}
-                                </span>
-                            </div>
-                            <div class="text-[10px] text-slate-500 font-normal truncate mt-0.5 opacity-60">
-                                ${(chat.preview || 'No preview available').substring(0, 60)}
-                            </div>
-                        </div>
-                    </button>
-                    <button onclick="deleteChat('${chat.id}', event)" class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 hover:text-red-400 transition-colors bg-background-dark/80 rounded-lg shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                    </button>
-                </div>`;
-            }).join('');
-        }
-
-        // Helper to load a specific chat from local
-        function loadChat(id) {
-            currentSessionId = id;
-            localStorage.setItem('currentSessionId', id);
-            const chats = loadChatsFromLocal();
-            const chat = chats.find(c => c.id === id);
-            if (chat) {
-                // Clear existing
-                const container = document.getElementById('chat-container');
-                container.innerHTML = '';
-                // Render messages
-                chat.messages.forEach(msg => {
-                    addMessageToChat(msg.role, msg.content, false); // false = don't save again
-                });
-            }
-        }
-
-        // Helper to delete chat
-        function deleteChat(id, e) {
-            if (e) e.stopPropagation();
-            if (!confirm('Delete this chat?')) return;
-            const chats = loadChatsFromLocal().filter(c => c.id !== id);
-            saveChatsToLocal(chats);
-            renderSidebar(chats);
-            if (id === currentSessionId) startNewChat();
-        }
-
-        // Update addMessageToChat to save to local
-        window.addMessageToChat = function (role, content, save = true) {
-            const container = document.getElementById('chat-container');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message-bubble ${role === 'user' ? 'user-message' : 'ai-message'}`;
-
-            if (role === 'ai') {
-                msgDiv.innerHTML = `<div class="markdown-body">${marked.parse(content)}</div>`;
-            } else {
-                msgDiv.textContent = content;
-            }
-            container.appendChild(msgDiv);
-
-            if (save) {
-                if (!currentSessionId) {
-                    currentSessionId = uuid.v4();
-                    localStorage.setItem('currentSessionId', currentSessionId);
-                }
-
-                let chat = allChats.find(c => c.id === currentSessionId);
-                if (!chat) {
-                    chat = {
-                        id: currentSessionId,
-                        title: role === 'user' ? content.substring(0, 40) : 'New Chat',
-                        messages: [],
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                        preview: content.substring(0, 60)
-                    };
-                    allChats.unshift(chat);
-                }
-
-                chat.messages.push({ role, content, timestamp: new Date() });
-                chat.updatedAt = new Date();
-                if (role === 'user') {
-                    chat.preview = content.substring(0, 60);
-                    if (chat.title === 'New Chat') chat.title = content.substring(0, 40);
-                }
-
-                saveChatsToLocal(allChats);
-                renderSidebar(allChats);
-                scrollToBottom();
-            }
-
-            // Highlight code if AI
-            if (role === 'ai') {
-                setTimeout(() => {
-                    Prism.highlightAllUnder(msgDiv);
-                    renderMermaidDiagrams(msgDiv);
-                    addMessageActions(container, null);
-                }, 50);
-            }
-        };
-
-
-        // ─── Auth Check ───
+        // ─── Auth ───
         const token = localStorage.getItem('mindx_token');
-        if (!token) {
-            window.location.href = '/login.html';
-        }
+        if (!token) window.location.href = '/login.html';
 
-        // Load user greeting
         try {
             const user = JSON.parse(localStorage.getItem('mindx_user') || '{}');
-            const name = user.full_name || user.email || 'User';
-            document.getElementById('user-greeting').textContent = 'Hello, ' + name;
+            document.getElementById('user-greeting').textContent = 'Hello, ' + (user.full_name || user.email || 'User');
         } catch (e) { }
 
-        // ─── Logout ───
         function handleLogout() {
             localStorage.removeItem('mindx_token');
             localStorage.removeItem('mindx_user');
             window.location.href = '/login.html';
         }
 
-        // ─── Web Search Toggle ───
+        // ─── Toggles & Controls ───
         function toggleWebSearch() {
             webSearchEnabled = !webSearchEnabled;
-            const dot = document.getElementById('web-toggle-dot');
-            if (webSearchEnabled) {
-                dot.classList.add('translate-x-5');
-                dot.classList.remove('translate-x-0');
-            } else {
-                dot.classList.remove('translate-x-5');
-                dot.classList.add('translate-x-0');
-            }
+            // Update UI toggle bullet if needed
         }
 
-        // ─── Example Chip Click ───
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        (function initTheme() {
+            if (localStorage.getItem('theme') === 'light') document.documentElement.classList.remove('dark');
+            else document.documentElement.classList.add('dark');
+        })();
+
+        // ─── Utility ───
+        function timeAgo(date) {
+            if (!date) return '...';
+            const diff = Math.floor((new Date() - new Date(date)) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return new Date(date).toLocaleDateString();
+        }
+
+        function detectTopicEmoji(title) { return '💬'; }
+
         function searchChip(btn) {
             document.getElementById('search-input').value = btn.textContent;
             handleSearch();
         }
 
-        // ─── Pipeline Stage Animation ───
-        const STAGE_ICONS = {
-            todo: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>',
-            doing: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-pulse"><circle cx="12" cy="12" r="10"></circle></svg>',
-            done: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><polyline points="20 6 9 17 4 12"></polyline></svg>'
-        };
+        // ─── File Upload ───
+        function triggerFileUpload(accept) {
+            const input = document.getElementById('chat-file-upload');
+            input.accept = accept;
+            input.click();
+            document.getElementById('upload-menu')?.classList.remove('active');
+        }
 
-        function animateStage(stageNum) {
-            for (let i = 1; i <= 7; i++) {
-                const el = document.getElementById('stage-' + i);
-                if (!el) continue;
-                if (i < stageNum) {
-                    el.className = 'flex items-center justify-center gap-2 text-primary/60 text-sm';
-                    el.innerHTML = STAGE_ICONS.done + `<span>${el.querySelector('span').textContent}</span>`;
-                } else if (i === stageNum) {
-                    el.className = 'flex items-center justify-center gap-2 text-primary text-sm font-medium';
-                    el.innerHTML = STAGE_ICONS.doing + `<span>${el.querySelector('span').textContent}</span>`;
+        async function handleFileUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+            // Simplified upload logic
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('session_id', currentSessionId);
+                await fetch('/documents/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+            }
+            fetchHistory();
+        }
+
+        // ─── Search & Interaction ───
+        async function handleSearch(manualQuery = null, isRetry = false) {
+            const input = document.getElementById('search-input');
+            const query = manualQuery || input.value.trim();
+            if (!query) return;
+
+            if (!isRetry) {
+                input.value = '';
+                input.style.height = 'auto';
+            }
+
+            // Remove empty state if present
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) emptyState.remove();
+
+            // Add user bubble
+            const container = document.getElementById('chat-container');
+            const uDiv = document.createElement('div');
+            uDiv.className = 'message-bubble user-message';
+            uDiv.textContent = query;
+            container.appendChild(uDiv);
+
+            showLoadingState();
+            scrollToBottom();
+
+            try {
+                const response = await fetch('/api/qa/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        query: query,
+                        session_id: currentSessionId,
+                        use_search: document.getElementById('intelligent-mode-toggle')?.checked,
+                        fast_mode: document.getElementById('fast-mode-toggle')?.checked
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    hideLoadingState();
+
+                    const aDiv = document.createElement('div');
+                    aDiv.className = 'message-bubble ai-message';
+                    aDiv.innerHTML = `<div class="markdown-body">${marked.parse(data.answer)}</div>`;
+
+                    if (data.confidence) {
+                        const badge = document.createElement('div');
+                        badge.className = 'flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/5 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-tight w-fit mt-4 mb-2';
+                        badge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>${Math.round(data.confidence * 100)}% Confirmed`;
+                        aDiv.appendChild(badge);
+                    }
+
+                    container.appendChild(aDiv);
+                    addMessageActions(container, query);
+
+                    setTimeout(() => {
+                        Prism.highlightAllUnder(aDiv);
+                        renderMermaidDiagrams(aDiv);
+                    }, 50);
                 } else {
-                    el.className = 'flex items-center justify-center gap-2 text-slate-600 text-sm';
-                    el.innerHTML = STAGE_ICONS.todo + `<span>${el.querySelector('span').textContent}</span>`;
+                    throw new Error('Search failed');
                 }
+            } catch (e) {
+                console.error(e);
+                hideLoadingState();
+                const errDiv = document.createElement('div');
+                errDiv.className = 'message-bubble ai-message text-red-400';
+                errDiv.textContent = 'Sorry, I encountered an error while processing your request.';
+                container.appendChild(errDiv);
             }
+            scrollToBottom();
+            fetchHistory();
         }
 
-        function resetStages() {
-            for (let i = 1; i <= 7; i++) {
-                const el = document.getElementById('stage-' + i);
-                if (!el) continue;
-                el.className = 'flex items-center justify-center gap-2 text-slate-600 text-sm';
-                el.innerHTML = STAGE_ICONS.todo + `<span>${el.querySelector('span').textContent}</span>`;
-            }
-        }
+        function showLoadingState() { document.getElementById('loading-state')?.classList.remove('hidden'); }
+        hideLoadingState();
+        function hideLoadingState() { document.getElementById('loading-state')?.classList.add('hidden'); }
 
-
-        // ─── File Upload Manager (Task 40) ───
-        class FileUploadManager {
-            constructor() {
-                this.uploadedFiles = []; // Stores {id, name, type, preview}
-                this.initListeners();
-            }
-
-            initListeners() {
-                // File Input
-                const fileInput = document.getElementById('chat-file-upload');
-                if (fileInput) {
-                    fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+        // ─── Rendering Helpers ───
+        function renderMermaidDiagrams(container) {
+            const mermaidBlocks = container.querySelectorAll('.language-mermaid');
+            mermaidBlocks.forEach((block, i) => {
+                const code = block.textContent;
+                const diagramDiv = document.createElement('div');
+                diagramDiv.id = `mermaid-${Date.now()}-${i}`;
+                diagramDiv.className = 'mermaid-diagram bg-white/5 p-4 rounded-xl my-4 text-center';
+                block.parentElement.replaceWith(diagramDiv);
+                try {
+                    mermaid.render(diagramDiv.id + '-svg', code).then(({ svg }) => {
+                        diagramDiv.innerHTML = svg;
+                    });
+                } catch (e) {
+                    console.error('Mermaid error:', e);
                 }
-
-                // Drag & Drop on Body
-                document.body.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    document.body.classList.add('drag-active');
-                });
-
-                document.body.addEventListener('dragleave', (e) => {
-                    e.preventDefault();
-                    if (e.clientX === 0 && e.clientY === 0) {
-                        document.body.classList.remove('drag-active');
-                    }
-                });
-
-                document.body.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    document.body.classList.remove('drag-active');
-                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                        this.uploadFiles(e.dataTransfer.files);
-                    }
-                });
-
-                // Paste Event
-                document.addEventListener('paste', (e) => {
-                    if (e.clipboardData && e.clipboardData.files.length > 0) {
-                        e.preventDefault();
-                        this.uploadFiles(e.clipboardData.files);
-                    }
-                });
-            }
-
-            handleFileSelect(event) {
-                const files = event.target.files;
-                if (files.length > 0) {
-                    this.uploadFiles(files);
-                }
-            }
-
-            async uploadFiles(fileList) {
-                // Show generalized loading (can be refined)
-                const previewZone = document.getElementById('file-list-preview');
-
-                for (let file of fileList) {
-                    // Create Optimistic UI Chip
-                    const tempId = 'temp-' + Date.now();
-                    this.renderChip(file.name, true, tempId);
-
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    try {
-                        const token = localStorage.getItem('mindx_token');
-                        const response = await fetch('/api/upload', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` },
-                            body: formData
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            // Replace temp chip with real one
-                            this.removeChip(tempId);
-                            this.uploadedFiles.push(data);
-                            this.renderChip(data.filename, false, data.file_id);
-
-                            // Add system message about upload
-                            // addMessageToChat('system', `Uploaded ${data.filename}`);
-                        } else {
-                            throw new Error('Upload failed');
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        this.removeChip(tempId);
-                        alert(`Failed to upload ${file.name}`);
-                    }
-                }
-            }
-
-            renderChip(filename, isLoading, id) {
-                const previewZone = document.getElementById('file-list-preview');
-                const chip = document.createElement('div');
-                chip.id = `file-chip-${id}`;
-                chip.className = `inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${isLoading ? 'bg-surface-dark/50 border-border-dark text-slate-400 animate-pulse' : 'bg-primary/10 border-primary/20 text-primary'}`;
-
-                chip.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
-                    <span class="max-w-[150px] truncate">${filename}</span>
-                    <button onclick="fileManager.removeFile('${id}')" class="hover:text-red-400 transition-colors ml-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
-                `;
-                previewZone.appendChild(chip);
-            }
-
-            removeFile(id) {
-                this.uploadedFiles = this.uploadedFiles.filter(f => f.file_id !== id);
-                this.removeChip(id);
-            }
-
-            removeChip(id) {
-                const el = document.getElementById(`file-chip-${id}`);
-                if (el) el.remove();
-            }
-
-            getAttachedFileContext() {
-                // If files are attached, we might want to guide the RAG mode
-                return this.uploadedFiles.length > 0;
-            }
-
-            getAttachedFiles() {
-                return this.uploadedFiles;
-            }
-
-            clear() {
-                this.uploadedFiles = [];
-                document.getElementById('file-list-preview').innerHTML = '';
-            }
-        }
-
-        const fileManager = new FileUploadManager();
-
-
-        // ─── Auto-Resize Textarea (Task 37) ───
-        const searchInput = document.getElementById('search-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
             });
         }
 
-        function scrollToBottom() {
-            const messagesArea = document.getElementById('messagesArea');
-            if (messagesArea) {
-                messagesArea.scrollTop = messagesArea.scrollHeight;
-            }
-        }
-
-        // Call scroll to bottom on load and mutations
-        window.addEventListener('load', scrollToBottom);
-
-        // Observer to keep scroll at bottom when content changes
-        const observer = new MutationObserver(() => {
-            scrollToBottom();
-        });
-        const chatContainer = document.getElementById('chat-container');
-        if (chatContainer) {
-            observer.observe(chatContainer, { childList: true, subtree: true });
-        }
         const STARTER_CHIP_POOL = [
-            // Technology
-            "Who is the CEO of OpenAI?",
-            "How does quantum computing work?",
-            "What is the latest iPhone model?",
-            "Explain large language models",
-            "Best programming languages in 2026",
-            // Science
-            "What causes the Northern Lights?",
-            "How big is the observable universe?",
-            "Explain CRISPR gene editing",
-            "Latest Mars mission updates",
-            "What is dark matter?",
-            // Business & Finance
-            "What is Zepto's valuation?",
-            "How do interest rates affect inflation?",
-            "Top AI startups to watch in 2026",
-            "What is a hedge fund?",
-            "India's GDP growth rate",
-            // History & Culture
-            "Who founded Netflix?",
-            "History of the internet",
-            "What caused World War I?",
-            "Timeline of space exploration",
-            "Who invented the telephone?",
-            // Health & Science
-            "Health benefits of intermittent fasting",
-            "How vaccines work",
-            "Symptoms of vitamin D deficiency",
-            "Latest cancer research breakthroughs",
-            "How to improve sleep quality",
-            // How-To
-            "How to learn Python fast",
-            "Explain quantum physics simply",
-            "How to start investing in stocks",
-            "Best practices for REST API design",
-            "How is AI changing healthcare?",
+            "Who is the CEO of OpenAI?", "How big is the universe?", "India GDP growth",
+            "Latest Mars mission", "AI in healthcare", "Quantum physics simply",
+            "Intermittent fasting benefits", "How to learn Python fast"
         ];
-
         function initStarterChips() {
             const container = document.getElementById('starter-chips');
             if (!container) return;
-
-            // Pick 5 random questions
             const pool = [...STARTER_CHIP_POOL];
             const picked = [];
-            for (let i = 0; i < 5 && pool.length > 0; i++) {
-                const idx = Math.floor(Math.random() * pool.length);
-                picked.push(pool.splice(idx, 1)[0]);
-            }
-
+            for (let i = 0; i < 5 && pool.length; i++) picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
             container.innerHTML = picked.map((q, i) => `
                 <button onclick="searchChip(this)" 
                     class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all opacity-0"
@@ -1194,541 +985,36 @@
             `).join('');
         }
 
-        // ─── Add to Sidebar History ───
-
-        function addToHistory(query) {
-            searchHistory.unshift(query);
-            if (searchHistory.length > 10) searchHistory.pop();
-            fetchHistory();
-        }
-
-        // Session Management
-        let currentSessionId = localStorage.getItem('currentSessionId') || uuid.v4();
-        localStorage.setItem('currentSessionId', currentSessionId);
-
-        function startNewChat() {
-            currentSessionId = uuid.v4();
-            localStorage.setItem('currentSessionId', currentSessionId);
-
-            // Clear UI
-            document.getElementById('answer-section').classList.add('hidden');
-            document.getElementById('search-input').value = '';
-
-            // Optional: Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            console.log('Started new chat session:', currentSessionId);
-        }
-
-        document.getElementById('btn-new-chat')?.addEventListener('click', startNewChat);
-
-        async function fetchHistory() {
-            try {
-                const token = localStorage.getItem('mindx_token');
-                const response = await fetch('/chats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    renderHistoryGroups(data.groups);
-                }
-            } catch (err) {
-                console.error('Failed to fetch history:', err);
-            }
-        }
-
-        function detectTopicEmoji(title) {
-            const t = title.toLowerCase();
-            if (t.includes('code') || t.includes('python') || t.includes('js') || t.includes('script')) return '💻';
-            if (t.includes('news') || t.includes('event') || t.includes('latest')) return '📰';
-            if (t.includes('ai') || t.includes('intelligence') || t.includes('search')) return '🧠';
-            if (t.includes('math') || t.includes('science') || t.includes('physics')) return '🔬';
-            if (t.includes('how to') || t.includes('tutorial') || t.includes('guide')) return '📖';
-            return '💬';
-        }
-
-        function renderHistoryGroups(groups) {
-            const nav = document.getElementById('search-history');
-            if (!nav) return;
-
-            if (!groups || groups.length === 0) {
-                nav.innerHTML = '<p class="text-[11px] text-slate-600 px-3 py-4 text-center border border-dashed border-white/5 rounded-xl">No chat history yet</p>';
-                return;
-            }
-
-            const chatIcon = (title) => `<div class="mr-3 text-lg opacity-70 group-hover:opacity-100 transition-opacity">${detectTopicEmoji(title)}</div>`;
-
-            let html = '';
-            groups.forEach(group => {
-                html += `<div class="history-group-label">${group.label}</div>`;
-                group.sessions.forEach(session => {
-                    const timeStr = timeAgo(session.updated_at || session.created_at);
-                    const isActive = currentSessionId === session.session_id;
-                    const isPinned = session.is_pinned;
-                    const previewText = (session.preview || session.last_query || '').substring(0, 60);
-
-                    html += `
-                    <div class="group relative w-full mb-1">
-                        <button onclick="loadSession('${session.session_id}')" 
-                                class="w-full flex items-start px-4 py-3 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all group ${isActive ? 'bg-white/10 text-white shadow-sm' : ''} ${isPinned ? 'history-item-pinned' : ''}"
-                                title="${new Date(session.updated_at || session.created_at).toLocaleString()}">
-                            ${chatIcon(session.title)}
-                            <div class="flex-1 truncate text-left">
-                                <div class="flex items-center justify-between gap-2">
-                                    <div class="truncate font-bold tracking-tight">${session.title}</div>
-                                    <span class="text-[9px] font-mono text-slate-600 flex-shrink-0 bg-white/5 px-1 rounded">${timeStr}</span>
-                                </div>
-                                <div class="text-[10px] text-slate-500 font-normal truncate mt-0.5 opacity-80">${previewText}</div>
-                            </div>
-                            ${isPinned ? '<span class="pinned-badge ml-2 text-[10px]">📌</span>' : ''}
-                        </button>
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 flex gap-1 transition-all z-20">
-                            <button onclick="event.stopPropagation(); pinSession('${session.session_id}', ${!isPinned})" class="p-1.5 hover:text-primary transition-colors bg-background-dark/80 rounded-lg shadow-lg" title="${isPinned ? 'Unpin' : 'Pin'}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m11 15-3-3 3-3"></path><path d="m15 11 3 3-3 3"></path></svg>
-                            </button>
-                            <button onclick="event.stopPropagation(); renameSession('${session.session_id}')" class="p-1.5 hover:text-indigo-400 transition-colors bg-background-dark/80 rounded-lg shadow-lg" title="Rename">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button onclick="event.stopPropagation(); deleteSession('${session.session_id}')" class="p-1.5 hover:text-red-400 transition-colors bg-background-dark/80 rounded-lg shadow-lg" title="Delete">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                            </button>
-                        </div>
-                    </div>`;
-                });
-            });
-            nav.innerHTML = html;
-        }
-
-        async function pinSession(sid, pinned) {
-            try {
-                const token = localStorage.getItem('mindx_token');
-                const response = await fetch(`/chats/${sid}/pin`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ pinned })
-                });
-                if (response.ok) fetchHistory();
-            } catch (err) { console.error('Pin failed:', err); }
-        }
-
-        async function renameSession(sid) {
-            const newTitle = prompt('Enter new chat title:');
-            if (!newTitle || !newTitle.trim()) return;
-            try {
-                const token = localStorage.getItem('mindx_token');
-                const response = await fetch(`/chats/${sid}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ title: newTitle.trim() })
-                });
-                if (response.ok) fetchHistory();
-            } catch (err) { console.error('Rename failed:', err); }
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            html.classList.toggle('dark');
-            const isDark = html.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        }
-
-        // Initialize theme
-        (function () {
-            const theme = localStorage.getItem('theme') || 'dark';
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        })();
-
-        // Mobile Menu Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const sidebar = document.getElementById('sidebar');
-
-            mobileMenuBtn?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sidebar?.classList.toggle('-translate-x-full');
-            });
-
-            // Close sidebar when clicking outside on mobile
-            document.addEventListener('click', (e) => {
-                if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
-                    if (!sidebar.contains(e.target) && !mobileMenuBtn?.contains(e.target)) {
-                        sidebar.classList.add('-translate-x-full');
-                    }
-                }
-            });
-        });
-
-        async function bulkDeleteSessions() {
-            if (!confirm('Are you sure you want to delete all non-pinned conversations?')) return;
-            try {
-                const token = localStorage.getItem('mindx_token');
-                // First get all sessions to find non-pinned IDs
-                const response = await fetch('/chats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) return;
-                const data = await response.json();
-                const idsToDelete = [];
-                data.groups.forEach(g => {
-                    g.sessions.forEach(s => {
-                        if (!s.is_pinned) idsToDelete.push(s.session_id);
-                    });
-                });
-
-                if (idsToDelete.length === 0) {
-                    alert('No non-pinned conversations to delete.');
-                    return;
-                }
-
-                const delResponse = await fetch('/chats', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ session_ids: idsToDelete })
-                });
-                if (delResponse.ok) {
-                    if (idsToDelete.includes(currentSessionId)) startNewChat();
-                    fetchHistory();
-                }
-            } catch (err) { console.error('Bulk delete failed:', err); }
-        }
-
-        // ─── Keyboard Shortcuts ───
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                document.getElementById('search-input')?.focus();
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                e.preventDefault();
-                startNewChat();
-            }
-        });
-
-
-
-
-        function reSearch(query) {
-            document.getElementById('search-input').value = query;
-            handleSearch();
-        }
-
-        // ─── In-Chat Search ───
-        function toggleInChatSearch() {
-            const bar = document.getElementById('in-chat-search-bar');
-            bar.classList.toggle('visible');
-            if (bar.classList.contains('visible')) {
-                document.getElementById('in-chat-search-input').focus();
-            } else {
-                document.getElementById('in-chat-search-input').value = '';
-                filterMessages(); // Reset view
-            }
-        }
-
-        function filterMessages() {
-            const query = document.getElementById('in-chat-search-input').value.toLowerCase();
-            const container = document.getElementById('chat-container');
-            const messages = container.querySelectorAll('.message-bubble');
-
-            messages.forEach(msg => {
-                const text = msg.innerText.toLowerCase();
-                if (text.includes(query)) {
-                    msg.style.display = 'flex';
-                } else {
-                    msg.style.display = 'none';
-                }
-            });
-        }
-
-        // ─── Markdown Export ───
-        function exportChatToMarkdown() {
-            const chatLog = [];
-            const container = document.getElementById('chat-container');
-            const messages = container.querySelectorAll('.message-bubble');
-
-            messages.forEach(msg => {
-                if (msg.classList.contains('user-message')) {
-                    chatLog.push(`### User\n${msg.innerText}\n`);
-                } else if (msg.classList.contains('ai-message')) {
-                    const md = msg.querySelector('.markdown-body')?.innerText || msg.innerText;
-                    chatLog.push(`### MindX AI\n${md}\n`);
-                }
-            });
-
-            if (chatLog.length === 0) {
-                alert('No conversation to export.');
-                return;
-            }
-
-            const blob = new Blob([chatLog.join('\n---\n\n')], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `MindX_Export_${new Date().toISOString().slice(0, 10)}.md`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // ─── Utility: Time Ago ───
-        function timeAgo(date) {
-            if (!date) return 'Long ago';
-            const now = new Date();
-            const past = new Date(date);
-            const diff = Math.floor((now - past) / 1000); // seconds
-
-            if (diff < 60) return 'Just now';
-            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-            if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-            // If older than a week, show absolute date
-            if (now.getFullYear() === past.getFullYear()) {
-                return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            }
-            return past.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-
-        // ─── Inline Sources (Perplexity-style chips) ───
-        function renderSourceChips(msgEl, sources, confidence = null) {
-            if (!sources || sources.length === 0) return;
-
-            const existingRow = msgEl.querySelector('.sources-row');
-            if (existingRow) existingRow.remove();
-
-            const container = document.createElement('div');
-            container.className = 'sources-row mt-6 pt-4 border-t border-white/5';
-
-            const header = document.createElement('div');
-            header.className = 'flex items-center justify-between mb-3';
-
-            const title = document.createElement('h4');
-            title.className = 'text-[11px] font-bold text-slate-500 uppercase tracking-widest';
-            title.textContent = 'Sources & References';
-            header.appendChild(title);
-
-            if (confidence !== null) {
-                let displayConfidence = confidence;
-                if (displayConfidence < 1) displayConfidence = Math.round(displayConfidence * 100);
-
-                const badge = document.createElement('div');
-                badge.className = 'flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/5 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-tight';
-                badge.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    ${displayConfidence}% Confirmed
-                `;
-                header.appendChild(badge);
-            }
-
-            container.appendChild(header);
-
-            const list = document.createElement('div');
-            list.className = 'flex flex-col gap-2.5';
-
-            list.innerHTML = sources.map((s, i) => {
-                let domain = 'Source';
-                try {
-                    domain = s.source || (s.url ? new URL(s.url).hostname.replace('www.', '') : 'Source');
-                } catch (e) { domain = s.source || 'Source'; }
-                const snippetText = (s.snippet || s.description || '').substring(0, 120);
-                const tooltipHtml = snippetText
-                    ? `<span class="source-tooltip">${snippetText}…<br><span class="text-primary/60 text-[9px] font-mono mt-1 block truncate">${s.url || ''}</span></span>`
-                    : `<span class="source-tooltip"><span class="text-primary/60 text-[9px] font-mono">${s.url || domain}</span></span>`;
-                return `
-                    <a href="${s.url || '#'}" target="_blank" 
-                       rel="noopener noreferrer"
-                       class="source-chip-link flex items-start gap-3 group px-1 relative">
-                        ${tooltipHtml}
-                        <span class="text-[10px] font-bold text-primary/40 bg-primary/5 size-5 flex items-center justify-center rounded border border-primary/10 group-hover:text-primary group-hover:border-primary/30 transition-all">${i + 1}</span>
-                        <div class="flex flex-col">
-                            <span class="text-[13px] font-semibold text-slate-300 group-hover:text-primary transition-colors">${s.title || 'Untitled Source'}</span>
-                            <span class="text-[10px] font-medium text-slate-600 group-hover:text-slate-400 truncate max-w-[300px]">${domain}</span>
-                        </div>
-                    </a>
-                `;
-            }).join('');
-
-            container.appendChild(list);
-            msgEl.querySelector('.message-bubble')?.appendChild(container);
-        }
-
-        // ─── Main Search Handler (Streaming Version) ───
-        async function handleSearch(manualQuery = null, isRetry = false) {
+        function initSessionRecovery() {
             const input = document.getElementById('search-input');
-            const query = manualQuery || input.value.trim();
-            if (!query) return;
+            input?.addEventListener('input', () => localStorage.setItem('draft_query', input.value));
+            const draft = localStorage.getItem('draft_query');
+            if (draft && input) input.value = draft;
+        }
 
-            // Clear input immediately if it was from input
-            if (!manualQuery) input.value = '';
+        function initOnboarding() {
+            if (localStorage.getItem('onboarding_seen_v2')) return;
+            // Driver.js logic... (assuming driver is loaded)
+            localStorage.setItem('onboarding_seen_v2', 'true');
+        }
 
-            console.log('🚀 MindX Dashboard v2.0 - Stream Fix Active');
-
-            const maxSources = 10; // Defaulting to 10
-            const container = document.getElementById('chat-container');
-            const emptyState = document.getElementById('empty-state');
-            if (emptyState) emptyState.remove();
-
-            // Append User Message Bubble (SKIP if retry)
-            if (!isRetry) {
-                // User message is already added at the top of handleSearch
-            }
-
-            // Reset UI
-            input.value = '';
-            input.style.height = 'auto';
-            document.getElementById('starter-chips')?.remove();
-
-            // Allow file-only submission
-            if (!query && fileManager.uploadedFiles.length > 0) {
-                addMessageToChat('user', `Analyzing ${fileManager.uploadedFiles.length} file(s)...`);
-            } else {
-                addMessageToChat('user', query);
-                addToHistory(query);
-            }
-
-            // Check if we have files attached
-            const attachedFiles = fileManager.getAttachedFiles();
-
-            if (attachedFiles.length > 0) {
-                // Handle File Chat (RAG)
-                // For this version, we'll chat with the first file
-                // Future: Support multi-file chat
-                const fileId = attachedFiles[0].file_id;
-
-                showLoadingState();
-
-                try {
-                    const token = localStorage.getItem('mindx_token');
-                    const formData = new FormData();
-                    formData.append('message', query || "Summarize this file");
-                    formData.append('file_id', fileId);
-
-                    const response = await fetch('/api/chat-with-file', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        hideLoadingState();
-                        addMessageToChat('ai', data.answer);
-                        // Clear files after successful chat? Or keep them?
-                        // For now keep them to allow follow-up
-                    } else {
-                        throw new Error('File chat failed');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    hideLoadingState();
-                    addMessageToChat('ai', "I encountered an error analyzing the file. Please try again.");
-                }
-                return;
-            }
-
-            // Standard Chat Flow
-            showLoadingState();
-            /* ... existing search logic ... */
-
-            // Build Context
-            let context = [];
-            const history = document.querySelectorAll('.message-bubble');
-            history.forEach(msg => {
-                const role = msg.classList.contains('user-message') ? 'user' : 'assistant';
-                context.push({ role, content: msg.innerText });
-            });
-            // Keep last 6 messages
-            if (context.length > 6) context = context.slice(-6);
-
-            /* ... API Call ... */
-            try {
-                const token = localStorage.getItem('mindx_token');
-                // Use fetch to stream or get JSON
-                // Re-using existing /api/chat logic but modernized
-
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        query: query,
-                        web_search: webSearchEnabled,
-                        session_id: currentSessionId,
-                        chat_history: context
-                    })
-                });
-
-                if (!response.ok) throw new Error('API Error');
-
-                const data = await response.json();
-                hideLoadingState();
-
-                // Show Answer
-                addMessageToChat('ai', data.answer);
-
-                // Show Sources
-                if (data.sources && data.sources.length) {
-                    const lastMsg = document.querySelector('#chat-container .ai-message:last-child');
-                    if (lastMsg) renderSourceChips(lastMsg, data.sources, data.confidence);
-                }
-
-                // Update history sidebar
-                fetchHistory();
-
-                // Remove thinking indicator
-                if (typeof aiDiv !== 'undefined') aiDiv.remove();
-
-                // Artifact Detection & Auto-Open
-                const codeBlockRegex = /```(\w*)\n([\s\S]*?)(?:```|$)/g;
-                const matches = Array.from(data.answer.matchAll(codeBlockRegex));
-                if (matches.length > 0) {
-                    const lastMatch = matches[matches.length - 1];
-                    const content = lastMatch[2];
-                    if (content.length > 60) {
-                        const lang = lastMatch[1] || 'text';
-                        openArtifact(content, lang, "Generated Code");
-                    }
-                }
-
-                scrollToBottom();
-
-                // Finalize UI
-                if (searchHistory.length === 0 || !searchHistory.find(s => s.id === currentSessionId)) {
-                    updateSessionTitle(currentSessionId, query);
-                }
-
-                // Highlight code blocks and add copy buttons
-                setTimeout(() => {
-                    Prism.highlightAllUnder(aiDiv);
-                    renderMermaidDiagrams(aiDiv); // Render diagrams after stream
-                    addMessageActions(container, query);
-                    saveActiveChat(); // Persist session
-                }, 100);
-
-            } catch (err) {
-                aiDiv.innerHTML = `
-                    <div class="flex items-center gap-2 text-red-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        <p>${err.message}</p>
-                    </div>`;
-            }
+        function initOfflineDetection() {
+            const banner = document.getElementById('offline-banner');
+            window.addEventListener('online', () => banner?.classList.add('hidden'));
+            window.addEventListener('offline', () => banner?.classList.remove('hidden'));
+            if (!navigator.onLine) banner?.classList.remove('hidden');
         }
 
         function addMessageActions(container, query) {
             const lastMessage = container.lastElementChild;
             if (!lastMessage || !lastMessage.classList.contains('ai-message')) return;
 
-            // Remove existing footer if any
             const existingFooter = lastMessage.querySelector('.ai-footer');
             if (existingFooter) existingFooter.remove();
 
             const footer = document.createElement('div');
             footer.className = 'ai-footer flex items-center gap-4 mt-4 pt-4 border-t border-white/5';
 
-            // SVG Icons (Feather Icons style)
             const copyIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
             const checkIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
             const retryIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>';
@@ -1738,7 +1024,6 @@
             copyBtn.innerHTML = `${copyIcon} Copy`;
             copyBtn.onclick = () => {
                 let text = lastMessage.querySelector('.markdown-body').innerText;
-                // Safety: strip any remaining citation marks like [1] or (1)
                 text = text.replace(/\[\d+\]/g, '').replace(/\(\d+\)/g, '').trim();
                 navigator.clipboard.writeText(text);
                 copyBtn.innerHTML = `${checkIcon} Copied!`;
@@ -1753,18 +1038,12 @@
             retryBtn.className = 'copy-btn ml-2';
             retryBtn.innerHTML = `${retryIcon} Retry`;
             retryBtn.onclick = () => {
-                // Fade out effect
                 lastMessage.style.opacity = '0.5';
                 setTimeout(() => {
                     lastMessage.remove();
-                    handleSearch(query, true); // Trigger retry
+                    handleSearch(query, true);
                 }, 200);
             };
-
-            const exportBtn = document.createElement('button');
-            exportBtn.className = 'copy-btn ml-2';
-            exportBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Export';
-            exportBtn.onclick = exportChatToMarkdown;
 
             const readBtn = document.createElement('button');
             readBtn.className = 'copy-btn ml-2 read-btn';
@@ -1775,7 +1054,7 @@
                     tts.stop();
                     readBtn.innerHTML = '🔊 Read';
                 } else {
-                    document.querySelectorAll('.read-btn').forEach(b => b.innerHTML = '🔊 Read'); // Reset others
+                    document.querySelectorAll('.read-btn').forEach(b => b.innerHTML = '🔊 Read');
                     tts.speak(text, () => { readBtn.innerHTML = '🔊 Read'; });
                     readBtn.innerHTML = '🔇 Stop';
                 }
@@ -1783,12 +1062,11 @@
 
             footer.appendChild(copyBtn);
             footer.appendChild(retryBtn);
-            footer.appendChild(exportBtn);
             footer.appendChild(readBtn);
             lastMessage.appendChild(footer);
         }
 
-        // ─── Artifact Sidebar Controls ───
+        // ─── Artifacts ───
         function openArtifact(content, lang = 'javascript', title = 'Artifact') {
             const sidebar = document.getElementById('artifact-sidebar');
             const contentEl = document.getElementById('artifact-content');
@@ -1796,7 +1074,6 @@
             const typeEl = document.getElementById('artifact-type');
             const iconEl = document.getElementById('artifact-icon');
 
-            // Map languages to icons
             const icons = {
                 'javascript': 'javascript', 'js': 'javascript',
                 'python': 'language_purl', 'py': 'language_purl',
@@ -1808,38 +1085,25 @@
             titleEl.textContent = title;
             typeEl.textContent = lang.toUpperCase() + ' Source';
 
-            // Show/Hide preview button
             const previewBtn = document.getElementById('artifact-preview-btn');
             const isPreviewable = ['html', 'css', 'svg'].includes(lang.toLowerCase());
-            if (isPreviewable) {
-                previewBtn.classList.remove('hidden');
-            } else {
-                previewBtn.classList.add('hidden');
-            }
+            if (isPreviewable) previewBtn.classList.remove('hidden');
+            else previewBtn.classList.add('hidden');
 
-            // Always reset preview when opening new artifact
             document.getElementById('artifact-preview-container').classList.add('hidden');
             previewBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Preview';
             previewBtn.classList.remove('bg-slate-700');
 
-            // Store raw content for preview
             window.activeArtifactContent = content;
-
-            // Render and highlight
             contentEl.innerHTML = marked.parse('```' + lang + '\n' + content + '\n```');
             Prism.highlightAllUnder(contentEl);
 
-            if (!sidebar.classList.contains('open')) {
-                sidebar.classList.add('open');
-            }
+            if (!sidebar.classList.contains('open')) sidebar.classList.add('open');
         }
 
-        function closeArtifact() {
-            document.getElementById('artifact-sidebar').classList.remove('open');
-        }
+        function closeArtifact() { document.getElementById('artifact-sidebar').classList.remove('open'); }
 
         function copyArtifact() {
-            // Get innerText from the code block specifically for formatting
             const codeEl = document.querySelector('#artifact-content pre code');
             const text = codeEl ? codeEl.innerText : document.getElementById('artifact-content').innerText;
             navigator.clipboard.writeText(text);
@@ -1869,123 +1133,59 @@
                 btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg> Code';
                 btn.classList.add('bg-slate-700');
 
-                // Inject content into iframe
                 const doc = frame.contentWindow.document;
                 doc.open();
-                // Simple HTML wrapper for common UI clips
                 const content = window.activeArtifactContent;
-                if (content.toLowerCase().includes('<html')) {
-                    doc.write(content);
-                } else {
-                    doc.write(`
-                        <html>
-                            <head>
-                                <script src="https://cdn.tailwindcss.com"><\/script>
-                                <style>body { font-family: sans-serif; padding: 20px; background: #fff; color: #333; }<\/style>
-                            </head>
-                            <body>${content}</body>
-                        </html>
-                    `);
-                }
+                if (content.toLowerCase().includes('<html')) doc.write(content);
+                else doc.write(`<html><head><script src="https://cdn.tailwindcss.com"><\/script><style>body { font-family: sans-serif; padding: 20px; background: #fff; color: #333; }<\/style></head><body>${content}</body></html>`);
                 doc.close();
             }
         }
 
-        function scrollToSource(n) {
-            // Sources are now inline chips within the AI message
-            const sources = document.querySelectorAll('.sources-row a');
-            const target = sources[n - 1];
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                target.classList.add('ring-2', 'ring-primary', 'border-primary');
-                setTimeout(() => target.classList.remove('ring-2', 'ring-primary', 'border-primary'), 2000);
-            }
-        }
-
-        async function updateSessionTitle(sid, query) {
-            // Create a smart title from the first query (first 40 chars)
-            const title = query.substring(0, 40).trim() + (query.length > 40 ? '...' : '');
-
-            // Save to server
-            try {
-                const token = localStorage.getItem('mindx_token');
-                await fetch(`/chats/${sid}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ title: title })
-                });
-                fetchHistory(); // Refresh sidebar
-            } catch (err) {
-                console.warn('Failed to persist title to server:', err);
-                // Fallback to local update
-                const existing = searchHistory.find(s => s.id === sid);
-                if (existing) existing.title = title;
-                else searchHistory.unshift({ id: sid, title: title, updated_at: new Date() });
-                renderHistoryGroups(searchHistory); // Assuming we might need to render local state
-            }
-        }
-
-        let activeSessionData = []; // Stores grouped messages
-
+        // ─── Session Loading & Versioning ───
         async function loadSession(sid) {
-            currentSessionId = (sid === 'legacy' || !sid) ? null : sid;
-            localStorage.setItem('currentSessionId', currentSessionId);
+            if (!sid) return startNewChat();
+            currentSessionId = sid;
+            localStorage.setItem('currentSessionId', sid);
+            window.history.pushState({}, '', `?chat=${sid}`);
 
             const container = document.getElementById('chat-container');
-            container.innerHTML = `
-                <div class="flex items-center justify-center p-12">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-primary">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                </div>`;
+            container.innerHTML = `<div class="flex items-center justify-center p-12"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-primary"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg></div>`;
 
             try {
-                const url = currentSessionId ? `/qa/history?session_id=${currentSessionId}` : '/qa/history?limit=20';
-                const response = await fetch(url, {
+                const response = await fetch(`/chats/${sid}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (response.ok) {
-                    const messages = await response.json();
+                    const data = await response.json();
                     container.innerHTML = '';
 
-                    if (messages.length === 0) {
-                        startNewChat();
-                        return;
+                    if (!data.messages || data.messages.length === 0) {
+                        return startNewChat();
                     }
 
-                    // Group by query to handle versions
                     const grouped = [];
                     const queryMap = {};
 
-                    messages.forEach(msg => {
+                    data.messages.forEach(msg => {
                         if (!queryMap[msg.query]) {
-                            queryMap[msg.query] = {
-                                query: msg.query,
-                                versions: [],
-                                currentIndex: 0
-                            };
+                            queryMap[msg.query] = { query: msg.query, versions: [], currentIndex: 0 };
                             grouped.push(queryMap[msg.query]);
                         }
                         queryMap[msg.query].versions.push(msg);
                     });
 
-                    // Set currentIndex to latest version for each
-                    grouped.forEach(g => {
-                        g.currentIndex = g.versions.length - 1;
-                    });
-
+                    grouped.forEach(g => { g.currentIndex = g.versions.length - 1; });
                     activeSessionData = grouped;
                     renderActiveSession();
+                    fetchHistory();
                 } else {
-                    console.error('Session load failed:', response.status);
-                    container.innerHTML = '';
-                    startNewChat(); // Fallback to new chat if load fails
+                    startNewChat();
                 }
             } catch (e) {
-                console.error('Failed to load session:', e);
-                container.innerHTML = '<p class="text-red-400 p-8 text-center">Failed to restore conversation.</p>';
-                setTimeout(startNewChat, 2000);
+                console.error('Load failed:', e);
+                startNewChat();
             }
         }
 
@@ -1996,41 +1196,30 @@
             activeSessionData.forEach((group, groupIndex) => {
                 const msg = group.versions[group.currentIndex];
 
-                // User Bubble
                 const uDiv = document.createElement('div');
                 uDiv.className = 'message-bubble user-message';
                 uDiv.textContent = msg.query;
                 container.appendChild(uDiv);
 
-                // AI Bubble
                 const aDiv = document.createElement('div');
                 aDiv.className = 'message-bubble ai-message';
                 aDiv.innerHTML = `<div class="markdown-body">${marked.parse(msg.answer)}</div>`;
 
-                // Version Switcher if applicable
                 if (group.versions.length > 1) {
                     const switcher = document.createElement('div');
                     switcher.className = 'version-switcher mb-4';
                     switcher.innerHTML = `
-                        <button onclick="switchVersion(${groupIndex}, -1)" ${group.currentIndex === 0 ? 'disabled' : ''} class="disabled:opacity-20 flex">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
+                        <button onclick="switchVersion(${groupIndex}, -1)" ${group.currentIndex === 0 ? 'disabled' : ''} class="disabled:opacity-20 flex"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
                         <span>${group.currentIndex + 1} / ${group.versions.length}</span>
-                        <button onclick="switchVersion(${groupIndex}, 1)" ${group.currentIndex === group.versions.length - 1 ? 'disabled' : ''} class="disabled:opacity-20 flex">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
+                        <button onclick="switchVersion(${groupIndex}, 1)" ${group.currentIndex === group.versions.length - 1 ? 'disabled' : ''} class="disabled:opacity-20 flex"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                     `;
                     aDiv.prepend(switcher);
                 }
 
-                // Confidence Badge if applicable
                 if (msg.confidence) {
                     const badge = document.createElement('div');
                     badge.className = 'flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/5 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-tight w-fit mt-4 mb-2';
-                    badge.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        ${msg.confidence}% Confirmed
-                    `;
+                    badge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>${msg.confidence}% Confirmed`;
                     aDiv.appendChild(badge);
                 }
 
@@ -2038,10 +1227,9 @@
                 addMessageActions(container, msg.query);
             });
 
-            // Apply code tools
             setTimeout(() => {
                 Prism.highlightAllUnder(container);
-                renderMermaidDiagrams(container); // Render historical diagrams
+                renderMermaidDiagrams(container);
                 scrollToBottom();
             }, 50);
         }
@@ -2057,232 +1245,65 @@
 
         function startNewChat() {
             currentSessionId = uuid.v4();
+            activeSessionData = [];
             localStorage.setItem('currentSessionId', currentSessionId);
-            document.getElementById('chat-container').innerHTML = `
+            window.history.pushState({}, '', '/dashboard_v2.html');
+            const container = document.getElementById('chat-container');
+            container.innerHTML = `
                 <div id="empty-state" class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-primary opacity-40"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"></path></svg>
-                    <p class="text-lg font-semibold text-slate-500">New Conversation</p>
-                    <p class="text-sm text-slate-600">Ask a question to begin.</p>
+                    <p class="text-xl font-bold text-white">How can MindX help you today?</p>
+                    <p class="text-sm text-slate-400 max-w-md mx-auto">Your private AI researcher. Ask questions, analyze documents, or explore the web.</p>
+                    <div class="flex items-center gap-4 pt-4">
+                        <button onclick="document.getElementById('search-input').focus()" class="px-6 py-2.5 rounded-xl bg-primary text-background-dark font-bold text-sm hover:shadow-[0_0_20px_rgba(0,255,65,0.3)] transition-all">Start Researching</button>
+                        <button onclick="triggerFileUpload('.pdf,.docx,.txt')" class="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm">Upload Files</button>
+                    </div>
                 </div>`;
             document.getElementById('search-input').focus();
+            fetchHistory();
         }
 
-        async function handleIngest(type) {
-            // Retired legacy ingest, but keeping function for partial compatibility if needed elsewhere
-        }
-
-        async function handleFileUpload(event) {
-            const files = event.target.files;
-            if (!files || files.length === 0) return;
-
-            const previewZone = document.getElementById('file-list-preview');
-
-            for (const file of Array.from(files)) {
-                const fileItem = document.createElement('div');
-                fileItem.className = 'flex items-center gap-2 bg-white/5 border border-white/5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-400';
-                fileItem.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                    <span>${file.name}</span>
-                    <span class="status-icon flex items-center justify-center animate-spin text-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-                    </span>
-                `;
-                previewZone.appendChild(fileItem);
-
-                const formData = new FormData();
-                formData.append('file', file);
-                if (currentSessionId) formData.append('session_id', currentSessionId);
-
-                try {
-                    const resp = await fetch('/documents/upload', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
-                    });
-
-                    if (resp.ok) {
-                        const statusIcon = fileItem.querySelector('.status-icon');
-                        statusIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                        statusIcon.classList.remove('animate-spin');
-                        statusIcon.classList.add('text-primary');
-                    } else {
-                        const errorData = await resp.json().catch(() => ({}));
-                        throw new Error(errorData.detail || 'Upload failed');
-                    }
-                } catch (err) {
-                    console.error('File upload failed:', err);
-                    const statusIcon = fileItem.querySelector('.status-icon');
-                    statusIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
-                    statusIcon.classList.remove('animate-spin');
-                    statusIcon.classList.add('text-red-500');
-                    fileItem.title = err.message;
-                }
-            }
-            event.target.value = '';
-        }
-
-        function toggleModeLabel() {
-            const isFast = document.getElementById('fast-mode-toggle').checked;
-            const label = document.getElementById('mode-label');
-            const aiStatus = document.getElementById('ai-status');
-
-            if (isFast) {
-                label.innerText = 'Fast Mode';
-                aiStatus.innerHTML = '<span class="size-1.5 bg-yellow-500 rounded-full animate-pulse"></span> MindX Fast Mode';
-            } else {
-                label.innerText = 'Deep Search';
-                aiStatus.innerHTML = '<span class="size-1.5 bg-primary rounded-full animate-pulse"></span> MindX Intelligent Mode';
-            }
-        }
-
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-        async function deleteSession(sid) {
-            if (!confirm('Are you sure you want to delete this conversation?')) return;
-            try {
-                const token = localStorage.getItem('mindx_token');
-                const response = await fetch(`/chats/${sid}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    searchHistory = searchHistory.filter(s => s.id !== sid);
-                    if (currentSessionId === sid) startNewChat();
-                    renderHistory();
-                }
-            } catch (err) {
-                console.error('Failed to delete session:', err);
-            }
-        }
-
-
-        // ─── Categorized Upload Menu ───
-        function toggleUploadMenu(e) {
-            e.stopPropagation();
-            document.getElementById('upload-menu').classList.toggle('active');
-        }
-
-        function scrollToBottom() {
-            const container = document.getElementById('chat-container');
-            if (container) {
-                container.scrollTop = container.scrollHeight;
-            }
-        }
-
-        function triggerFileUpload(accept) {
-            const input = document.getElementById('chat-file-upload');
-            input.accept = accept;
-            input.click();
-            document.getElementById('upload-menu').classList.remove('active');
-        }
-
-        function renderMermaidDiagrams(container) {
-            const mermaidBlocks = container.querySelectorAll('.language-mermaid');
-            mermaidBlocks.forEach((block, i) => {
-                const code = block.textContent;
-                const diagramDiv = document.createElement('div');
-                diagramDiv.id = `mermaid-${Date.now()}-${i}`;
-                diagramDiv.className = 'mermaid-diagram bg-white/5 p-4 rounded-xl my-4 text-center';
-                block.parentElement.replaceWith(diagramDiv);
-
-                try {
-                    mermaid.render(diagramDiv.id + '-svg', code).then(({ svg }) => {
-                        diagramDiv.innerHTML = svg;
-                    });
-                } catch (e) {
-                    console.error('Mermaid render error:', e);
-                }
-            });
-        }
-
-        // ─── Onboarding Tour ───
+        // ─── Initial Load & Observers ───
         function initOnboarding() {
-            const hasSeen = localStorage.getItem('onboarding_seen_v2');
-            if (hasSeen) return;
-
+            if (localStorage.getItem('onboarding_seen_v2')) return;
             const driverObj = window.driver.js.driver({
                 showProgress: true,
                 steps: [
                     { element: '#btn-new-chat', popover: { title: 'New Era of Search', description: 'Start fresh, organized conversations.' } },
                     { element: '#search-input', popover: { title: 'Intelligent Query', description: 'Describe complex research tasks in natural language.' } },
-                    { element: '#fast-mode-toggle', popover: { title: 'Fast vs Deep', description: 'Switch between instant answers and comprehensive deep research.' } },
-                    { element: '#sidebar', popover: { title: 'Organized History', description: 'Chat sessions are now grouped by date and searchable.' } },
-                    { element: '#in-chat-search-bar', popover: { title: 'In-Chat Search', description: 'Filter messages within a single conversation instantly.' } }
+                    { element: '#sidebar', popover: { title: 'Organized History', description: 'Chat sessions are now grouped by date and searchable.' } }
                 ]
             });
-
-            setTimeout(() => {
-                driverObj.drive();
-                localStorage.setItem('onboarding_seen_v2', 'true');
-            }, 2000);
+            setTimeout(() => { driverObj.drive(); localStorage.setItem('onboarding_seen_v2', 'true'); }, 2000);
         }
 
-        // ─── Session Persistence (Metadata & Restoration) ───
-        function saveActiveChat() {
-            if (currentSessionId) {
-                localStorage.setItem('currentSessionId', currentSessionId);
-            }
+        function initOfflineDetection() {
+            const banner = document.getElementById('offline-banner');
+            const update = () => navigator.onLine ? banner?.classList.add('hidden') : banner?.classList.remove('hidden');
+            window.addEventListener('online', update);
+            window.addEventListener('offline', update);
+            update();
         }
 
-        function restoreActiveChat() {
-            const sid = localStorage.getItem('currentSessionId');
-            if (sid && sid !== 'null') {
-                console.log('Restoring session:', sid);
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchHistory();
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get('q');
+            const sid = params.get('chat') || localStorage.getItem('currentSessionId');
+
+            if (q) {
+                document.getElementById('search-input').value = q;
+                handleSearch();
+            } else if (sid && sid !== 'null') {
                 loadSession(sid);
             } else {
                 startNewChat();
             }
-        }
 
-        // ─── Session Recovery (Drafts) ───
-        function initSessionRecovery() {
-            const input = document.getElementById('search-input');
-            input.addEventListener('input', () => {
-                localStorage.setItem('draft_query', input.value);
-            });
-
-            const draft = localStorage.getItem('draft_query');
-            if (draft) {
-                input.value = draft;
-            }
-        }
-
-        // ─── Offline Detection (Task 22) ───
-        function initOfflineDetection() {
-            const banner = document.getElementById('offline-banner');
-            if (!banner) return;
-
-            function updateOnlineStatus() {
-                if (navigator.onLine) {
-                    banner.classList.add('hidden');
-                    // Show brief "back online" toast
-                    const toast = document.createElement('div');
-                    toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/40 text-green-400 text-xs font-bold rounded-full backdrop-blur-sm pointer-events-none';
-                    toast.innerHTML = '✅ Connection restored';
-                    document.body.appendChild(toast);
-                    setTimeout(() => toast.remove(), 3000);
-                } else {
-                    banner.classList.remove('hidden');
-                }
-            }
-
-            window.addEventListener('online', updateOnlineStatus);
-            window.addEventListener('offline', updateOnlineStatus);
-            updateOnlineStatus(); // Run on load
-        }
-
-        // ─── Initial Load ───
-        window.addEventListener('DOMContentLoaded', () => {
-            // Fix 3: Load Local History Immediately
-            allChats = loadChatsFromLocal();
-            renderSidebar(allChats);
-
-            fetchHistory(); // Sync with backend
-            restoreActiveChat();
+            initStarterChips();
             initSessionRecovery();
             initOnboarding();
             initOfflineDetection();
-            initStarterChips();
 
             // Initialize Voice & TTS
             window.voice = new VoiceManager();
@@ -2291,13 +1312,6 @@
                 if (!voice.isRecording) voice.startRecording();
             });
             wakeWord.start();
-
-            const params = new URLSearchParams(window.location.search);
-            const q = params.get('q');
-            if (q) {
-                document.getElementById('search-input').value = q;
-                handleSearch();
-            }
         });
 
         // ═══════════════════════════════════════════════════════
