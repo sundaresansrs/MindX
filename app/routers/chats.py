@@ -18,7 +18,7 @@ from app.database import get_db
 from app.routers.auth import get_current_user
 from app.services.chat_history_service import ChatHistoryService
 
-router = APIRouter(prefix="/chats", tags=["chats"])
+router = APIRouter(tags=["chats"])
 
 
 # ─── Schemas ─────────────────────────────────────────────────────────────────

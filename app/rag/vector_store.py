@@ -15,7 +15,7 @@ class VectorStore:
             return []
 
         sims = cosine_similarity(
-            [query_embedding], self.embeddings
+            np.array([query_embedding]), np.array(self.embeddings)
         )[0]
 
         top_indices = np.argsort(sims)[::-1][:top_k]

@@ -191,7 +191,24 @@
             flex-direction: column;
             scroll-behavior: smooth;
             align-items: center;
-            /* Fix 2: Center content */
+            justify-content: flex-start;
+            /* Messages start from top */
+        }
+
+        /* Empty state wrapper to fill height and center contents */
+        .empty-state {
+            flex: 1;
+            /* Fill available height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Center vertically */
+            align-items: center;
+            /* Center horizontally */
+            text-align: center;
+            padding: 24px;
+            color: #888;
+            font-size: 14px;
         }
 
         /* Fix 4: File Menu Positioning */
@@ -219,10 +236,12 @@
             flex-shrink: 0;
             background: var(--background-dark);
             border-top: 1px solid var(--border-dark);
-            padding: 16px 24px 24px;
-            /* More padding at bottom */
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            /* Allow stacking status bars/toggles */
+            align-items: center;
             z-index: 20;
-            position: relative;
         }
 
         .input-wrap {
@@ -406,6 +425,10 @@
                     <p class="text-[10px] text-slate-500">Status: <span class="text-primary">Fully Synced</span></p>
                     <p class="text-[9px] text-slate-600 mt-1">Last update: Just now</p>
                 </div>
+
+                <footer class="mt-8 text-center pb-2">
+                    <p class="text-slate-600 text-[10px]">MindX AI Search Engine • © 2026</p>
+                </footer>
             </div>
         </aside>
 
@@ -434,10 +457,10 @@
             <div id="messagesArea" class="messages-area">
                 <div id="chat-container" class="max-w-3xl mx-auto w-full flex flex-col gap-6">
                     <!-- Empty State -->
-                    <!-- Empty State (Wrapped for Fix 2) -->
-                    <div style="flex:1; display:flex; align-items:center; justify-content:center; width:100%;">
+                    <div id="empty-state-wrapper"
+                        class="flex-1 flex flex-col items-center justify-center w-full min-h-[60vh]">
                         <div id="empty-state"
-                            class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
+                            class="border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4 max-w-2xl mx-auto shadow-2xl animate-in fade-in zoom-in duration-500">
                             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
                                 stroke-linejoin="round" class="text-primary opacity-40">
@@ -462,7 +485,8 @@
                             </div>
 
                             <!-- Dynamic Starter Chips (Task 36) -->
-                            <div id="starter-chips" class="flex flex-wrap justify-center gap-2 pt-8 max-w-2xl"></div>
+                            <div id="starter-chips" class="flex flex-wrap justify-center gap-2 pt-8 max-w-2xl mx-auto">
+                            </div>
                         </div>
                     </div>
 
@@ -588,29 +612,15 @@
                                     <span id="meta-mode">Hybrid Mode Active</span>
                                 </div>
                             </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="text-primary">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path
-                                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
-                                </path>
-                                <path d="M2.17 12h19.66"></path>
-                            </svg>
-                            <span id="meta-mode">Hybrid Mode</span>
-
                         </div>
                 </div>
+                </article>
             </div>
-            </article>
+    </div>
 
 
     </div>
 
-    <!-- Footer -->
-    <footer class="max-w-4xl mx-auto px-6 py-12 border-t border-border-dark text-center">
-        <p class="text-slate-600 text-xs">MindX AI Search Engine • © 2026</p>
-    </footer>
     </div>
     </div>
 
@@ -635,40 +645,7 @@
             <!-- File Preview Zone (Above Input) -->
             <div id="file-list-preview" class="flex flex-wrap gap-2 mb-3"></div>
 
-            <!-- Mode Selectors (Task 35) -->
-            <div class="flex items-center gap-3 mb-3 px-2">
-                <div
-                    class="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="intelligent-mode-toggle" class="sr-only peer" checked
-                            onchange="toggleModeLabel()">
-                        <div
-                            class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary">
-                        </div>
-                    </label>
-                    <span id="mode-label" class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Deep
-                        Search</span>
-                </div>
-
-                <div
-                    class="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="fast-mode-toggle" class="sr-only peer" onchange="toggleModeLabel()">
-                        <div
-                            class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-yellow-500">
-                        </div>
-                    </label>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Fast Mode</span>
-                </div>
-
-                <div id="ai-status"
-                    class="ml-auto flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 border border-primary/20 px-3 py-1.5 rounded-xl">
-                    <span class="size-1.5 bg-primary rounded-full animate-pulse"></span>
-                    MindX Intelligent Mode
-                </div>
-            </div>
-
-            <div class="input-wrap">
+            <div class="input-wrap max-w-3xl mx-auto w-full">
                 <div class="flex items-end gap-2 px-2 w-full">
                     <!-- File Upload Trigger & Menu -->
                     <div class="relative mb-1 flex-shrink-0">
@@ -782,7 +759,42 @@
                 </div>
             </div>
 
+            <!-- Mode Selectors (Moved below search bar and centered) -->
+            <div class="flex flex-wrap items-center justify-center gap-3 mt-4 w-full">
+                <div
+                    class="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="intelligent-mode-toggle" class="sr-only peer" checked
+                            onchange="toggleModeLabel()">
+                        <div
+                            class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary">
+                        </div>
+                    </label>
+                    <span id="mode-label" class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Deep
+                        Search</span>
+                </div>
+
+                <div
+                    class="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="fast-mode-toggle" class="sr-only peer" onchange="toggleModeLabel()">
+                        <div
+                            class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-yellow-500">
+                        </div>
+                    </label>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Fast Mode</span>
+                </div>
+
+                <div id="ai-status"
+                    class="flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 border border-primary/20 px-3 py-1.5 rounded-xl">
+                    <span class="size-1.5 bg-primary rounded-full animate-pulse"></span>
+                    MindX Intelligent Mode
+                </div>
+            </div>
         </div>
+    </div>
+
+    </div>
     </div>
     </main>
     </div>
@@ -810,6 +822,70 @@
             localStorage.removeItem('mindx_token');
             localStorage.removeItem('mindx_user');
             window.location.href = '/login.html';
+        }
+
+        // ─── History Synchronization ───
+        async function fetchHistory() {
+            try {
+                const res = await fetch('/chats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    renderHistoryGroups(data);
+                }
+            } catch (err) { console.error('History fetch failed:', err); }
+        }
+
+        function renderHistoryGroups(data) {
+            const container = document.getElementById('search-history');
+            if (!container) return;
+            if (!data || !data.groups || data.groups.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-600 px-3 py-2">No history</p>';
+                return;
+            }
+
+            container.innerHTML = data.groups.map(group => `
+                <div class="mb-4">
+                    <h3 class="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2">${group.label}</h3>
+                    ${group.sessions.map(s => `
+                        <div onclick="loadSession('${s.session_id}')" class="group flex items-center justify-between p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-all ${s.session_id === currentSessionId ? 'bg-white/5' : ''}">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-200 truncate">${s.title || 'Untitled Research'}</p>
+                                <p class="text-[10px] text-slate-500 truncate mt-0.5">${s.preview || 'No preview available'}</p>
+                            </div>
+                            <button onclick="event.stopPropagation(); deleteSession('${s.session_id}')" class="opacity-0 group-hover:opacity-100 p-1.5 text-slate-600 hover:text-red-400 transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        async function deleteSession(sid) {
+            if (!confirm('Delete this conversation?')) return;
+            try {
+                const res = await fetch(`/chats/${sid}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    if (sid === currentSessionId) startNewChat();
+                    else fetchHistory();
+                }
+            } catch (err) { }
+        }
+
+        async function bulkDeleteSessions() {
+            if (!confirm('Clear all conversation history?')) return;
+            try {
+                const res = await fetch('/chats', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) startNewChat();
+            } catch (err) { }
         }
 
         // ─── Toggles & Controls ───
@@ -861,7 +937,7 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('session_id', currentSessionId);
-                await fetch('/documents/upload', {
+                await fetch('/api/upload', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
@@ -896,7 +972,7 @@
             scrollToBottom();
 
             try {
-                const response = await fetch('/api/qa/search', {
+                const response = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({
@@ -1248,9 +1324,9 @@
             activeSessionData = [];
             localStorage.setItem('currentSessionId', currentSessionId);
             window.history.pushState({}, '', '/dashboard_v2.html');
-            const container = document.getElementById('chat-container');
             container.innerHTML = `
-                <div id="empty-state" class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
+                <div class="flex-1 flex items-center justify-center w-full min-h-[400px]">
+                    <div id="empty-state" class="border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4 max-w-2xl mx-auto shadow-2xl">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-primary opacity-40"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"></path></svg>
                     <p class="text-xl font-bold text-white">How can MindX help you today?</p>
                     <p class="text-sm text-slate-400 max-w-md mx-auto">Your private AI researcher. Ask questions, analyze documents, or explore the web.</p>

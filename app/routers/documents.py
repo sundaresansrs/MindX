@@ -14,7 +14,6 @@ from app.services.vector_service import VectorService
 
 
 router = APIRouter(
-    prefix="/documents",
     tags=["documents"]
 )
 

@@ -114,13 +114,13 @@ class ChatHistoryService:
             )
             result.append({
                 "session_id": str(row.session_id),
-                "title": row.title or (row.query[:40] + ("…" if len(row.query) > 40 else "")),
-                "preview": row.preview or (row.query[:60] + ("…" if len(row.query) > 60 else "")),
+                "title": row.title or (str(row.query)[:40] + ("…" if len(str(row.query)) > 40 else "")),
+                "preview": row.preview or (str(row.query)[:60] + ("…" if len(str(row.query)) > 60 else "")),
                 "message_count": count,
-                "last_query": row.query[:60],
+                "last_query": str(row.query)[:60],
                 "is_pinned": bool(row.is_pinned),
-                "created_at": row.created_at.isoformat() if row.created_at else None,
-                "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+                "created_at": row.created_at.isoformat() if row.created_at is not None else None,
+                "updated_at": row.updated_at.isoformat() if row.updated_at is not None else None,
             })
         return result
 
@@ -226,11 +226,11 @@ class ChatHistoryService:
     # ─── Update answer specifically (for streaming sync) ─────────────────────
 
     def update_answer(self, record_id: int, answer: str, source: Optional[str] = None, confidence: Optional[int] = None):
-        data: Dict[str, Any] = {"answer": answer, "updated_at": func.now()}
+        data = {ChatHistory.answer: answer, ChatHistory.updated_at: func.now()}
         if source:
-            data["source"] = source
+            data[ChatHistory.source] = source
         if confidence is not None:
-            data["confidence"] = confidence
+            data[ChatHistory.confidence] = confidence
             
         self.db.query(ChatHistory).filter(ChatHistory.id == record_id).update(data)
         self.db.commit()

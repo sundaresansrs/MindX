@@ -7,7 +7,7 @@ from app.database import get_db
 from app.routers.auth import get_current_user
 from app.services.pipeline_factory import PipelineFactory
 
-router = APIRouter(prefix="/qa", tags=["qa"])
+router = APIRouter(tags=["qa"])
 
 class SearchRequest(BaseModel):
     query: str
@@ -26,10 +26,10 @@ async def search(request: SearchRequest, db: Session = Depends(get_db), current_
     pipeline = PipelineFactory.get_pipeline(current_user, db)
     result = await pipeline.search(
         query=request.query, 
-        session_id=request.session_id,
-        use_search=request.use_search,
-        max_sources=request.max_sources,
-        fast_mode=request.fast_mode
+        session_id=request.session_id,  # type: ignore
+        use_search=request.use_search or True,  # type: ignore
+        max_sources=request.max_sources or 10,  # type: ignore
+        fast_mode=request.fast_mode or False  # type: ignore
     )
     return result
 
@@ -40,10 +40,10 @@ async def stream_search(request: SearchRequest, db: Session = Depends(get_db), c
     async def event_generator():
         async for chunk in pipeline.stream(
             query=request.query,
-            session_id=request.session_id,
-            use_search=request.use_search,
-            max_sources=request.max_sources,
-            fast_mode=request.fast_mode
+            session_id=request.session_id,  # type: ignore
+            use_search=request.use_search or True,  # type: ignore
+            max_sources=request.max_sources or 10,  # type: ignore
+            fast_mode=request.fast_mode or False  # type: ignore
         ):
             yield f"data: {json.dumps(chunk)}\n\n"
         yield "data: [DONE]\n\n"

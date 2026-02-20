@@ -160,10 +160,16 @@ class PersonalPipeline:
         # Update record with final response
         if full_answer:
             confidence_val = metadata.get("confidence", 0.7)
-            final_confidence = int(confidence_val * 100) if isinstance(confidence_val, float) else confidence_val
+            if isinstance(confidence_val, float):
+                final_confidence = int(confidence_val * 100)
+            else:
+                try:
+                    final_confidence = int(confidence_val) if confidence_val is not None else None  # type: ignore
+                except (ValueError, TypeError):
+                    final_confidence = None
             
             self.history.update_answer(
-                record_id=record.id,
+                record_id=record.id,  # type: ignore
                 answer=full_answer,
                 source=str(len(metadata.get("sources", []))),
                 confidence=final_confidence

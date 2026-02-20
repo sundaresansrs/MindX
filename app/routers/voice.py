@@ -86,7 +86,7 @@ def detect_voice_command(text: str) -> dict:
 
 # ── ENDPOINT 1: Standard Transcription ──────────
 
-@router.post("/api/voice/transcribe")
+@router.post("/voice/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)):
     """
     Receive audio blob → Whisper → clean text → return.
@@ -148,7 +148,7 @@ async def transcribe_audio(audio: UploadFile = File(...)):
 
 # ── ENDPOINT 2: Chunk Transcription (for live preview) ──
 
-@router.post("/api/voice/transcribe-chunk")
+@router.post("/voice/transcribe-chunk")
 async def transcribe_chunk(
     audio: UploadFile = File(...),
     is_final: bool = Form(False)
@@ -198,7 +198,7 @@ async def transcribe_chunk(
 
 # ── ENDPOINT 3: Language Auto-Detect + Translate ──
 
-@router.post("/api/voice/transcribe-multilang")
+@router.post("/voice/transcribe-multilang")
 async def transcribe_multilang(audio: UploadFile = File(...)):
     """
     Auto-detect language. If non-English, translate to English.

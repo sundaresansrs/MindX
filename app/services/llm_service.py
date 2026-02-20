@@ -49,7 +49,7 @@ class LLMService:
             temperature=0.3,
         )
 
-        return response.choices[0].message.content
+        return response.choices[0].message.content or ""
 
     async def stream_response(
         self,
@@ -139,5 +139,5 @@ Search Results:
             messages=messages, # type: ignore
             temperature=temperature,
         )
-        return response.choices[0].message.content
+        return response.choices[0].message.content or ""
 
