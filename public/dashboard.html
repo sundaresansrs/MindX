@@ -283,16 +283,58 @@
         }
 
         /* ── Source chips ── */
-        body.light-mode .source-chip {
-            background: #f5f5fa;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            color: #4a4a6a;
+        .sources-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
         }
 
-        body.light-mode .source-chip:hover {
-            background: rgba(0, 168, 122, 0.08);
-            border-color: rgba(0, 168, 122, 0.4);
-            color: #007a5a;
+        .sources-label {
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+        }
+
+        .source-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .source-chip:hover {
+            background: rgba(59, 130, 246, 0.1);
+            /* Primary fallback */
+            border-color: var(--primary);
+            color: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        .chip-num {
+            background: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            font-size: 9px;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-weight: 800;
         }
 
         /* ── Input area ── */
@@ -305,6 +347,33 @@
             background: #ffffff;
             border: 1.5px solid rgba(0, 0, 0, 0.14);
             box-shadow: var(--shadow-sm);
+        }
+
+        /* Markdown List Rendering Fix */
+        .ai-message ul,
+        .ai-message ol {
+            margin: 12px 0;
+            padding-left: 24px;
+            display: block !important;
+        }
+
+        .ai-message ul li {
+            list-style-type: disc !important;
+            margin: 6px 0;
+            line-height: 1.6;
+            display: list-item !important;
+        }
+
+        .ai-message ol li {
+            list-style-type: decimal !important;
+            margin: 6px 0;
+            line-height: 1.6;
+            display: list-item !important;
+        }
+
+        .ai-message li::marker {
+            color: var(--primary);
+            font-weight: bold;
         }
 
         body.light-mode .chat-input-container:focus-within {
@@ -1528,9 +1597,11 @@
             border-radius: 28px;
             padding: 8px 12px;
             display: flex;
-            align-items: center;
+            align-items: flex-end;
+            /* Align icons with bottom of expanding text */
             gap: 8px;
             transition: all 0.3s;
+            position: relative;
         }
 
         .input-wrapper:focus-within {
@@ -1737,11 +1808,7 @@
         <div class="flex items-center gap-2">
             <span id="user-greeting"
                 class="text-sm font-medium text-slate-500 dark:text-slate-400 hidden sm:block">Hello, User</span>
-            <!-- Theme Toggle -->
-            <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark"
-                class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
-                <span class="material-symbols-outlined text-[20px]" id="theme-icon">dark_mode</span>
-            </button>
+            <!-- Theme Toggle Removed -->
             <!-- Export Chat -->
             <button onclick="exportChat()" title="Export chat as Markdown"
                 class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
@@ -1848,7 +1915,7 @@
                     </button>
 
                     <div id="file-list-preview"
-                        class="absolute -top-12 left-0 right-0 flex flex-wrap gap-2 px-4 pointer-events-auto empty:hidden">
+                        class="absolute -top-16 left-0 right-0 flex flex-wrap gap-2 px-4 pointer-events-auto empty:hidden max-h-32 overflow-y-auto no-scrollbar">
                     </div>
 
                     <button class="input-icon-btn" onclick="toggleUploadMenu(event)" title="Upload file">
@@ -2192,6 +2259,18 @@
         let abortController = null; // for stop generating
         let showAllHistory = false; // Toggle for "See all chats"
 
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+            // Limit max height
+            if (textarea.scrollHeight > 200) {
+                textarea.style.height = '200px';
+                textarea.style.overflowY = 'auto';
+            } else {
+                textarea.style.overflowY = 'hidden';
+            }
+        }
+
         // ─── Char Counter ───
         function updateCharCounter(textarea) {
             const len = textarea.value.length;
@@ -2200,6 +2279,20 @@
             counter.textContent = len + '/4000';
             counter.className = len > 3500 ? 'danger' : len > 3000 ? 'warn' : '';
             sendBtn.disabled = textarea.value.trim().length === 0;
+
+            // NEW: Hide welcome screen when typing
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) {
+                if (len > 0) {
+                    emptyState.style.display = 'none';
+                } else {
+                    // Only show if no messages exist yet
+                    const hasMessages = document.querySelector('.message-bubble');
+                    if (!hasMessages) {
+                        emptyState.style.display = 'flex';
+                    }
+                }
+            }
         }
 
         // ─── Theme Toggle ───
@@ -2402,34 +2495,7 @@
             a.click();
         }
 
-        function startNewChat() {
-            currentSessionId = uuid.v4();
-            setActiveChat(currentSessionId); // Update storage
-            // localStorage.setItem('currentSessionId', currentSessionId); // Remove legacy
-            currentChatMessages = [];
-
-            // Clear UI
-            const container = document.getElementById('chat-container');
-            container.innerHTML = `
-                <div id="empty-state"
-                    class="mt-20 border border-border-dark bg-surface-dark/20 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-4">
-                    <span class="material-symbols-outlined text-primary text-5xl opacity-40">neurology</span>
-                    <p class="text-lg font-semibold text-slate-500">How can MindX help you today?</p>
-                    <p class="text-sm text-slate-600">Secure, AI-powered research at your fingertips.</p>
-                    <div class="flex flex-wrap justify-center gap-2 pt-8 max-w-lg">
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Who founded Netflix?</button>
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Explain quantum physics</button>
-                        <button onclick="searchChip(this)" class="px-4 py-2 rounded-full border border-border-dark bg-surface-dark/50 text-xs font-medium text-slate-400 hover:text-primary hover:border-primary/30 transition-all">Latest AI news</button>
-                    </div>
-                </div>`;
-            document.getElementById('search-input').value = '';
-            updateCharCounter(document.getElementById('search-input'));
-            document.getElementById('chat-scroller').scrollTop = 0;
-            activeSessionId = null;
-            renderHistory(allSessions);
-            closeMobileSidebar();
-            console.log('Started new chat session:', currentSessionId);
-        }
+        // Removed legacy startNewChat (duplicated at end of file)
 
         document.getElementById('btn-new-chat')?.addEventListener('click', startNewChat);
 
@@ -2815,11 +2881,17 @@
 
             if (emptyState) emptyState.remove();
 
-            if (emptyState) emptyState.remove();
-
-            // Track for export & Persistence
+            let fileIdsToAttach = [];
             if (!isRetry) {
-                const userMsg = { role: 'user', content: query };
+                // Determine if there are files to attach
+                const filesToAttach = [...uploadedFiles.filter(f => f.status === 'ready')];
+                fileIdsToAttach = filesToAttach.map(f => f.file_id).filter(id => id);
+
+                const userMsg = {
+                    role: 'user',
+                    content: query,
+                    files: filesToAttach.map(f => ({ name: f.name, size: f.size, type: f.type, file_id: f.file_id }))
+                };
                 currentChatMessages.push(userMsg);
                 saveMessage(currentSessionId, userMsg);
                 setActiveChat(currentSessionId);
@@ -2827,8 +2899,44 @@
                 // Append User Message Bubble (optimistic)
                 const userDiv = document.createElement('div');
                 userDiv.className = 'message-bubble user-message';
-                userDiv.textContent = query;
+
+                // Render files FIRST (if any)
+                if (filesToAttach.length > 0) {
+                    const filesDiv = document.createElement('div');
+                    filesDiv.className = 'flex flex-col gap-2 mb-3';
+                    filesToAttach.forEach(f => {
+                        const fileCard = document.createElement('div');
+                        fileCard.className = 'flex items-center gap-3 bg-white/10 border border-white/10 p-3 rounded-xl max-w-sm';
+                        fileCard.innerHTML = `
+                            <span class="material-symbols-outlined text-primary text-2xl">description</span>
+                            <div class="flex-1 min-w-0 text-left">
+                                <div class="text-xs font-bold text-slate-100 truncate">${f.name}</div>
+                                <div class="text-[10px] text-slate-500 uppercase tracking-tight">Attached Document</div>
+                            </div>
+                        `;
+                        filesDiv.appendChild(fileCard);
+                    });
+                    userDiv.appendChild(filesDiv);
+                }
+
+                const textDiv = document.createElement('div');
+                textDiv.textContent = query;
+                userDiv.appendChild(textDiv);
                 container.appendChild(userDiv);
+
+                // Clear files after attaching to message
+                uploadedFiles = [];
+                const previewZone = document.getElementById('file-list-preview');
+                if (previewZone) previewZone.innerHTML = '';
+            } else {
+                // Retrieve file IDs from the last user message for retry
+                for (let i = currentChatMessages.length - 1; i >= 0; i--) {
+                    if (currentChatMessages[i].role === 'user') {
+                        const files = currentChatMessages[i].files || [];
+                        fileIdsToAttach = files.map(f => f.file_id).filter(id => id);
+                        break;
+                    }
+                }
             }
 
             // Append AI bubble with typing indicator
@@ -2864,7 +2972,8 @@
                         session_id: currentSessionId,
                         use_search: true,
                         max_sources: parseInt(maxSources),
-                        fast_mode: document.getElementById('fast-mode-toggle').checked
+                        fast_mode: document.getElementById('fast-mode-toggle').checked,
+                        file_ids: fileIdsToAttach.length > 0 ? fileIdsToAttach : undefined
                     }),
                     signal: abortController.signal
                 });
@@ -3407,7 +3516,27 @@
                         const div = document.createElement('div');
                         div.className = `message-bubble ${isUser ? 'user-message' : 'ai-message'}`;
                         if (isUser) {
-                            div.textContent = msg.content;
+                            // Render files first if present
+                            if (msg.files && msg.files.length > 0) {
+                                const filesDiv = document.createElement('div');
+                                filesDiv.className = 'flex flex-col gap-2 mb-3';
+                                msg.files.forEach(f => {
+                                    const fileCard = document.createElement('div');
+                                    fileCard.className = 'flex items-center gap-3 bg-white/5 border border-border-dark p-3 rounded-xl max-w-sm';
+                                    fileCard.innerHTML = `
+                                        <span class="material-symbols-outlined text-primary text-2xl">description</span>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-medium text-slate-200 truncate">${f.name}</div>
+                                            <div class="text-[10px] text-slate-500 uppercase tracking-tight">Document</div>
+                                        </div>
+                                    `;
+                                    filesDiv.appendChild(fileCard);
+                                });
+                                div.appendChild(filesDiv);
+                            }
+                            const textDiv = document.createElement('div');
+                            textDiv.textContent = msg.content;
+                            div.appendChild(textDiv);
                         } else {
                             // Assistant
                             div.innerHTML = `<div class="markdown-body" data-raw="${encodeURIComponent(msg.content || '')}">${formatContent(msg.content || '')}</div>`;
@@ -3558,6 +3687,8 @@
             // Retired legacy ingest, but keeping function for partial compatibility if needed elsewhere
         }
 
+        let uploadedFiles = [];
+
         async function handleFileUpload(event) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -3565,12 +3696,27 @@
             const previewZone = document.getElementById('file-list-preview');
 
             for (const file of Array.from(files)) {
+                // Tracking locally for message rendering
+                const fileObj = {
+                    id: uuid.v4(),
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    file: file,
+                    status: 'uploading'
+                };
+                uploadedFiles.push(fileObj);
+
                 const fileItem = document.createElement('div');
-                fileItem.className = 'flex items-center gap-2 bg-slate-100 dark:bg-white/5 border border-border-dark px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-slate-400';
+                fileItem.id = `preview-${fileObj.id}`;
+                fileItem.className = 'flex items-center gap-2 bg-background-dark border border-border-dark px-3 py-1.5 rounded-xl text-[11px] font-medium text-slate-400 shadow-xl';
                 fileItem.innerHTML = `
                     <span class="material-symbols-outlined text-[14px]">description</span>
-                    <span>${file.name}</span>
+                    <span class="truncate max-w-[150px]">${file.name}</span>
                     <span class="status-icon material-symbols-outlined text-[14px] animate-spin text-primary">sync</span>
+                    <button onclick="removeFile('${fileObj.id}')" class="hover:text-red-400 transition-colors ml-1">
+                        <span class="material-symbols-outlined text-[14px]">close</span>
+                    </button>
                 `;
                 previewZone.appendChild(fileItem);
 
@@ -3586,24 +3732,31 @@
                     });
 
                     if (resp.ok) {
+                        const respData = await resp.json();
                         const statusIcon = fileItem.querySelector('.status-icon');
                         statusIcon.textContent = 'check_circle';
                         statusIcon.classList.remove('animate-spin');
                         statusIcon.classList.add('text-primary');
+                        fileObj.status = 'ready';
+                        fileObj.file_id = respData.file_id;
                     } else {
-                        const errorData = await resp.json().catch(() => ({}));
-                        throw new Error(errorData.detail || 'Upload failed');
+                        throw new Error('Upload failed');
                     }
                 } catch (err) {
-                    console.error('File upload failed:', err);
                     const statusIcon = fileItem.querySelector('.status-icon');
                     statusIcon.textContent = 'error';
                     statusIcon.classList.remove('animate-spin');
                     statusIcon.classList.add('text-red-500');
-                    fileItem.title = err.message;
+                    fileObj.status = 'error';
                 }
             }
             event.target.value = '';
+        }
+
+        function removeFile(id) {
+            uploadedFiles = uploadedFiles.filter(f => f.id !== id);
+            const el = document.getElementById(`preview-${id}`);
+            if (el) el.remove();
         }
 
         function toggleModeLabel() {

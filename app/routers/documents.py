@@ -8,30 +8,13 @@ import requests
 from app.database import get_db
 from app.models.document import Document
 from app.routers.auth import get_current_user
+from app.schemas import DocumentIngest, SearchQuery, DocumentResponse
 from app.services.embeddings import EmbeddingsService
 from app.services.upload_service import UploadService
 from app.services.vector_service import VectorService
 
-
-router = APIRouter(
-    tags=["documents"]
-)
-
+router = APIRouter(tags=["documents"])
 embeddings_service = EmbeddingsService()
-
-class DocumentIngest(BaseModel):
-    url: Optional[str] = None
-    text: Optional[str] = None
-
-class SearchQuery(BaseModel):
-    query: str
-    limit: int = 5
-
-class DocumentResponse(BaseModel):
-    id: str
-    content: str
-    source_url: Optional[str] = None
-    score: Optional[float] = None
 
 @router.post("/ingest", response_model=DocumentResponse)
 async def ingest_document(

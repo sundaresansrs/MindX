@@ -51,6 +51,7 @@ class PersonalPipeline:
         use_search: bool = True,
         max_sources: int = 20,
         fast_mode: bool = False,
+        file_ids: Optional[list[str]] = None,
     ):
         """Process query through quality pipeline and save to chat history."""
         is_first = self.history.is_first_message(self.user.id, session_id) if session_id else False
@@ -77,6 +78,7 @@ class PersonalPipeline:
             use_search=use_search,
             max_sources=max_sources,
             fast_mode=fast_mode,
+            file_ids=file_ids,
         )
 
         self.history.save(
@@ -111,6 +113,7 @@ class PersonalPipeline:
         use_search: bool = True,
         max_sources: int = 15,
         fast_mode: bool = False,
+        file_ids: Optional[list[str]] = None,
     ):
         """Stream search results and save history incrementally."""
         is_first = self.history.is_first_message(self.user.id, session_id) if session_id else False
@@ -150,6 +153,7 @@ class PersonalPipeline:
             use_search=use_search,
             max_sources=max_sources,
             fast_mode=fast_mode,
+            file_ids=file_ids,
         ):
             if chunk["type"] == "token":
                 full_answer += chunk["content"]
@@ -160,18 +164,23 @@ class PersonalPipeline:
         # Update record with final response
         if full_answer:
             confidence_val = metadata.get("confidence", 0.7)
+            final_confidence: Optional[int] = None
+            
             if isinstance(confidence_val, float):
                 final_confidence = int(confidence_val * 100)
-            else:
+            elif isinstance(confidence_val, (int, str)):
                 try:
-                    final_confidence = int(confidence_val) if confidence_val is not None else None  # type: ignore
+                    final_confidence = int(confidence_val)
                 except (ValueError, TypeError):
-                    final_confidence = None
-            
+                    pass
+
+            sources_list = metadata.get("sources", [])
+            sources_count = len(sources_list) if isinstance(sources_list, list) else 0
+
             self.history.update_answer(
                 record_id=record.id,  # type: ignore
                 answer=full_answer,
-                source=str(len(metadata.get("sources", []))),
+                source=str(sources_count),
                 confidence=final_confidence
             )
             # ── Async Background Tasks ────────────────────────────────────────

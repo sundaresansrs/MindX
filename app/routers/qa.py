@@ -15,6 +15,7 @@ class SearchRequest(BaseModel):
     use_search: Optional[bool] = True
     max_sources: Optional[int] = 10
     fast_mode: Optional[bool] = False
+    file_ids: Optional[list[str]] = None
 
 
 from fastapi.responses import StreamingResponse
@@ -29,7 +30,8 @@ async def search(request: SearchRequest, db: Session = Depends(get_db), current_
         session_id=request.session_id,  # type: ignore
         use_search=request.use_search or True,  # type: ignore
         max_sources=request.max_sources or 10,  # type: ignore
-        fast_mode=request.fast_mode or False  # type: ignore
+        fast_mode=request.fast_mode or False,  # type: ignore
+        file_ids=request.file_ids
     )
     return result
 
@@ -43,7 +45,8 @@ async def stream_search(request: SearchRequest, db: Session = Depends(get_db), c
             session_id=request.session_id,  # type: ignore
             use_search=request.use_search or True,  # type: ignore
             max_sources=request.max_sources or 10,  # type: ignore
-            fast_mode=request.fast_mode or False  # type: ignore
+            fast_mode=request.fast_mode or False,  # type: ignore
+            file_ids=request.file_ids
         ):
             yield f"data: {json.dumps(chunk)}\n\n"
         yield "data: [DONE]\n\n"

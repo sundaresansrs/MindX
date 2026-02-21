@@ -170,8 +170,10 @@ class FileProcessor:
         
         formatted = ""
         if rows:
-            formatted += "Headers: " + " | ".join(rows[0]) + "\n\n"
-            for row in rows[1:100]: # Limit to first 100 rows for context
+            header_row = rows[0]
+            formatted += "Headers: " + " | ".join(header_row) + "\n\n"
+            data_rows = rows[1:100] # Limit to first 100 rows for context
+            for row in data_rows:
                 formatted += " | ".join(row) + "\n"
             if len(rows) > 100:
                 formatted += f"\n[{len(rows)-100} more rows omitted]"
@@ -192,8 +194,10 @@ class FileProcessor:
         for i, slide in enumerate(prs.slides):
             slide_text = []
             for shape in slide.shapes:
-                if hasattr(shape, "text") and shape.text:
-                    slide_text.append(shape.text)
+                # Use getattr and check if it's a string to satisfy strict type checkers
+                text_val = getattr(shape, "text", None)
+                if isinstance(text_val, str) and text_val.strip():
+                    slide_text.append(text_val)
             
             joined = "\n".join(slide_text)
             if joined.strip():

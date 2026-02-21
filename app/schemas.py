@@ -25,3 +25,17 @@ class QAOutput(BaseModel):
     sources: List[dict]  # List of {title, url, snippet, source}
     confidence: float
     metadata: dict
+
+class DocumentIngest(BaseModel):
+    url: Optional[str] = None
+    text: Optional[str] = None
+
+class SearchQuery(BaseModel):
+    query: str
+    limit: int = 5
+
+class DocumentResponse(BaseModel):
+    id: str
+    content: str
+    source_url: Optional[str] = None
+    score: Optional[float] = None

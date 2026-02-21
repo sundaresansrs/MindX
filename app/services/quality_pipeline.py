@@ -136,7 +136,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
                 logger.warning(f"Re-ranking disabled: {e}")
                 self.use_reranking = False
 
-    async def process_query(self, query: str, user: Any, session_id: Optional[str] = None, history: Optional[List[Any]] = None, use_search: bool = True, max_sources: int = 20, fast_mode: bool = False) -> Dict:
+    async def process_query(self, query: str, user: Any, session_id: Optional[str] = None, history: Optional[List[Any]] = None, use_search: bool = True, max_sources: int = 20, fast_mode: bool = False, file_ids: Optional[List[str]] = None) -> Dict:
         """
         Process query through the 7-stage quality pipeline
         
@@ -233,6 +233,23 @@ If answer is about "Oxidation of Iron", suggestions could be:
             
             # Combine results using RRF (Premium Ranking)
             ranked_results = self.apply_rrf([vector_results, web_results, specialized_results])
+            
+            # Inject uploaded files at the top
+            if file_ids:
+                from app.routers.upload import UPLOADED_FILES_CACHE
+                uploaded_sources = []
+                for fid in file_ids:
+                    fdata = UPLOADED_FILES_CACHE.get(fid)
+                    if fdata:
+                        uploaded_sources.append({
+                            "title": f"Uploaded File: {fdata['filename']}",
+                            "url": "",
+                            "snippet": fdata.get("text", "")[:5000],
+                            "credibility_score": 1.0,
+                            "source": "Document Upload"
+                        })
+                if uploaded_sources:
+                    ranked_results = uploaded_sources + ranked_results
             
             if not ranked_results:
                 # Fallback to LLM-only if no search results
@@ -351,7 +368,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
                 }
             }
 
-    async def stream_query(self, query: str, user: Any, session_id: Optional[str] = None, history: Optional[List[Any]] = None, use_search: bool = True, max_sources: int = 10, fast_mode: bool = False):
+    async def stream_query(self, query: str, user: Any, session_id: Optional[str] = None, history: Optional[List[Any]] = None, use_search: bool = True, max_sources: int = 10, fast_mode: bool = False, file_ids: Optional[List[str]] = None):
         """
         Stream query results through the pipeline
         """
@@ -455,6 +472,24 @@ If answer is about "Oxidation of Iron", suggestions could be:
             # Stage 3: Neural Ranking (RRF)
             yield {"type": "status", "stage": 3, "content": "Ranking results by credibility..."}
             ranked_results = self.apply_rrf([vector_results, web_results, specialized_results])
+            
+            # Inject uploaded files at the top
+            if file_ids:
+                from app.routers.upload import UPLOADED_FILES_CACHE
+                uploaded_sources = []
+                for fid in file_ids:
+                    fdata = UPLOADED_FILES_CACHE.get(fid)
+                    if fdata:
+                        uploaded_sources.append({
+                            "title": f"Uploaded File: {fdata['filename']}",
+                            "url": "",
+                            "snippet": fdata.get("text", "")[:5000],
+                            "credibility_score": 1.0,
+                            "source": "Document Upload"
+                        })
+                if uploaded_sources:
+                    ranked_results = uploaded_sources + ranked_results
+
             sources_to_use = ranked_results[:max_sources]
             
             # Stage 4: Semantic Intelligence

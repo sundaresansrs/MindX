@@ -4,7 +4,7 @@ from app.services.llm_service import LLMService
 import os
 import uuid
 import logging
-from typing import List, Optional
+from typing import Dict, Any, List, Optional
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -56,6 +56,47 @@ async def upload_file(file: UploadFile = File(...)):
         logger.error(f"File upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+async def chat_file_search(file_data: Dict[str, Any], message: str) -> str:
+    """
+    Look for relevant info within an uploaded file given a user message.
+    """
+    relevant_context = ""
+    
+    chunks = file_data.get("chunks")
+    if chunks and isinstance(chunks, list):
+        # Simple keyword/semantic search within the file chunks
+        # In a real app, these would be indexed in a vector DB
+        # For now, we perform a linear scan with keyword overlap scoring
+        scored_chunks = []
+        query_terms = set(message.lower().split())
+        
+        for chunk in chunks:
+            if not isinstance(chunk, dict): continue # Ensure chunk is a dictionary
+            score = 0
+            chunk_text = str(chunk.get("text", "")) # Safely get chunk text
+            chunk_text_lower = chunk_text.lower()
+            for term in query_terms:
+                if term in chunk_text_lower:
+                    score += 1
+            scored_chunks.append((score, chunk_text))
+            
+        # Sort by score and take top 5
+        scored_chunks.sort(key=lambda x: x[0], reverse=True)
+        top_chunks = [c[1] for c in scored_chunks[:5] if c[0] > 0]
+        
+        if not top_chunks and file_data.get("text"):
+             # Fallback: if no keywords match, take first 3000 chars
+             text_content = str(file_data.get("text", ""))
+             relevant_context = text_content[0:3000]
+        else:
+             relevant_context = "\n---\n".join(top_chunks)
+    else:
+        # No chunks, use raw text fallback
+        text_content = str(file_data.get("text", ""))
+        relevant_context = text_content[0:3000] # Fallback for small files (images/short text)
+
+    return relevant_context
+
 @router.post("/chat-with-file")
 async def chat_with_file(
     message: str = Form(...),
@@ -71,35 +112,7 @@ async def chat_with_file(
     file_data = UPLOADED_FILES_CACHE[file_id]
     
     # 1. Retrieve relevant chunks based on query
-    relevant_context = ""
-    
-    if file_data.get("chunks"):
-        # Simple keyword/semantic search within the file chunks
-        # In a real app, these would be indexed in a vector DB
-        # For now, we perform a linear scan with keyword overlap scoring
-        scored_chunks = []
-        query_terms = set(message.lower().split())
-        
-        for chunk in file_data["chunks"]:
-            score = 0
-            chunk_text_lower = chunk["text"].lower()
-            for term in query_terms:
-                if term in chunk_text_lower:
-                    score += 1
-            scored_chunks.append((score, chunk["text"]))
-            
-        # Sort by score and take top 5
-        scored_chunks.sort(key=lambda x: x[0], reverse=True)
-        top_chunks = [c[1] for c in scored_chunks[:5] if c[0] > 0]
-        
-        if not top_chunks and file_data.get("text"):
-             # Fallback: if no keywords match, take first 2000 chars
-             relevant_context = file_data["text"][:3000]
-        else:
-             relevant_context = "\n---\n".join(top_chunks)
-    else:
-        # Fallback for small files (images/short text)
-        relevant_context = file_data.get("text", "")[:5000]
+    relevant_context = await chat_file_search(file_data, message)
 
     # 2. Construct Prompt
     system_prompt = f"""You are analyzing a file named '{file_data['filename']}'.
