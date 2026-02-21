@@ -65,11 +65,6 @@ class PersonalPipeline:
             history_context.append({"role": "user", "content": r.query})
             history_context.append({"role": "assistant", "content": r.answer})
 
-        # ── Personal Memory Injection (Task 31) ──────────────────────────────
-        user_context = await self.memory.get_user_context(self.user.id, query)
-        if user_context:
-            history_context.insert(0, {"role": "system", "content": user_context})
-
         result = await self.quality_pipeline.process_query(
             query=query,
             user=self.user,
@@ -126,11 +121,6 @@ class PersonalPipeline:
         for r in history_records:
             history_context.append({"role": "user", "content": r.query})
             history_context.append({"role": "assistant", "content": r.answer})
-
-        # ── Personal Memory Injection (Task 31) ──────────────────────────────
-        user_context = await self.memory.get_user_context(self.user.id, query)
-        if user_context:
-            history_context.insert(0, {"role": "system", "content": user_context})
 
         # LAYER 2 PERSISTENCE: Save record immediately so it exists in history if user refreshes mid-stream
         placeholder_answer = "..." 

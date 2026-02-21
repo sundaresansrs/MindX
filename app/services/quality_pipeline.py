@@ -220,15 +220,14 @@ If answer is about "Oxidation of Iron", suggestions could be:
             specialized_task = self.search_service.search_specialized(query)
 
             # Parallel Retrieve with timeout
-            memory_task = self.memory_service.get_user_context(user.id, query)
             try:
-                web_results, vector_results, specialized_results, user_mem_context = await asyncio.wait_for(
-                    asyncio.gather(web_task, vector_task, specialized_task, memory_task),
+                web_results, vector_results, specialized_results = await asyncio.wait_for(
+                    asyncio.gather(web_task, vector_task, specialized_task),
                     timeout=25.0
                 )
             except asyncio.TimeoutError:
                 logger.warning("Pipeline process_query retrieval timed out.")
-                web_results, vector_results, specialized_results, user_mem_context = [], [], [], ""
+                web_results, vector_results, specialized_results = [], [], []
 
             
             # Combine results using RRF (Premium Ranking)
@@ -275,9 +274,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
             # Use islice to satisfy linter that doesn't like [:]
             top_chunks: List[str] = list(islice(chunks_list, 12))
             context = "\n\n".join(top_chunks)
-            
-            if user_mem_context:
-                context = user_mem_context + "\n\n" + context
+
             
             # ════════════════════════════════════════════════
             # MULTI-PASS GENERATION (Stage 5, 6, 7 replacement)
@@ -346,9 +343,8 @@ If answer is about "Oxidation of Iron", suggestions could be:
                     "mode": "multi_pass_v2"
                 }
             }
-            
-            # Background: Extract memory
-            asyncio.create_task(self.memory_service.extract_and_store_facts(user.id, query, raw_answer))
+            # Background: Extract memory (Disabled to enforce chat isolation)
+            # asyncio.create_task(self.memory_service.extract_and_store_facts(user.id, query, raw_answer))
 
             return result
             
@@ -454,20 +450,19 @@ If answer is about "Oxidation of Iron", suggestions could be:
                 session_id=session_id, 
                 limit=5 if fast_mode else 10
             )
-            memory_task = self.memory_service.get_user_context(user.id, enhanced_query)
             specialized_task = self.search_service.search_specialized(enhanced_query)
             
             # Yielding status while gathering with a strict timeout
             try:
-                web_results, vector_results, user_mem_context, specialized_results = await asyncio.wait_for(
-                    asyncio.gather(web_task, vector_task, memory_task, specialized_task),
+                web_results, vector_results, specialized_results = await asyncio.wait_for(
+                    asyncio.gather(web_task, vector_task, specialized_task),
                     timeout=25.0 # 25s total for combined retrieval
                 )
                 yield {"type": "status", "stage": 2, "content": "Retrieval complete."}
             except asyncio.TimeoutError:
                 logger.warning("Retrieval stage timed out. Proceeding with limited data.")
                 yield {"type": "status", "stage": 2, "content": "Search slow; proceeding with limited results..."}
-                web_results, vector_results, user_mem_context, specialized_results = [], [], "", []
+                web_results, vector_results, specialized_results = [], [], []
             
             # Stage 3: Neural Ranking (RRF)
             yield {"type": "status", "stage": 3, "content": "Ranking results by credibility..."}
@@ -496,9 +491,6 @@ If answer is about "Oxidation of Iron", suggestions could be:
             yield {"type": "status", "stage": 4, "content": "Synthesizing multi-source evidence..."}
             chunks = self.semantic_chunk(sources_to_use)
             context = "\n\n".join(chunks)
-
-            if user_mem_context:
-                context = user_mem_context + "\n\n" + context
             
             # Stage 5+6 (Consensus/Consistency)
             yield {"type": "status", "stage": 5, "content": "Checking factual consensus..."}
@@ -600,8 +592,8 @@ If answer is about "Oxidation of Iron", suggestions could be:
 
             yield {"type": "final", "content": "Complete"}
             
-            # Background: Extract memory
-            asyncio.create_task(self.memory_service.extract_and_store_facts(user.id, query, raw_answer))
+            # Background: Extract memory (Disabled to enforce chat isolation)
+            # asyncio.create_task(self.memory_service.extract_and_store_facts(user.id, query, raw_answer))
 
         except Exception as e:
             logger.error(f"Streaming pipeline error: {e}")

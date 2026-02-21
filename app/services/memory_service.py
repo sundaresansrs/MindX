@@ -12,9 +12,13 @@ class MemoryService:
         self.db = db
         self.llm = llm_service
 
-    EXTRACTION_PROMPT = """Extract core personal facts, preferences, or project details about the user from the following exchange.
+    EXTRACTION_PROMPT = """Extract core personal facts, preferences, or explicit custom instructions about the user from the following exchange.
+CRITICAL RULES:
+1. ONLY extract information that is strictly personal to the user (e.g., "I prefer dark mode", "My name is John", "I am a software engineer").
+2. DO NOT extract general knowledge, facts about the world, topic summaries, trivia, or coding concepts (e.g., DO NOT extract what ZigBee is, DO NOT extract facts about Hawaii).
+3. If no new PERSONAL facts are found, you MUST return {{"facts": []}}.
+
 Return a valid JSON object with a "facts" list. Each fact must have "key", "value", and "category" (pref, fact, work, bio).
-If no new facts are found, return {{"facts": []}}.
 
 Exchange:
 User: {query}

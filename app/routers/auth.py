@@ -10,6 +10,9 @@ from app.models.user import User
 from app.schemas import UserCreate, Token
 from app.utils.security import hash_password, verify_password
 from app.utils.jwt import create_access_token, oauth2_scheme, SECRET_KEY, ALGORITHM
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["auth"])
 
@@ -74,12 +77,15 @@ def get_current_user(
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str | None = payload.get("sub")
         if email is None:
+            logger.error("Token payload missing 'sub' (email) field")
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT decode error: {e}")
         raise credentials_exception
 
     user = db.query(User).filter(User.email == email).first()
     if user is None:
+        logger.error(f"User with email {email} not found in database")
         raise credentials_exception
 
     return user
