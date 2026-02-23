@@ -3349,6 +3349,16 @@
             container.appendChild(aiDiv);
             scrollToBottom();
 
+            // FIX: Save placeholder assistant message to history immediately
+            // This prevents updateLastMessage from overwriting the last user message
+            const assistantPlaceholder = {
+                role: 'assistant',
+                content: '',
+                sources: []
+            };
+            currentChatMessages.push(assistantPlaceholder);
+            saveMessage(currentSessionId, assistantPlaceholder);
+
             // Show stop button
             const stopBtn = document.getElementById('stop-btn');
             stopBtn.style.display = 'flex';
