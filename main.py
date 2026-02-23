@@ -92,44 +92,22 @@ def health():
         "env_loaded": True,
     }
 
+# Dedicated routes for landing and app pages if they need specific logic
+# Otherwise the static mount at "/" will handle them automatically.
 @app.get("/")
 def landing_page():
-    index_path = BASE_DIR / "public" / "index.html"
-    if index_path.exists():
-        return FileResponse(index_path)
-    return JSONResponse(status_code=404, content={"error": "index.html not found"})
-
-@app.get("/login.html")
-def login_page():
-    return FileResponse(BASE_DIR / "public" / "login.html")
-
-@app.get("/signup.html")
-def signup_page():
-    return FileResponse(BASE_DIR / "public" / "signup.html")
-
-@app.get("/dashboard.html")
-def dashboard_page():
-    return FileResponse(BASE_DIR / "public" / "dashboard.html")
-
-@app.get("/index.html")
-def index_page():
     return FileResponse(BASE_DIR / "public" / "index.html")
 
-
+# Redirect old V2 users to the unified dashboard
 @app.get("/dashboard_v2.html")
 def dashboard_v2_redirect():
-    # Redirect old V2 users to the unified dashboard
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/dashboard.html")
-
-
-@app.get("/stream_test.html")
-def stream_test_page():
-    return FileResponse(BASE_DIR / "public" / "stream_test.html")
 
 
 # Serve static assets (CSS, JS, images)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-
-
+# Serve public assets (config.js, script.js) at the root
+# Must be mounted last so explicit routes (/login, /dashboard) take priority
+app.mount("/", StaticFiles(directory=str(BASE_DIR / "public")), name="public")
