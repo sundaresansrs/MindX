@@ -56,6 +56,36 @@
                 processFiles(files);
             }
         });
+
+        // Close upload menu clicking outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('upload-menu');
+            const btn = e.target.closest('.input-icon-btn');
+            if (menu && !menu.contains(e.target) && !btn) {
+                menu.classList.remove('show');
+            }
+        });
+    }
+
+    // Toggle upload menu
+    function toggleUploadMenu(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById('upload-menu');
+        if (menu) {
+            menu.classList.toggle('show');
+        }
+    }
+
+    // Trigger specific file type upload
+    function triggerFileUpload(acceptString) {
+        const fileInput = document.getElementById('file-upload-input');
+        if (fileInput) {
+            fileInput.accept = acceptString;
+            fileInput.click();
+        }
+
+        const menu = document.getElementById('upload-menu');
+        if (menu) menu.classList.remove('show');
     }
 
     // ===================================================
@@ -896,5 +926,7 @@
     // Expose necessary functions to the global scope
     window.removeFile = removeFile;
     window.handleSearch = sendMessage; // Override older dashboard.html references
+    window.toggleUploadMenu = toggleUploadMenu;
+    window.triggerFileUpload = triggerFileUpload;
 
 })();
