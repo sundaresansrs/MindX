@@ -211,7 +211,7 @@
 
         previewContainer.classList.add('has-files');
         previewContainer.innerHTML = localUploadedFiles.map(fileObj => `
-    < div class="file-preview-item" data - id="${fileObj.id}" >
+    <div class="file-preview-item" data-id="${fileObj.id}">
         ${fileObj.preview ? `
         <img src="${fileObj.preview}" alt="${fileObj.name}" class="file-preview-image">
       ` : `
@@ -230,7 +230,7 @@
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
       </button>
-    </div >
+    </div>
     `).join('');
     }
 
@@ -285,7 +285,13 @@
             updateCharCount(this.value.length);
         });
 
-        // Let dashboard.html's native listeners handle Enter keys
+        // Handle Enter key to send message
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                processGeminiMessage();
+            }
+        });
     }
 
     function updateCharCount(length) {
@@ -309,7 +315,13 @@
     // ===================================================
 
     function initSendButton() {
-        // Let dashboard.html handle the search button click natively via handleSearch
+        const sendBtn = document.getElementById('search-btn');
+        if (sendBtn) {
+            sendBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                processGeminiMessage();
+            });
+        }
     }
 
     // ===================================================
@@ -353,6 +365,7 @@
             // Clear input and files
             input.value = '';
             input.style.height = 'auto';
+            updateCharCount(0);
             const filesToSend = [...localUploadedFiles];
             localUploadedFiles = [];
             displayFilePreviews();
