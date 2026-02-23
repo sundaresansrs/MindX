@@ -1,0 +1,19 @@
+commit 2d61aa08c90cabf7e7810e213ce6190de693aea9
+Author: sundaresansrs <srsundar2005@gmail.com>
+Date:   Sat Feb 21 09:24:22 2026 +0530
+
+    Enforce strict chat isolation and cleanup memory pollutions
+
+diff --git a/public/dashboard.html b/public/dashboard.html
+index 3605bcd..754a72e 100644
+--- a/public/dashboard.html
++++ b/public/dashboard.html
+@@ -1796,7 +1796,7 @@
+                 class="lg:hidden p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-white/5 transition-colors">
+                 <span class="material-symbols-outlined text-[22px]">menu</span>
+             </button>
+-            <a href="/" class="flex items-center gap-3 no-underline">
++            <a href="javascript:void(0)" onclick="startNewChat()" class="flex items-center gap-3 no-underline">
+                 <div
+                     class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-background-dark shadow-[0_0_15px_rgba(0,255,65,0.3)]">
+                     <span class="material-symbols-outlined text-sm font-bold">query_stats</span>

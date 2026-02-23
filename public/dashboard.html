@@ -1918,6 +1918,22 @@
             }
         }
     </style>
+    <!-- PDF Processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <!-- DOCX Processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <!-- OCR for Images -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+    <!-- Markdown Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <link rel="stylesheet" href="/styles.css">
 </head>
 
 <body class="bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display"
@@ -2043,65 +2059,70 @@
                 <span class="material-symbols-outlined text-[20px]">keyboard_arrow_down</span>
             </button>
 
-            <!-- Premium Fixed Input Container -->
+            <!-- Fixed Input Container for Free Gemini System -->
             <div class="input-container-fixed">
+                <!-- File previews area -->
+                <div class="uploaded-files-preview" id="filesPreview"></div>
+
                 <div class="input-wrapper">
-                    <!-- Stop Generating (Floating above wrapper when needed) -->
+                    <!-- Stop Generating Button for Legacy/Shared logic -->
                     <button id="stop-btn" onclick="stopGenerating()"
                         class="hidden absolute -top-14 left-1/2 -translate-x-1/2 items-center gap-2 px-5 py-2.5 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-xs font-bold rounded-full border border-red-500/10 transition-all backdrop-blur-md">
                         <span class="material-symbols-outlined text-[18px]">stop_circle</span>
                         Stop generating
                     </button>
 
-                    <div id="file-list-preview"
-                        class="absolute -top-16 left-0 right-0 flex flex-wrap gap-2 px-4 pointer-events-auto empty:hidden max-h-32 overflow-y-auto no-scrollbar">
-                    </div>
-
-                    <button class="input-icon-btn" onclick="toggleUploadMenu(event)" title="Upload file">
-                        <span class="material-symbols-outlined">attach_file</span>
-                    </button>
-
-                    <button class="input-icon-btn" id="voice-btn" onclick="toggleVoice()" title="Voice input">
-                        <span class="material-symbols-outlined">mic</span>
-                    </button>
-
-                    <textarea id="search-input" rows="1" placeholder="Message MindX..." class="message-input-field"
-                        oninput="autoResize(this); updateCharCounter(this)"
-                        onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); handleSearch(); }"></textarea>
-
-                    <span id="char-counter" class="char-count-badge">0/4000</span>
-
-                    <button id="search-btn" onclick="handleSearch()" class="send-btn-creative">
-                        <span class="material-symbols-outlined">arrow_upward</span>
-                    </button>
-
-                    <!-- Hidden actual upload menu -->
-                    <div id="upload-menu" class="upload-menu">
-                        <div class="upload-menu-item" onclick="triggerFileUpload('.pdf,.docx,.doc')">
-                            <span class="material-symbols-outlined">description</span> Documents
-                        </div>
-                        <div class="upload-menu-item" onclick="triggerFileUpload('.xlsx,.xls,.csv')">
-                            <span class="material-symbols-outlined">table_chart</span> Data
-                        </div>
-                        <div class="upload-menu-item" onclick="triggerFileUpload('image/png,image/jpeg,image/webp')">
-                            <span class="material-symbols-outlined">image</span> Images
-                        </div>
-                    </div>
-                    <input id="file-upload-input" type="file" class="hidden" multiple
-                        onchange="handleFileUpload(event)">
-                </div>
-
-                <!-- Mode toggles below input -->
-                <div class="mode-toggles-bar">
-                    <label class="mode-toggle-pill">
-                        <input type="checkbox" id="fast-mode-toggle" checked>
-                        <span class="toggle-track"></span>
-                        <span class="mode-label-text">DEEP SEARCH</span>
+                    <!-- File upload button (FIRST, before voice) -->
+                    <label class="input-icon attach-btn" for="fileUpload" title="Upload file">
+                        <input type="file" id="fileUpload" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.webp"
+                            multiple style="display: none;" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                        </svg>
                     </label>
 
-                    <div class="confidence-chip">
-                        <span class="confidence-dot-pulse"></span>
-                        <span class="confidence-label">98% CONFIRMED</span>
+                    <!-- Voice button (SECOND) -->
+                    <button class="input-icon voice-btn" id="voiceBtn" title="Voice input">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                        <span class="listening-indicator"></span>
+                    </button>
+
+                    <!-- Message input (THIRD) -->
+                    <textarea class="message-input" id="messageInput" placeholder="Message MindX..." rows="1"
+                        maxlength="4000"></textarea>
+
+                    <!-- Character count -->
+                    <span class="char-count" id="charCount">0/4000</span>
+
+                    <!-- Send button (LAST) -->
+                    <button class="send-btn" id="sendBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                            <polyline points="5 12 12 5 19 12"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Mode toggles -->
+                <div class="mode-toggles">
+                    <label class="mode-toggle">
+                        <input type="checkbox" id="deepSearch">
+                        <span class="toggle-switch"></span>
+                        <span class="mode-label">DEEP SEARCH</span>
+                    </label>
+
+                    <div class="confidence-indicator">
+                        <span class="confidence-dot"></span>
+                        <span class="confidence-text">AI READY</span>
                     </div>
                 </div>
             </div>
@@ -2113,6 +2134,14 @@
                 <div class="pulse-animation"></div>
                 <p class="status-text">Listening...</p>
                 <p class="transcript-preview"></p>
+            </div>
+        </div>
+
+        <!-- Processing overlay -->
+        <div class="processing-overlay" id="processingOverlay">
+            <div class="processing-content">
+                <div class="spinner"></div>
+                <p class="processing-text" id="processingText">Processing files...</p>
             </div>
         </div>
 
@@ -4327,6 +4356,8 @@
         </div>
     </div>
 
+    <script src="/config.js"></script>
+    <script src="/script.js"></script>
 </body>
 
 </html>

@@ -6,7 +6,7 @@ import httpx
 import sys
 
 async def test_with_logging():
-    url = "http://localhost:8000/qa/stream"
+    url = "http://localhost:8000/api/stream"
     
     # Login first
     login_data = {
