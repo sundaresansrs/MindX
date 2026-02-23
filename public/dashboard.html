@@ -3199,7 +3199,14 @@
         async function handleSearch(initialQuery = null, isRetry = false) {
             const input = document.getElementById('search-input');
             let query = initialQuery || input.value.trim();
-            if (!query) return;
+            if (!query && (!window.getUploadedFiles || window.getUploadedFiles().length === 0)) return;
+
+            // Route file-attached queries to Gemini pipeline (script.js)
+            if (window.getUploadedFiles && window.getUploadedFiles().length > 0) {
+                if (window.sendMessage && typeof window.sendMessage === 'function') {
+                    return window.sendMessage(query);
+                }
+            }
 
             // Multi-question Splitter (and / ? / multiple sentences)
             // Trigger ONLY if not already in a recursive call

@@ -285,13 +285,7 @@
             updateCharCount(this.value.length);
         });
 
-        // Handle Enter key
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
+        // Let dashboard.html's native listeners handle Enter keys
     }
 
     function updateCharCount(length) {
@@ -315,24 +309,32 @@
     // ===================================================
 
     function initSendButton() {
-        const sendBtn = document.getElementById('search-btn');
-        if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+        // Let dashboard.html handle the search button click natively via handleSearch
     }
 
     // ===================================================
     // SEND MESSAGE - MAIN FUNCTION
     // ===================================================
 
-    async function sendMessage() {
+    async function processGeminiMessage(overrideMessage = null) {
         if (localIsProcessing) return;
 
         const input = document.getElementById('search-input');
-        const message = input.value.trim();
+        const message = overrideMessage !== null ? overrideMessage : input.value.trim();
 
         // Must have either message or files
         if (!message && localUploadedFiles.length === 0) return;
 
-        // Disable send button
+        // Route text-only requests back to original Groq backend pipeline
+        if (localUploadedFiles.length === 0) {
+            localIsProcessing = false;
+            if (window.handleSearch && typeof window.handleSearch === 'function') {
+                return window.handleSearch(message);
+            }
+            return;
+        }
+
+        // Disable send button for Gemini pipeline
         localIsProcessing = true;
         document.getElementById('search-btn').disabled = true;
 
@@ -881,7 +883,7 @@
             if (transcript.length >= CONFIG.VOICE_MIN_LENGTH) {
                 stopVoiceRecognition();
                 setTimeout(() => {
-                    sendMessage();
+                    processGeminiMessage();
                 }, 300);
             }
         }, CONFIG.VOICE_SILENCE_DELAY);
@@ -925,9 +927,15 @@
 
     // Expose necessary functions to the global scope
     window.removeFile = removeFile;
-    window.handleSearch = sendMessage; // Override older dashboard.html references
+    // Remove the override so the original dashboard.js backend handler remains intact
     window.toggleUploadMenu = toggleUploadMenu;
     window.triggerFileUpload = triggerFileUpload;
     window.handleFileSelection = handleFileSelection;
+    window.getUploadedFiles = () => localUploadedFiles;
+    window.sendMessage = () => {
+        const input = document.getElementById('search-input');
+        const message = input ? input.value.trim() : '';
+        return processGeminiMessage(message);
+    };
 
 })();
