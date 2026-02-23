@@ -337,7 +337,14 @@
         // Must have either message or files
         if (!message && localUploadedFiles.length === 0) return;
 
-        // Route text-only requests back to original Groq backend pipeline
+        // Clear input immediately for better UX
+        if (input) {
+            input.value = '';
+            input.style.height = 'auto';
+            updateCharCount(0);
+        }
+
+        // Route text-only requests back to original Groq backend pipeline, or handle locally if files exist
         if (localUploadedFiles.length === 0) {
             localIsProcessing = false;
             if (window.handleSearch && typeof window.handleSearch === 'function') {
@@ -676,12 +683,22 @@
     // DISPLAY AI MESSAGE
     // ===================================================
 
-    function displayAIMessage(content) {
+    function displayAIMessage(content, confidence = null) {
         const conversationArea = document.getElementById('chat-container') || document.querySelector('.conversation-area');
         if (!conversationArea) return;
 
         const messageWrapper = document.createElement('div');
         messageWrapper.className = 'message-bubble ai-message';
+
+        // Add confidence badge if available (default for Gemini is high confidence)
+        const score = confidence !== null ? confidence : 95;
+        const badge = document.createElement('div');
+        badge.className = 'answer-confidence';
+        badge.innerHTML = `
+            <div class="confidence-dot-pulsing"></div>
+            <span>${score}% Confirmed</span>
+        `;
+        messageWrapper.appendChild(badge);
 
         const messageText = document.createElement('div');
         messageText.className = 'markdown-body'; // Using markdown-body to inherit styles

@@ -131,7 +131,7 @@ def filter_results(results: List[Dict]) -> List[Dict]:
         try:
             # Combine title and snippet for better detection
             combined = (title + " " + snippet).strip()
-            if len(combined) > 40:
+            if len(combined) > 60: # Only filter longer text to avoid false positives on short titles
                 if detect(combined) != 'en':
                     logger.info(f"🚫 Detected non-English content ({detect(combined)}): {title[:40]}")
                     continue
@@ -139,7 +139,7 @@ def filter_results(results: List[Dict]) -> List[Dict]:
             pass
 
         # 3. Block results with tiny snippets
-        if len(snippet.strip()) < 30:
+        if len(snippet.strip()) < 20: 
             continue
             
         # 4. Domain-based Deduplication (keep first found)

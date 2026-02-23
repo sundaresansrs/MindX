@@ -578,7 +578,7 @@
         .ai-message li {
             margin: 0;
             padding: 0;
-            line-height: 1.7;
+            line-height: 1.5;
         }
 
         .ai-message h2 {
@@ -691,13 +691,13 @@
         }
 
         .markdown-body p {
-            margin: 0.6em 0;
+            margin: 0.4em 0;
         }
 
         .markdown-body ul,
         .markdown-body ol {
             padding-left: 1.4em;
-            margin: 0.5em 0;
+            margin: 0.3em 0;
         }
 
         .markdown-body li {
@@ -718,6 +718,48 @@
         .markdown-body a {
             color: var(--primary);
             text-decoration: underline;
+        }
+
+        /* Per-answer Confidence Badge */
+        .answer-confidence {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(0, 255, 65, 0.08);
+            border: 1px solid rgba(0, 255, 65, 0.15);
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+            width: fit-content;
+        }
+
+        .confidence-dot-pulsing {
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--primary);
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% {
+                opacity: 0.4;
+                transform: scale(0.9);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+
+            100% {
+                opacity: 0.4;
+                transform: scale(0.9);
+            }
         }
 
         .markdown-body pre {
@@ -2203,11 +2245,6 @@
                         <span class="toggle-track"></span>
                         <span class="mode-label-text">DEEP SEARCH</span>
                     </label>
-
-                    <div class="confidence-chip">
-                        <span class="confidence-dot-pulse"></span>
-                        <span class="confidence-label">98% CONFIRMED</span>
-                    </div>
                 </div>
             </div>
         </main>
@@ -3224,12 +3261,10 @@
                 }
             }
 
-            // Clear input
-            if (!initialQuery) {
-                input.value = '';
-                updateCharCounter(input);
-                input.style.height = '';
-            }
+            // Clear input immediately for better UX
+            input.value = '';
+            updateCharCounter(input);
+            input.style.height = '';
 
             const maxSources = 10; // Hardcoded default
             const container = document.getElementById('chat-container');
@@ -3406,17 +3441,24 @@
                                 } else if (data.type === 'metadata') {
                                     currentSources = data.sources || [];
                                     const conf = data.confidence_details || {};
+                                    const score = Math.round((data.confidence || 0.85) * 100);
                                     const reason = conf.reason || 'Verified based on source credibility & consensus';
                                     const conflicts = conf.conflicts ? `\nConflicts: ${conf.conflicts}` : '';
 
-                                    document.getElementById('ai-status').innerHTML = `
-                                        <div class="flex items-center gap-1" data-tooltip="${reason}${conflicts}">
-                                            <span class="material-symbols-outlined text-primary text-[14px]">verified</span>
-                                            ${Math.round((data.confidence || 0.85) * 100)}% Confirmed
-                                            <span class="material-symbols-outlined text-[12px] opacity-50 ml-1">info</span>
-                                        </div>
-                                    `;
-                                    // Removed renderSources call to prevent blocking UI
+                                    // Inject confidence badge if not already added
+                                    if (!aiDiv.querySelector('.answer-confidence')) {
+                                        const badge = document.createElement('div');
+                                        badge.className = 'answer-confidence';
+                                        badge.innerHTML = `
+                                            <div class="confidence-dot-pulsing"></div>
+                                            <span>${score}% Confirmed</span>
+                                        `;
+                                        badge.setAttribute('data-tooltip', `${reason}${conflicts}`);
+                                        aiDiv.prepend(badge);
+                                    } else {
+                                        // Update existing badge score if it changes
+                                        aiDiv.querySelector('.answer-confidence span').textContent = `${score}% Confirmed`;
+                                    }
                                 } else if (data.type === 'error') {
                                     aiDiv.innerHTML = `
                                         <div class="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
