@@ -86,12 +86,13 @@ class LLMService:
         question: str,
         context: str,
         chat_history: List[Dict],
-        max_history: int = 6,
+        max_history: int = 8,
         system_prompt: Optional[str] = None,
         images: Optional[List[str]] = None
     ) -> List[Dict]:
         """
         Build the full message array including conversation history and images.
+        Uses a proper message array for history instead of string concatenation.
         """
         # Base System instructions with Context
         system_base = f"""You are MindX AI, an intelligent research assistant.
@@ -114,13 +115,31 @@ Search Results (Context):
         else:
             system_msg = system_base
 
-        # Add recent chat history
+        messages: List[Dict[str, Any]] = [
+            {"role": "system", "content": system_msg}
+        ]
+
+        # Add recent chat history as individual messages
         if chat_history:
-            recent_context = "\n".join([
-                f"{'User' if str(m.get('role','')).lower()=='user' else 'AI'}: {''.join(islice(str(m.get('content','')), 300))}"
-                for m in list(islice(chat_history, max(0, len(chat_history)-4), len(chat_history)))
-            ])
-            system_msg += f"\n\nRecent conversation:\n{recent_context}"
+            # Get last N messages (usually 2-4 exchanges)
+            visible_history = list(islice(chat_history, max(0, len(chat_history) - max_history), len(chat_history)))
+            for m in visible_history:
+                # Map various history formats to role/content
+                role = str(m.get('role', '')).lower()
+                content = str(m.get('content', ''))
+                
+                # Check for alternative keys used in QA history
+                if not content:
+                    content = m.get('query') or m.get('role_user') or m.get('answer') or m.get('role_assistant') or ""
+                
+                if not role:
+                    if m.get('query') or m.get('role_user'):
+                        role = "user"
+                    elif m.get('answer') or m.get('role_assistant'):
+                        role = "assistant"
+                
+                if role in ["user", "assistant"] and content:
+                    messages.append({"role": role, "content": content})
 
         user_content: Any = question
         if images:
@@ -132,10 +151,7 @@ Search Results (Context):
                     "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}
                 })
 
-        messages: List[Dict[str, Any]] = [
-            {"role": "system", "content": system_msg},
-            {"role": "user", "content": user_content}
-        ]
+        messages.append({"role": "user", "content": user_content})
 
         return messages
 

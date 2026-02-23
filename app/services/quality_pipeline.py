@@ -219,12 +219,12 @@ If answer is about "Oxidation of Iron", suggestions could be:
                 max_results_per_query=5 if fast_mode else 15
             )
             vector_task = self.vector_service.search_documents(
-                query, 
+                resolved_query, 
                 user_id=user.id,
                 session_id=session_id,
                 limit=10
             )
-            specialized_task = self.search_service.search_specialized(query)
+            specialized_task = self.search_service.search_specialized(resolved_query)
 
             # Parallel Retrieve with timeout
             try:
@@ -538,7 +538,7 @@ If answer is about "Oxidation of Iron", suggestions could be:
             yield {"type": "status", "stage": 5, "content": "Analyzing and citing sources..."}
 
             messages = await self.llm_service.build_messages_with_history(
-                question=query,
+                question=resolved_query,
                 context=context,
                 chat_history=history,
                 system_prompt=self.PASS1_SYSTEM,

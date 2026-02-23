@@ -2066,6 +2066,12 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <!-- Markdown Parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+    </script>
 </head>
 
 <body class="bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display"
