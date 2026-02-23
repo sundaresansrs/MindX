@@ -928,5 +928,6 @@
     window.handleSearch = sendMessage; // Override older dashboard.html references
     window.toggleUploadMenu = toggleUploadMenu;
     window.triggerFileUpload = triggerFileUpload;
+    window.handleFileSelection = handleFileSelection;
 
 })();

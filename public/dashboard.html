@@ -1916,100 +1916,101 @@
                 width: 50px;
                 height: 50px;
             }
+        }
 
-            /* --- Zero Cost Pipeline Styles --- */
-            .uploaded-files-preview {
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-                margin-bottom: 10px;
+        /* --- Zero Cost Pipeline Styles --- */
+        .uploaded-files-preview {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .file-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #fff;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .file-preview-image {
+            width: 30px;
+            height: 30px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .file-remove-btn {
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+        }
+
+        .file-remove-btn:hover {
+            color: #ff4757;
+        }
+
+        .processing-overlay,
+        .voice-status {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .processing-overlay.visible,
+        .voice-status.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .processing-content,
+        .voice-status-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid #7FFF00;
+            text-align: center;
+            color: white;
+            box-shadow: 0 0 30px rgba(127, 255, 0, 0.2);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(127, 255, 0, 0.3);
+            border-top-color: #7FFF00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
             }
+        }
 
-            .file-preview-item {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                background: rgba(255, 255, 255, 0.1);
-                padding: 6px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                color: #fff;
-                position: relative;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-            }
-
-            .file-preview-image {
-                width: 30px;
-                height: 30px;
-                object-fit: cover;
-                border-radius: 4px;
-            }
-
-            .file-remove-btn {
-                background: none;
-                border: none;
-                color: #ff6b6b;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                padding: 2px;
-            }
-
-            .file-remove-btn:hover {
-                color: #ff4757;
-            }
-
-            .processing-overlay,
-            .voice-status {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.3s;
-            }
-
-            .processing-overlay.visible,
-            .voice-status.visible {
-                opacity: 1;
-                pointer-events: auto;
-            }
-
-            .processing-content,
-            .voice-status-content {
-                background: #1a1a1a;
-                padding: 30px;
-                border-radius: 20px;
-                border: 1px solid #7FFF00;
-                text-align: center;
-                color: white;
-                box-shadow: 0 0 30px rgba(127, 255, 0, 0.2);
-            }
-
-            .spinner {
-                width: 40px;
-                height: 40px;
-                border: 3px solid rgba(127, 255, 0, 0.3);
-                border-top-color: #7FFF00;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin: 0 auto 15px;
-            }
-
-            @keyframes spin {
-                to {
-                    transform: rotate(360deg);
-                }
-            }
-
-            /* --------------------------------- */
+        /* --------------------------------- */
     </style>
     <!-- PDF Processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2190,7 +2191,8 @@
                             <span class="material-symbols-outlined">image</span> Images
                         </div>
                     </div>
-                    <input id="file-upload-input" type="file" class="hidden" multiple>
+                    <input id="file-upload-input" type="file" class="hidden" multiple
+                        onchange="handleFileSelection(event)">
                 </div>
 
                 <!-- Mode toggles below input -->
