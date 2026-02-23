@@ -15,6 +15,7 @@ class LLMService:
         # ✅ NEW MULTI-MODEL SETUP
         self.FAST_MODEL = "llama-3.1-8b-instant"    # For expansion & scoring
         self.SMART_MODEL = "llama-3.3-70b-versatile" # For reasoning & formatting
+        self.VISION_MODEL = "llama-3.2-11b-vision-preview" # For image analysis
         self.model = self.FAST_MODEL # default
 
     async def generate_response(
@@ -24,33 +25,23 @@ class LLMService:
         model: str | None = None,
         system_prompt: str | None = None,
         history: Optional[List[Dict]] = None,
+        images: Optional[List[str]] = None
     ) -> str:
-        messages = []
-
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        elif context:
-            messages.append({
-                "role": "system",
-                "content": (
-                    "You are a helpful assistant. "
-                    "Use the following context if relevant:\n\n"
-                    f"{context}"
-                )
-            })
-        
-        if history:
-            for m in history:
-                messages.append(m)
-
-        messages.append({
-            "role": "user",
-            "content": prompt,
-        })
+        """Non-streaming version of generates chat completion."""
+        if images or history or context or system_prompt:
+             messages = await self.build_messages_with_history(
+                 question=prompt,
+                 context=context or "",
+                 chat_history=history or [],
+                 system_prompt=system_prompt,
+                 images=images
+             )
+        else:
+             messages = [{"role": "user", "content": prompt}]
 
         response = await self.client.chat.completions.create(
             model=model or self.model,
-            messages=messages,
+            messages=messages, # type: ignore
             temperature=0.3,
         )
 
@@ -63,25 +54,24 @@ class LLMService:
         model: str | None = None,
         system_prompt: str | None = None,
         history: Optional[List[Dict]] = None,
+        images: Optional[List[str]] = None
     ):
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        elif context:
-            messages.append({
-                "role": "system",
-                "content": f"You are a helpful assistant. Use this context if relevant:\n\n{context}"
-            })
-        
-        if history:
-            for m in history:
-                messages.append(m)
-        
-        messages.append({"role": "user", "content": prompt})
+        """Streaming version of generate_chat_completion."""
+        if images or history or context or system_prompt:
+             # Use the more robust message builder if we have complex inputs
+             messages = await self.build_messages_with_history(
+                 question=prompt,
+                 context=context or "",
+                 chat_history=history or [],
+                 system_prompt=system_prompt,
+                 images=images
+             )
+        else:
+             messages = [{"role": "user", "content": prompt}]
 
         stream = await self.client.chat.completions.create(
             model=model or self.model,
-            messages=messages,
+            messages=messages, # type: ignore
             temperature=0.3,
             stream=True,
         )
@@ -97,18 +87,16 @@ class LLMService:
         context: str,
         chat_history: List[Dict],
         max_history: int = 6,
-        system_prompt: Optional[str] = None
+        system_prompt: Optional[str] = None,
+        images: Optional[List[str]] = None
     ) -> List[Dict]:
         """
-        Build the full message array including conversation history.
-        This makes follow-up questions work correctly.
+        Build the full message array including conversation history and images.
         """
-        if system_prompt:
-            system_msg = system_prompt
-        else:
-            system_msg = f"""You are MindX AI, an intelligent research assistant.
+        # Base System instructions with Context
+        system_base = f"""You are MindX AI, an intelligent research assistant.
 
-You have access to live search results AND the conversation history.
+You have access to live search results (Context) AND the conversation history.
 
 CONTEXT RULES:
 - Always refer to previous messages when answering follow-up questions
@@ -118,10 +106,15 @@ CONTEXT RULES:
 - Never say "I don't have context from our previous conversation"
 - You have full access to everything discussed in this session
 
-Search Results:
+Search Results (Context):
 {context}"""
 
-        # Add recent chat history to the system message for enhanced grounding
+        if system_prompt:
+            system_msg = system_base + "\n\nSTRICT TASK INSTRUCTIONS:\n" + system_prompt
+        else:
+            system_msg = system_base
+
+        # Add recent chat history
         if chat_history:
             recent_context = "\n".join([
                 f"{'User' if str(m.get('role','')).lower()=='user' else 'AI'}: {''.join(islice(str(m.get('content','')), 300))}"
@@ -129,9 +122,19 @@ Search Results:
             ])
             system_msg += f"\n\nRecent conversation:\n{recent_context}"
 
-        messages: List[Dict] = [
+        user_content: Any = question
+        if images:
+            # Multi-modal content format
+            user_content = [{"type": "text", "text": question}]
+            for b64_img in images:
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}
+                })
+
+        messages: List[Dict[str, Any]] = [
             {"role": "system", "content": system_msg},
-            {"role": "user", "content": question}
+            {"role": "user", "content": user_content}
         ]
 
         return messages

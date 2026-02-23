@@ -598,6 +598,22 @@
             margin: 16px 0 6px 0;
         }
 
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -20px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0) scale(1);
+            }
+        }
+
+        .animate-popIn {
+            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
         .ai-message strong {
             color: #ffffff;
             font-weight: 700;
@@ -1778,6 +1794,129 @@
             animation: pulse-mic 1.5s infinite;
             background: rgba(239, 68, 68, 0.1) !important;
         }
+
+        /* ===================================================
+           VOICE STATUS POPUP
+           =================================================== */
+        .voice-status {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid #2a2a2a;
+            border-radius: 20px;
+            padding: 30px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .voice-status.visible {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: all;
+        }
+
+        .voice-status-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Pulse animation */
+        .pulse-animation {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #7FFF00;
+            position: relative;
+            animation: pulse-expand 2s ease-out infinite;
+        }
+
+        @keyframes pulse-expand {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+        }
+
+        .pulse-animation::before,
+        .pulse-animation::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid #7FFF00;
+            animation: ripple 2s ease-out infinite;
+        }
+
+        .pulse-animation::after {
+            animation-delay: 1s;
+        }
+
+        @keyframes ripple {
+            0% {
+                width: 100%;
+                height: 100%;
+                opacity: 1;
+            }
+
+            100% {
+                width: 200%;
+                height: 200%;
+                opacity: 0;
+            }
+        }
+
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin: 0;
+        }
+
+        .transcript-preview {
+            font-size: 14px;
+            color: #888;
+            margin: 0;
+            min-height: 20px;
+            max-width: 400px;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .voice-status {
+                min-width: 250px;
+                padding: 24px 30px;
+            }
+
+            .pulse-animation {
+                width: 50px;
+                height: 50px;
+            }
+        }
     </style>
 </head>
 
@@ -1968,6 +2107,15 @@
             </div>
         </main>
 
+        <!-- Voice status popup -->
+        <div class="voice-status" id="voiceStatus">
+            <div class="voice-status-content">
+                <div class="pulse-animation"></div>
+                <p class="status-text">Listening...</p>
+                <p class="transcript-preview"></p>
+            </div>
+        </div>
+
         <!-- Full History Modal -->
         <div id="history-modal" class="fixed inset-0 z-[100] hidden">
             <div class="absolute inset-0 modal-backdrop" onclick="closeFullHistory()"></div>
@@ -2080,6 +2228,29 @@
             }
             updateGreeting();
         } catch (e) { }
+
+        function showNotification(msg, type = 'info') {
+            const container = document.getElementById('notification-container');
+            if (!container) {
+                const div = document.createElement('div');
+                div.id = 'notification-container';
+                div.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(div);
+            }
+            const el = document.createElement('div');
+            const bg = type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-primary' : 'bg-slate-800';
+            el.className = `${bg} text-white text-xs font-bold px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-popIn pointer-events-auto`;
+            el.innerHTML = `
+                <span class="material-symbols-outlined text-[16px]">${type === 'error' ? 'error' : 'info'}</span>
+                ${msg}
+            `;
+            document.getElementById('notification-container').appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-20px)';
+                setTimeout(() => el.remove(), 500);
+            }, 4000);
+        }
 
         // Dynamic greeting based on time
         function updateGreeting() {
@@ -2383,95 +2554,168 @@
         }
 
         // ─── Voice Input (Advanced Pipeline) ───
-        let voiceRecognition = null;
-        let voiceSilenceTimer = null;
+        let recognition = null;
+        let isListening = false;
+        let silenceTimer = null;
+        let finalTranscript = '';
+        let interimTranscript = '';
 
-        function toggleVoice() {
-            const btn = document.getElementById('voice-btn');
-            const input = document.getElementById('search-input');
+        const SILENCE_DELAY = 3000;
+        const MIN_SPEECH_LENGTH = 3;
 
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert('Voice input is not supported in this browser.');
-                return;
+        function initVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showNotification('Voice recognition is not supported in this browser.', 'warning');
+                return false;
             }
 
-            if (voiceRecognition) {
-                stopVoiceRecognition();
-                return;
-            }
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            recognition.maxAlternatives = 1;
 
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            voiceRecognition = new SR();
-            voiceRecognition.continuous = true;
-            voiceRecognition.interimResults = true;
-            voiceRecognition.lang = 'en-US';
-
-            voiceRecognition.onresult = (e) => {
-                let interimTranscript = '';
-                let finalTranscript = '';
-
-                for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    if (e.results[i].isFinal) {
-                        finalTranscript += e.results[i][0].transcript;
+            recognition.onresult = (event) => {
+                interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
                     } else {
-                        interimTranscript += e.results[i][0].transcript;
+                        interimTranscript += transcript;
                     }
                 }
+                updateInputWithTranscript();
+                updateVoiceStatusPreview();
+                resetSilenceTimer();
+            };
 
-                // Simultaneously print to search bar
-                if (finalTranscript || interimTranscript) {
-                    input.value = (finalTranscript || interimTranscript).trim();
-                    updateCharCounter(input);
-                    autoResize(input);
+            recognition.onspeechstart = () => { console.log('Speech detected'); };
+            recognition.onspeechend = () => { console.log('Speech ended'); };
+            recognition.onnomatch = () => { console.log('No speech recognized'); };
 
-                    // Reset silence timer on every result
-                    resetVoiceSilenceTimer();
+            recognition.onerror = (event) => {
+                console.error('Recognition error:', event.error);
+                if (event.error === 'no-speech' || event.error === 'aborted') {
+                    stopVoiceRecognition();
+                } else {
+                    showNotification(`Voice Error: ${event.error}`, 'error');
+                    stopVoiceRecognition();
                 }
             };
 
-            voiceRecognition.onstart = () => {
-                btn.classList.add('recording');
-                input.placeholder = "Listening...";
-                resetVoiceSilenceTimer();
+            recognition.onend = () => {
+                console.log('Recognition ended');
+                if (isListening) {
+                    try { recognition.start(); }
+                    catch (e) {
+                        console.log('Could not restart recognition');
+                        stopVoiceRecognition();
+                    }
+                }
             };
+            return true;
+        }
 
-            voiceRecognition.onend = () => {
-                stopVoiceRecognition();
-            };
+        function toggleVoice() {
+            // Check protocol constraints if needed
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                showNotification('Voice input requires HTTPS.', 'warning');
+                return;
+            }
 
-            voiceRecognition.onerror = (event) => {
-                console.error('Speech recognition error', event.error);
-                stopVoiceRecognition();
-            };
+            if (!recognition && !initVoiceRecognition()) return;
 
-            voiceRecognition.start();
+            if (isListening) stopVoiceRecognition();
+            else startVoiceRecognition();
+        }
+
+        function startVoiceRecognition() {
+            finalTranscript = '';
+            interimTranscript = '';
+            const input = document.getElementById('search-input');
+            input.value = '';
+
+            try {
+                recognition.start();
+                isListening = true;
+                updateVoiceUI(true);
+                showVoiceStatus();
+                console.log('Voice recognition started');
+            } catch (e) {
+                console.error('Error starting recognition:', e);
+                showNotification('Could not start voice recognition. Please try again.', 'error');
+            }
         }
 
         function stopVoiceRecognition() {
-            if (voiceRecognition) {
-                voiceRecognition.stop();
-                voiceRecognition = null;
+            if (recognition) recognition.stop();
+            isListening = false;
+            if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
             }
-            if (voiceSilenceTimer) {
-                clearTimeout(voiceSilenceTimer);
-                voiceSilenceTimer = null;
-            }
-            const btn = document.getElementById('voice-btn');
-            const input = document.getElementById('search-input');
-            if (btn) btn.classList.remove('recording');
-            if (input) input.placeholder = "Message MindX...";
+            updateVoiceUI(false);
+            hideVoiceStatus();
+            console.log('Voice recognition stopped');
         }
 
-        function resetVoiceSilenceTimer() {
-            if (voiceSilenceTimer) clearTimeout(voiceSilenceTimer);
-            voiceSilenceTimer = setTimeout(() => {
-                const input = document.getElementById('search-input');
-                if (input.value.trim().length > 0) {
-                    console.log("Auto-triggering search after voice pause...");
+        function updateInputWithTranscript() {
+            const input = document.getElementById('search-input');
+            const fullTranscript = (finalTranscript + interimTranscript).trim();
+            input.value = fullTranscript;
+
+            // Auto-resize textarea logic native to our dashboard
+            autoResize(input);
+            updateCharCounter(input);
+        }
+
+        function resetSilenceTimer() {
+            if (silenceTimer) clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(() => {
+                console.log('Silence detected - auto-submitting');
+                const transcript = (finalTranscript + interimTranscript).trim();
+                if (transcript.length >= MIN_SPEECH_LENGTH) {
                     stopVoiceRecognition();
-                    handleSearch();
+                    setTimeout(() => {
+                        handleSearch();
+                    }, 300);
                 }
-            }, 5000); // 5 seconds pause
+            }, SILENCE_DELAY);
+        }
+
+        function updateVoiceUI(listening) {
+            const btn = document.getElementById('voice-btn');
+            const input = document.getElementById('search-input');
+            if (listening) {
+                btn.classList.add('recording');
+                input.classList.add('animate-pulse');
+                input.placeholder = "Listening... Speak clearly.";
+                showNotification('Listening...', 'success');
+            } else {
+                btn.classList.remove('recording');
+                input.classList.remove('animate-pulse');
+                input.placeholder = "Message MindX...";
+            }
+        }
+
+        function showVoiceStatus() {
+            const status = document.getElementById('voiceStatus');
+            if (status) status.classList.add('visible');
+        }
+
+        function hideVoiceStatus() {
+            const status = document.getElementById('voiceStatus');
+            if (status) status.classList.remove('visible');
+        }
+
+        function updateVoiceStatusPreview() {
+            const preview = document.querySelector('.transcript-preview');
+            if (preview) {
+                const transcript = (finalTranscript + interimTranscript).trim();
+                preview.textContent = transcript || 'Start speaking...';
+            }
         }
 
         // ─── Export Chat ───
@@ -2905,13 +3149,15 @@
                     const filesDiv = document.createElement('div');
                     filesDiv.className = 'flex flex-col gap-2 mb-3';
                     filesToAttach.forEach(f => {
+                        const isImage = f.type && f.type.startsWith('image');
                         const fileCard = document.createElement('div');
-                        fileCard.className = 'flex items-center gap-3 bg-white/10 border border-white/10 p-3 rounded-xl max-w-sm';
+                        fileCard.className = 'flex items-center gap-3 bg-white/10 border border-white/10 p-3 rounded-xl max-w-sm cursor-pointer hover:bg-white/20 transition-colors';
+                        fileCard.onclick = () => viewAttachment(f.file_id);
                         fileCard.innerHTML = `
-                            <span class="material-symbols-outlined text-primary text-2xl">description</span>
+                            <span class="material-symbols-outlined text-primary text-2xl">${isImage ? 'image' : 'description'}</span>
                             <div class="flex-1 min-w-0 text-left">
                                 <div class="text-xs font-bold text-slate-100 truncate">${f.name}</div>
-                                <div class="text-[10px] text-slate-500 uppercase tracking-tight">Attached Document</div>
+                                <div class="text-[10px] text-slate-500 uppercase tracking-tight">${isImage ? 'Image File' : 'Attached Document'}</div>
                             </div>
                         `;
                         filesDiv.appendChild(fileCard);
@@ -3319,6 +3565,31 @@
             }
         }
 
+        async function viewAttachment(fileId) {
+            console.log('viewAttachment called with:', fileId);
+            if (!fileId) return;
+            try {
+                const response = await fetch(`/api/preview/${fileId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                console.log('Fetch response status:', response.status);
+                if (!response.ok) throw new Error('File not found');
+                const data = await response.json();
+                console.log('Fetched file data type:', data.type);
+
+                if (data.type === 'image' && data.image_base64) {
+                    openArtifact(data.image_base64, 'image', data.filename || 'Image Preview');
+                } else if (data.text) {
+                    openArtifact(data.text, 'text', data.filename || 'Document Content');
+                } else {
+                    showNotification('No preview available for this file type.', 'info');
+                }
+            } catch (err) {
+                console.error('Failed to load file preview:', err);
+                showNotification('Failed to load file preview. It may have expired.', 'error');
+            }
+        }
+
         // ─── Artifact Sidebar Controls ───
         function openArtifact(content, lang = 'javascript', title = 'Artifact') {
             const sidebar = document.getElementById('artifact-sidebar');
@@ -3357,8 +3628,17 @@
             window.activeArtifactContent = content;
 
             // Render and highlight
-            contentEl.innerHTML = marked.parse('```' + lang + '\n' + content + '\n```');
-            Prism.highlightAllUnder(contentEl);
+            console.log('Rendering artifact with lang:', lang);
+            if (lang === 'image') {
+                contentEl.innerHTML = `
+                    <div class="flex flex-col items-center gap-4 p-2">
+                        <img src="data:image/jpeg;base64,${content}" class="w-full h-auto rounded-xl shadow-2xl border border-white/10 object-contain" style="max-height: 70vh;">
+                    </div>
+                `;
+            } else {
+                contentEl.innerHTML = marked.parse('```' + lang + '\n' + content + '\n```');
+                Prism.highlightAllUnder(contentEl);
+            }
 
             if (!sidebar.classList.contains('open')) {
                 sidebar.classList.add('open');
@@ -3521,13 +3801,15 @@
                                 const filesDiv = document.createElement('div');
                                 filesDiv.className = 'flex flex-col gap-2 mb-3';
                                 msg.files.forEach(f => {
+                                    const isImg = f.type && f.type.startsWith('image');
                                     const fileCard = document.createElement('div');
-                                    fileCard.className = 'flex items-center gap-3 bg-white/5 border border-border-dark p-3 rounded-xl max-w-sm';
+                                    fileCard.className = 'flex items-center gap-3 bg-white/5 border border-border-dark p-3 rounded-xl max-w-sm cursor-pointer hover:bg-white/10 transition-colors';
+                                    fileCard.onclick = () => viewAttachment(f.file_id);
                                     fileCard.innerHTML = `
-                                        <span class="material-symbols-outlined text-primary text-2xl">description</span>
+                                        <span class="material-symbols-outlined text-primary text-2xl">${isImg ? 'image' : 'description'}</span>
                                         <div class="flex-1 min-w-0">
                                             <div class="text-sm font-medium text-slate-200 truncate">${f.name}</div>
-                                            <div class="text-[10px] text-slate-500 uppercase tracking-tight">Document</div>
+                                            <div class="text-[10px] text-slate-500 uppercase tracking-tight">${isImg ? 'Image' : 'Document'}</div>
                                         </div>
                                     `;
                                     filesDiv.appendChild(fileCard);
@@ -3791,7 +4073,7 @@
         }
 
         function triggerFileUpload(accept) {
-            const input = document.getElementById('chat-file-upload');
+            const input = document.getElementById('file-upload-input');
             input.accept = accept;
             input.click();
             document.getElementById('upload-menu').classList.remove('active');
@@ -3829,6 +4111,167 @@
                 const distFromBottom = chatScroller.scrollHeight - chatScroller.scrollTop - chatScroller.clientHeight;
                 btn.classList.toggle('hidden', distFromBottom < 100);
             });
+        }
+
+
+
+        // ─── Formatting & Rendering ───
+        function formatContent(text) {
+            // 1. Strip Source/References blocks
+            let clean = text.replace(/Source:[\s\S]*?$/, '').trim();
+            clean = clean.replace(/Sources:[\s\S]*?$/, '').trim();
+            clean = clean.replace(/References:[\s\S]*?$/, '').trim();
+
+            // 2. Parse Markdown first
+            let html = marked.parse(clean || '');
+
+            // 3. Replace citations [1], __1__ with superscript chips
+            html = html.replace(/\[(\d+)\]/g, (match, n) =>
+                `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`
+            );
+            html = html.replace(/__(\d+)__/g, (match, n) =>
+                `<a class="citation" title="Source ${n}" onclick="scrollToSource(${n})">${n}</a>`
+            );
+
+            return html;
+        }
+
+        function scrollToSource(n) {
+            showNotification('Viewing source ' + n, 'info');
+        }
+
+        function togglePreview() { }
+
+        // ─── Attachments & Artifacts ───
+        async function viewAttachment(fileId) {
+            try {
+                const response = await fetch(`/api/file/${fileId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (!response.ok) throw new Error('File not found');
+
+                const data = await response.json();
+
+                if (data.type === 'image') {
+                    openArtifact(`<img src="data:image/jpeg;base64,${data.image_base64}" alt="Uploaded Image" style="max-width:100%; border-radius: 8px;">`, 'html', data.filename || 'Image Preview');
+                } else if (data.text) {
+                    openArtifact(data.text, 'text', data.filename || 'Document Content');
+                } else {
+                    showNotification('No preview available for this file.', 'warning');
+                }
+            } catch (err) {
+                console.error('Error fetching attachment:', err);
+                showNotification('Could not load attachment.', 'error');
+            }
+        }
+
+        function openArtifact(content, lang, title) {
+            document.getElementById('artifact-title').textContent = title || 'Artifact';
+            document.getElementById('artifact-type').textContent = lang || 'Text';
+            const body = document.getElementById('artifact-content');
+
+            if (lang === 'html' || String(content).trim().startsWith('<')) {
+                body.innerHTML = content;
+            } else {
+                body.innerHTML = `<pre><code class="language-${lang}">${String(content).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+                Prism.highlightAllUnder(body);
+            }
+
+            document.getElementById('artifact-sidebar').classList.add('open');
+        }
+
+        function closeArtifact() {
+            document.getElementById('artifact-sidebar').classList.remove('open');
+        }
+
+        function copyArtifact() {
+            const content = document.getElementById('artifact-content').innerText;
+            navigator.clipboard.writeText(content);
+            showNotification('Copied to clipboard', 'success');
+        }
+
+        // ─── Message Actions ───
+        function addMessageActions(container, rawText) {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'msg-actions flex items-center justify-end gap-2 mt-4 pt-2 border-t border-border-dark/50 opacity-0 group-hover:opacity-100 transition-opacity';
+
+            // Helpful
+            const helpfulBtn = document.createElement('button');
+            helpfulBtn.className = 'msg-action-btn hover:text-primary transition-colors';
+            helpfulBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                </svg> Helpful`;
+            helpfulBtn.onclick = () => {
+                helpfulBtn.innerHTML = `<span class="material-symbols-outlined text-[13px] text-primary">check</span> Recorded`;
+                helpfulBtn.classList.add('text-primary');
+            };
+
+            // Not Helpful
+            const unhelpfulBtn = document.createElement('button');
+            unhelpfulBtn.className = 'msg-action-btn hover:text-red-500 transition-colors';
+            unhelpfulBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                </svg> Not Helpful`;
+            unhelpfulBtn.onclick = () => {
+                unhelpfulBtn.innerHTML = `<span class="material-symbols-outlined text-[13px] text-red-500">check</span> Recorded`;
+                unhelpfulBtn.classList.add('text-red-500');
+            };
+
+            // Copy
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'msg-action-btn copy-btn hover:text-white transition-colors';
+            copyBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg> Copy`;
+            copyBtn.onclick = async () => {
+                await navigator.clipboard.writeText(rawText);
+                copyBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg> Copied!`;
+                copyBtn.classList.add('active', 'text-white');
+                setTimeout(() => {
+                    copyBtn.innerHTML = `
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg> Copy`;
+                    copyBtn.classList.remove('active', 'text-white');
+                }, 2000);
+            };
+
+            // Retry
+            const retryBtn = document.createElement('button');
+            retryBtn.className = 'msg-action-btn hover:text-primary transition-colors';
+            retryBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+                </svg> Retry`;
+            retryBtn.onclick = () => {
+                const prev = container.previousElementSibling;
+                if (prev && prev.classList.contains('user-message')) {
+                    const q = prev.textContent;
+                    container.remove();
+                    prev.remove();
+                    document.getElementById('search-input').value = q;
+                    handleSearch();
+                }
+            };
+
+            actionsDiv.appendChild(helpfulBtn);
+            actionsDiv.appendChild(unhelpfulBtn);
+            actionsDiv.appendChild(copyBtn);
+            actionsDiv.appendChild(retryBtn);
+
+            container.classList.add('group');
+            container.appendChild(actionsDiv);
+        }
+
+        function injectCodeCopyButtons(container) {
+            // Logic to inject copy buttons onto pre code blocks, ignored if unused directly in DOM or stubbed
         }
 
         // ─── Check for ?q= parameter (from landing page) ───

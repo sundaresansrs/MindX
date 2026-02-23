@@ -223,19 +223,21 @@ class FileProcessor:
 
     @staticmethod
     async def process_image(file_bytes: bytes, filename: str) -> Dict[str, Any]:
-        # For now, we will perform simple OCR via Tesseract if available
-        # In a real production scenario with vision models (Groq Llama Vision), 
-        # we would encode base64 and send to the LLM.
-        
+        """
+        Processes images. Uses Vision model by default, but provides local OCR fallback.
+        """
         text = ""
         try:
              image = Image.open(io.BytesIO(file_bytes))
-             # text = pytesseract.image_to_string(image) 
-             # Commenting out actual OCR execution to avoid errors if Tesseract binary missing
-             # For this task, we will prepare the infrastructure.
-             pass
-        except:
-             pass
+             # Check if tesseract is available before running
+             try:
+                 pytesseract.get_tesseract_version()
+                 text = pytesseract.image_to_string(image)
+             except:
+                 # Local OCR not available (binary missing)
+                 text = "[Image analysis will be performed by Vision Model]"
+        except Exception as e:
+             text = f"[Image read error: {str(e)}]"
              
         # Return base64 for frontend display or LLM vision
         img_b64 = base64.b64encode(file_bytes).decode('utf-8')
@@ -243,8 +245,8 @@ class FileProcessor:
         return {
             "success": True,
             "type": "image",
-            "text": text if text else "[Image processing requires Vision Model]",
-            "image_base64": img_b64, # useful for passing to vision model later
+            "text": text,
+            "image_base64": img_b64,
             "vision_ready": True
         }
 

@@ -36,7 +36,10 @@ class QualityPipeline:
     # ════════════════════════════════════════════════
     PASS1_SYSTEM = """
 You are a High-Precision Research Analyst for MindX AI. 
-Your goal is to extract every factual detail from the provided context and history to answer the question perfectly.
+Your goal is to extract every factual detail from the provided context, history, and any uploaded images (visual data) to answer the question perfectly.
+
+VISUAL DATA:
+If images are provided, analyzing them is your TOP priority. Describe and summarize their contents accurately as they relate to the user's query.
 
 ABSOLUTE RULES:
 1. ANSWER DIRECTLY: Start your answer immediately. No "Certainly!", "Based on the context...", or greeting.
@@ -53,6 +56,10 @@ Your output is RAW RESEARCH. Accuracy and completeness are the only priorities.
     PASS2_SYSTEM = """
 You are the Display Formatter for MindX AI, designed to produce output exactly like Claude 3.5 Sonnet.
 Transform the provided research notes into a high-quality, structured, and beautiful response.
+
+STRICT INSTRUCTIONS:
+1. TRUST THE RESEARCH: If the research notes mention an image, describe it as if you saw it yourself. Do not express doubt or say "There is no picture provided" if the notes describe one.
+2. SOURCE GROUNDING: Use the research notes as your absolute source of truth.
 
 STRICT STRUCTURE RULES:
 1. DIRECT OPENING: The first sentence must be a bold, direct answer. 
@@ -411,10 +418,29 @@ If answer is about "Oxidation of Iron", suggestions could be:
         deep_fetch_count = 5 if not fast_mode else 2
         
         try:
+            # Consolidate Image Detection (Vision Flow)
+            images_b64 = []
+            use_vision = False
+            if file_ids:
+                from app.routers.upload import UPLOADED_FILES_CACHE
+                for fid in file_ids:
+                    fdata = UPLOADED_FILES_CACHE.get(fid)
+                    if fdata and fdata.get("type") == "image" and fdata.get("image_base64"):
+                        images_b64.append(fdata["image_base64"])
+                        use_vision = True
+
             # If search disabled, use LLM-only mode (existing behavior) with history
             if not use_search:
                 yield {"type": "status", "stage": 0, "content": "Search disabled, using LLM-only mode..."}
-                async for token in self.llm_service.stream_response(resolved_query, history=history):
+                if use_vision:
+                    yield {"type": "status", "content": "Running visual analysis..."}
+                
+                async for token in self.llm_service.stream_response(
+                    resolved_query, 
+                    history=history,
+                    images=images_b64 if use_vision else None,
+                    model=self.llm_service.VISION_MODEL if use_vision else None
+                ):
                     yield {"type": "token", "content": token}
                 yield {
                     "type": "metadata",
@@ -510,25 +536,24 @@ If answer is about "Oxidation of Iron", suggestions could be:
 
             # Stage 5: Multi-Pass Streaming (Accuracy -> Format)
             yield {"type": "status", "stage": 5, "content": "Analyzing and citing sources..."}
-            
-            # Pass 1: Silent Accuracy Generation
-            relevance = await self.check_context_relevance(query, context)
-            if not relevance.get("is_relevant", True):
-                if not fast_mode: 
-                    yield {"type": "status", "content": "Context mismatch; relying on model intelligence..."}
-                logger.warning(f"Search context irrelevant: {relevance.get('reason')}")
-                context = f"The search results were found to be mostly irrelevant: {relevance.get('reason')}. Answer the user's question directly and comprehensively using your own knowledge. Do not mention search results or lack thereof."
 
             messages = await self.llm_service.build_messages_with_history(
                 question=query,
                 context=context,
                 chat_history=history,
-                system_prompt=self.PASS1_SYSTEM
+                system_prompt=self.PASS1_SYSTEM,
+                images=images_b64 if images_b64 else None
             )
             
+            # Switch to vision model if images are present
+            active_model = self.llm_service.SMART_MODEL
+            if use_vision:
+                active_model = self.llm_service.VISION_MODEL
+                yield {"type": "status", "content": "Running visual analysis..."}
+
             raw_answer = await self.llm_service.generate_chat_completion(
                 messages=messages,
-                model=self.llm_service.SMART_MODEL
+                model=active_model
             )
             
             # Pass 2: Streamed Formatting
@@ -554,7 +579,8 @@ If answer is about "Oxidation of Iron", suggestions could be:
                     intent=intent,
                     intent_guidelines=intent_map.get(intent, intent_map["factual"])
                 ),
-                model=self.llm_service.SMART_MODEL
+                images=images_b64 if use_vision else None,
+                model=self.llm_service.VISION_MODEL if use_vision else self.llm_service.SMART_MODEL
             ):
                 full_formatted += token
                 # Yield tokens as they come, but we'll do a final strip at the very end

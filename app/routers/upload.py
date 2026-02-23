@@ -36,6 +36,7 @@ async def upload_file(file: UploadFile = File(...)):
             "filename": file.filename,
             "type": result.get("type"),
             "text": result.get("text"),
+            "image_base64": result.get("image_base64"),
             "chunks": result.get("chunks", []),
             "metadata": {
                 "page_count": result.get("page_count"),
@@ -142,3 +143,12 @@ Instructions:
     except Exception as e:
         logger.error(f"Chat with file error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/preview/{file_id}")
+async def get_file_preview(file_id: str):
+    """
+    Returns the cached data for a file, including text or image base64.
+    """
+    if file_id not in UPLOADED_FILES_CACHE:
+        raise HTTPException(status_code=404, detail="File not found or expired")
+    return UPLOADED_FILES_CACHE[file_id]
