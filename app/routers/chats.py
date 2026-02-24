@@ -102,10 +102,27 @@ def get_chat(
 ):
     """Load all messages for a specific chat session."""
     service = ChatHistoryService(db)
+    
+    # ✅ STRICT OWNERSHIP CHECK
+    from app.models.conversation import Conversation
+    conv = db.query(Conversation).filter(Conversation.id == session_id).first()
+    
+    if not conv:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+        
+    if conv.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied to this chat session")
+
     messages = service.get_by_session(user_id=current_user.id, session_id=session_id)
 
     if not messages:
-        raise HTTPException(status_code=404, detail="Chat session not found")
+        # It's an empty conversation, still return title
+        return {
+            "session_id": session_id,
+            "title": conv.title or "New Chat",
+            "messages": [],
+            "message_count": 0,
+        }
 
     return {
         "session_id": session_id,
@@ -139,13 +156,22 @@ def rename_chat(
         raise HTTPException(status_code=400, detail="Title cannot be empty")
 
     service = ChatHistoryService(db)
+    
+    # ✅ STRICT OWNERSHIP CHECK
+    from app.models.conversation import Conversation
+    conv = db.query(Conversation).filter(Conversation.id == session_id).first()
+    
+    if not conv:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+        
+    if conv.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     ok = service.rename_session(
         user_id=current_user.id,
         session_id=session_id,
         new_title=body.title.strip(),
     )
-    if not ok:
-        raise HTTPException(status_code=404, detail="Chat session not found")
     return {"ok": True, "title": body.title.strip()}
 
 
@@ -180,9 +206,27 @@ def delete_chat(
 ):
     """Delete a chat session and all its messages."""
     service = ChatHistoryService(db)
-    ok = service.delete_session(user_id=current_user.id, session_id=session_id)
-    if not ok:
+    
+    # ✅ STRICT OWNERSHIP CHECK
+    from app.models.conversation import Conversation
+    conv = db.query(Conversation).filter(Conversation.id == session_id).first()
+    
+    if not conv:
         raise HTTPException(status_code=404, detail="Chat session not found")
+        
+    if conv.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # This will also delete messages via ON DELETE CASCADE in future if we add it,
+    # but currently service.delete_session handles both.
+    ok = service.delete_session(user_id=current_user.id, session_id=session_id)
+    
+    # Also ensure Conversation record is gone if not handled by cascades
+    db.query(Conversation).filter(
+        Conversation.id == session_id,
+        Conversation.user_id == current_user.id
+    ).delete()
+    db.commit()
     return {"ok": True, "deleted": session_id}
 
 

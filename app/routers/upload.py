@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends
 from app.services.file_processor import FileProcessor
 from app.services.llm_service import LLMService
 import os
@@ -6,15 +6,22 @@ import uuid
 import logging
 from typing import Dict, Any, List, Optional
 
+from app.routers.auth import get_current_user
+from sqlalchemy.orm import Session
+from app.database import get_db
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Temporary storage for uploaded files chunks (In production, use Redis or DB)
-# Structure: { file_id: { "chunks": [], "metadata": {} } }
+# Temporary storage for uploaded files chunks
+# Structure: { file_id: { "user_id": int, "filename": str, ... } }
 UPLOADED_FILES_CACHE = {}
 
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...),
+    current_user = Depends(get_current_user)
+):
     """
     Processes an uploaded file and returns its ID and basic metadata.
     """
@@ -33,6 +40,7 @@ async def upload_file(file: UploadFile = File(...)):
             
         # Store processed data in cache
         UPLOADED_FILES_CACHE[file_id] = {
+            "user_id": current_user.id, # 🔐 Tie to user
             "filename": file.filename,
             "type": result.get("type"),
             "text": result.get("text"),
@@ -102,7 +110,8 @@ async def chat_file_search(file_data: Dict[str, Any], message: str) -> str:
 async def chat_with_file(
     message: str = Form(...),
     file_id: str = Form(...),
-    model: str = Form("llama3-70b-8192")
+    model: str = Form("llama3-70b-8192"),
+    current_user = Depends(get_current_user)
 ):
     """
     RAG Endpoint: Chat specifically with an uploaded file.
@@ -112,6 +121,10 @@ async def chat_with_file(
         
     file_data = UPLOADED_FILES_CACHE[file_id]
     
+    # ✅ STRICT OWNERSHIP CHECK
+    if file_data.get("user_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied to this file")
+
     # 1. Retrieve relevant chunks based on query
     relevant_context = await chat_file_search(file_data, message)
 
@@ -145,10 +158,20 @@ Instructions:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/preview/{file_id}")
-async def get_file_preview(file_id: str):
+async def get_file_preview(
+    file_id: str,
+    current_user = Depends(get_current_user)
+):
     """
     Returns the cached data for a file, including text or image base64.
     """
     if file_id not in UPLOADED_FILES_CACHE:
         raise HTTPException(status_code=404, detail="File not found or expired")
-    return UPLOADED_FILES_CACHE[file_id]
+        
+    file_data = UPLOADED_FILES_CACHE[file_id]
+    
+    # ✅ STRICT OWNERSHIP CHECK
+    if file_data.get("user_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied to this file preview")
+        
+    return file_data

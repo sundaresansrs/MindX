@@ -29,19 +29,38 @@ class ChatHistoryService:
             except ValueError:
                 sid = None
 
-        # Count existing messages and versions
+        # Ensuring the conversation exists and belongs to the user
+        if sid:
+            from app.models.conversation import Conversation
+            existing_conv = self.db.query(Conversation).filter(Conversation.id == sid).first()
+            
+            if existing_conv:
+                if existing_conv.user_id != user_id:
+                    # Security breach attempt or UUID collision
+                    raise ValueError("Target conversation belongs to another user")
+            else:
+                # Create new conversation for this user
+                conv = Conversation(
+                    id=sid,
+                    user_id=user_id,
+                    title=title or (query[:100] + ("..." if len(query) > 100 else ""))
+                )
+                self.db.add(conv)
+                self.db.commit()
+        
+        # Count existing messages for the session
         existing_count = 0
         latest_version = 0
         if sid:
             existing_count = (
                 self.db.query(func.count(ChatHistory.id))
-                .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == sid)
+                .filter(ChatHistory.user_id == user_id, ChatHistory.conversation_id == sid)
                 .scalar()
                 or 0
             )
             latest_version = (
                 self.db.query(func.max(ChatHistory.version))
-                .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == sid, ChatHistory.query == query)
+                .filter(ChatHistory.user_id == user_id, ChatHistory.conversation_id == sid, ChatHistory.query == query)
                 .scalar()
                 or 0
             )
@@ -52,6 +71,7 @@ class ChatHistoryService:
             answer=answer,
             source=source,
             session_id=sid,
+            conversation_id=sid,
             title=title,
             preview=query[:100] + ("..." if len(query) > 100 else ""),
             message_count=existing_count + 1,
@@ -72,9 +92,17 @@ class ChatHistoryService:
         except ValueError:
             return
 
+        # Update Conversation table
+        from app.models.conversation import Conversation
+        self.db.query(Conversation).filter(
+            Conversation.id == sid,
+            Conversation.user_id == user_id
+        ).update({"title": title})
+
+        # Update all messages in that session
         self.db.query(ChatHistory).filter(
             ChatHistory.user_id == user_id,
-            ChatHistory.session_id == sid,
+            ChatHistory.conversation_id == sid,
         ).update({"title": title})
         self.db.commit()
 
@@ -82,45 +110,50 @@ class ChatHistoryService:
 
     def get_sessions_list(self, user_id: int, limit: int = 100) -> List[Dict]:
         """
-        Returns one row per session_id: the most recent message row.
-        Groups by session_id and sorts by is_pinned and updated_at.
+        Returns one row per session using the dedicated Conversations table.
+        Strictly filtered by user_id for isolation.
         """
-        # Subquery: latest id per session
-        subq = (
-            self.db.query(func.max(ChatHistory.id).label("max_id"))
-            .filter(ChatHistory.user_id == user_id, ChatHistory.session_id.isnot(None))
-            .group_by(ChatHistory.session_id)
-            .subquery()
-        )
-        rows = (
-            self.db.query(ChatHistory)
-            .join(subq, ChatHistory.id == subq.c.max_id)
-            .order_by(desc(ChatHistory.is_pinned), desc(ChatHistory.updated_at))
+        from app.models.conversation import Conversation
+        
+        # Join Conversation with its most recent message
+        sessions = (
+            self.db.query(Conversation)
+            .filter(Conversation.user_id == user_id)
+            .order_by(desc(Conversation.updated_at))
             .limit(limit)
             .all()
         )
 
         result = []
-        for row in rows:
-            # Get total message count for this session
+        for conv in sessions:
+            # Get latest message for preview
+            latest_msg = (
+                self.db.query(ChatHistory)
+                .filter(ChatHistory.conversation_id == conv.id)
+                .order_by(desc(ChatHistory.created_at))
+                .first()
+            )
+            
+            if not latest_msg:
+                continue
+
+            # Get total message count
             count = (
                 self.db.query(func.count(ChatHistory.id))
-                .filter(
-                    ChatHistory.user_id == user_id,
-                    ChatHistory.session_id == row.session_id,
-                )
+                .filter(ChatHistory.conversation_id == conv.id)
                 .scalar()
                 or 0
             )
+            
             result.append({
-                "session_id": str(row.session_id),
-                "title": row.title or (str(row.query)[:40] + ("…" if len(str(row.query)) > 40 else "")),
-                "preview": row.preview or (str(row.query)[:60] + ("…" if len(str(row.query)) > 60 else "")),
+                "session_id": str(conv.id),
+                "title": conv.title or (str(latest_msg.query)[:40] + ("…" if len(str(latest_msg.query)) > 40 else "")),
+                "preview": latest_msg.preview or (str(latest_msg.query)[:60] + ("…" if len(str(latest_msg.query)) > 60 else "")),
                 "message_count": count,
-                "last_query": str(row.query)[:60],
-                "is_pinned": bool(row.is_pinned),
-                "created_at": row.created_at.isoformat() if row.created_at is not None else None,
-                "updated_at": row.updated_at.isoformat() if row.updated_at is not None else None,
+                "last_query": str(latest_msg.query)[:60],
+                "is_pinned": bool(latest_msg.is_pinned),
+                "created_at": conv.created_at.isoformat() if conv.created_at is not None else None,
+                "updated_at": conv.updated_at.isoformat() if conv.updated_at is not None else None,
             })
         return result
 
@@ -135,7 +168,7 @@ class ChatHistoryService:
 
         return (
             self.db.query(ChatHistory)
-            .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == sid)
+            .filter(ChatHistory.user_id == user_id, ChatHistory.conversation_id == sid)
             .order_by(ChatHistory.created_at.asc())
             .all()
         )  # type: ignore
@@ -246,7 +279,7 @@ class ChatHistoryService:
 
         count = (
             self.db.query(func.count(ChatHistory.id))
-            .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == sid)
+            .filter(ChatHistory.user_id == user_id, ChatHistory.conversation_id == sid)
             .scalar()
             or 0
         )

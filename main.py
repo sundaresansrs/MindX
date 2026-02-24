@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, qa, documents, chats, voice, upload
 from app.database import engine, Base
 import app.models.user
+import app.models.conversation
 import app.models.chat_history
 import app.models.document
 

@@ -2360,10 +2360,18 @@
 
         // ─── Auth Check ───
         const token = localStorage.getItem('mindx_token');
-        const userObj = JSON.parse(localStorage.getItem('mindx_user') || '{}');
-        const userId = userObj.user_id || userObj.id || 'anonymous';
+        const userObjStr = localStorage.getItem('mindx_user');
 
-        if (!token) {
+        if (!token || !userObjStr) {
+            window.location.href = '/login.html';
+        }
+
+        const userObj = JSON.parse(userObjStr || '{}');
+        const userId = userObj.user_id || userObj.id;
+
+        if (!userId) {
+            // Force logout if we have a token but no ID (corrupt state)
+            localStorage.clear();
             window.location.href = '/login.html';
         }
 
@@ -2427,11 +2435,24 @@
 
         // ─── Logout ───
         function handleLogout() {
+            // Clear specific user chats before nuking everything
+            if (typeof STORAGE_KEY !== 'undefined') {
+                localStorage.removeItem(STORAGE_KEY);
+            }
             localStorage.removeItem('mindx_token');
             localStorage.removeItem('mindx_user');
             localStorage.removeItem('mindx_active_chat');
             localStorage.removeItem('currentSessionId');
+            localStorage.removeItem('mindx_theme'); // Optional, but safer
+
+            // Full sweep
             sessionStorage.clear();
+            if (window.clearGeminiHistory) window.clearGeminiHistory();
+
+            // Clear global state
+            allSessions = [];
+            currentChatMessages = [];
+
             window.location.href = '/login.html';
         }
 
@@ -2500,6 +2521,7 @@
         }
 
         function saveChatsToLocal(chats) {
+            if (!userId || userId === 'anonymous') return;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
         }
 
@@ -2948,9 +2970,12 @@
                 if (response.ok) {
                     const data = await response.json();
 
-                    // MERGE STRATEGY (Layer 1): Keep local if backend missing
+                    // Reset local state before merge to prevent leakage from previous user
                     const localMap = new Map();
-                    allSessions.forEach(s => localMap.set(s.id || s.session_id, s));
+                    // Optional: only re-import from local if it's the SAME user 
+                    // (already handled by STORAGE_KEY scoping, but extra safety)
+                    const cached = loadChatsFromLocal();
+                    cached.forEach(s => localMap.set(s.id || s.session_id, s));
 
                     // Parse server sessions
                     const flatSessions = data.groups.flatMap(g => g.sessions.map(s => {

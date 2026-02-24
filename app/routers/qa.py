@@ -23,6 +23,16 @@ import json
 
 @router.post("/search")
 async def search(request: SearchRequest, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    # ✅ STRICT OWNERSHIP CHECK
+    if request.session_id:
+        from app.models.conversation import Conversation
+        conv = db.query(Conversation).filter(
+            Conversation.id == request.session_id,
+            Conversation.user_id == current_user.id
+        ).first()
+        if not conv:
+             raise HTTPException(status_code=403, detail="Access denied to this chat session")
+
     # Factory expects (user, db)
     pipeline = PipelineFactory.get_pipeline(current_user, db)
     result = await pipeline.search(
@@ -37,6 +47,16 @@ async def search(request: SearchRequest, db: Session = Depends(get_db), current_
 
 @router.post("/stream")
 async def stream_search(request: SearchRequest, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    # ✅ STRICT OWNERSHIP CHECK
+    if request.session_id:
+        from app.models.conversation import Conversation
+        conv = db.query(Conversation).filter(
+            Conversation.id == request.session_id,
+            Conversation.user_id == current_user.id
+        ).first()
+        if not conv:
+             raise HTTPException(status_code=403, detail="Access denied to this chat session")
+
     pipeline = PipelineFactory.get_pipeline(current_user, db)
     
     async def event_generator():
@@ -104,6 +124,15 @@ def get_history(
     service = ChatHistoryService(db)
     
     if session_id:
+        # ✅ STRICT OWNERSHIP CHECK inside service.get_by_session
+        from app.models.conversation import Conversation
+        conv = db.query(Conversation).filter(
+            Conversation.id == session_id,
+            Conversation.user_id == current_user.id
+        ).first()
+        if not conv:
+             raise HTTPException(status_code=403, detail="Access denied")
+             
         history = service.get_by_session(user_id=current_user.id, session_id=session_id)
     else:
         history = service.get_recent(user_id=current_user.id, limit=limit)

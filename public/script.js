@@ -782,11 +782,26 @@
     }
 
     function loadConversationHistory() {
-        const saved = sessionStorage.getItem('mindx_conversation');
-        if (saved) {
-            localConversationHistory = JSON.parse(saved);
+        try {
+            const saved = sessionStorage.getItem('mindx_conversation');
+            if (saved) {
+                localConversationHistory = JSON.parse(saved);
+            } else {
+                localConversationHistory = [];
+            }
+        } catch (e) {
+            localConversationHistory = [];
         }
     }
+
+    function clearLocalHistory() {
+        localConversationHistory = [];
+        sessionStorage.removeItem('mindx_conversation');
+        localUploadedFiles = [];
+    }
+
+    // Export globally for dashboard.html if needed
+    window.clearGeminiHistory = clearLocalHistory;
 
     // ===================================================
     // VOICE RECOGNITION

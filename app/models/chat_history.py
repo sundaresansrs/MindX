@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey  # type: ignore
+from sqlalchemy.orm import relationship # type: ignore
 from sqlalchemy.dialects.postgresql import UUID  # type: ignore
 from sqlalchemy.sql import func  # type: ignore
 
@@ -12,6 +13,10 @@ class ChatHistory(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     session_id = Column(UUID(as_uuid=True), index=True, nullable=True)  # groups messages into threads
+    conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=True)
+
+    # Relationships
+    conversation_ref = relationship("Conversation", back_populates="messages")
 
     query = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
