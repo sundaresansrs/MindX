@@ -38,6 +38,10 @@ class ChatHistoryService:
                 if existing_conv.user_id != user_id:
                     # Security breach attempt or UUID collision
                     raise ValueError("Target conversation belongs to another user")
+                
+                # Update timestamp for sorting
+                existing_conv.updated_at = func.now()
+                self.db.add(existing_conv)
             else:
                 # Create new conversation for this user
                 conv = Conversation(
@@ -46,7 +50,7 @@ class ChatHistoryService:
                     title=title or (query[:100] + ("..." if len(query) > 100 else ""))
                 )
                 self.db.add(conv)
-                self.db.commit()
+            # No need for extra commit here, we commit at end of save
         
         # Count existing messages for the session
         existing_count = 0
