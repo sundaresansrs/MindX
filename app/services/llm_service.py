@@ -92,64 +92,63 @@ class LLMService:
     ) -> List[Dict]:
         """
         Build the full message array including conversation history and images.
-        Uses a proper message array for history instead of string concatenation.
+        Uses the 'Enhanced User Prompt' pattern: Research results are injected 
+        into the final user message for grounding, keeping history clean.
         """
-        # Base System instructions with Context
-        system_base = f"""You are MindX AI, an intelligent research assistant.
-
-You have access to live search results (Context) AND the conversation history.
-
-CONTEXT RULES:
-- Always refer to previous messages when answering follow-up questions
-- If user says "he", "she", "it", "they" — refer to the conversation to understand who/what
-- If user says "tell me more" — expand on the previous answer topic
-- If user asks "why" after a fact — explain the fact from previous answer
-- Never say "I don't have context from our previous conversation"
-- You have full access to everything discussed in this session
-
-Search Results (Context):
-{context}"""
-
+        # 1. Base Identity System Prompt
+        system_msg = "You are MindX AI, an intelligent research assistant."
         if system_prompt:
-            system_msg = system_base + "\n\nSTRICT TASK INSTRUCTIONS:\n" + system_prompt
-        else:
-            system_msg = system_base
+            system_msg += f"\n\nSTRICT TASK INSTRUCTIONS:\n{system_prompt}"
+        
+        # Add basic context awareness rules to system message
+        system_msg += (
+            "\n\nCONVERSATION RULES:\n"
+            "- Refer to previous turns to resolve pronouns (he, she, it, they).\n"
+            "- Provide citations in [1], [2] format based on the research results provided in the user prompt.\n"
+            "- Be concise and professional."
+        )
 
         messages: List[Dict[str, Any]] = [
             {"role": "system", "content": system_msg}
         ]
 
-        # Add recent chat history as individual messages
+        # 2. Add recent chat history (ordered)
         if chat_history:
-            # Get last N messages (usually 2-4 exchanges)
             visible_history = list(islice(chat_history, max(0, len(chat_history) - max_history), len(chat_history)))
             for m in visible_history:
-                # Map various history formats to role/content
                 role = str(m.get('role', '')).lower()
                 content = str(m.get('content', ''))
                 
-                # Check for alternative keys used in QA history
                 if not content:
                     content = m.get('query') or m.get('role_user') or m.get('answer') or m.get('role_assistant') or ""
                 
                 if not role:
-                    if m.get('query') or m.get('role_user'):
-                        role = "user"
-                    elif m.get('answer') or m.get('role_assistant'):
-                        role = "assistant"
+                    if m.get('query') or m.get('role_user'): role = "user"
+                    elif m.get('answer') or m.get('role_assistant'): role = "assistant"
                 
                 if role in ["user", "assistant"] and content:
                     messages.append({"role": role, "content": content})
 
-        user_content: Any = question
+        # 3. Final Grounded User Message (Question + Context)
+        enhanced_user_content = question
+        if context:
+            enhanced_user_content = (
+                f"### Research Results\n{context}\n\n"
+                f"### User Question\n{question}\n\n"
+                f"Instructions: Use the research results to provide a comprehensive answer with citations. "
+                f"If the results don't contain enough info, say so."
+            )
+
+        # 4. Handle vision/images if provided
+        user_content: Any = enhanced_user_content
         if images:
-            # Multi-modal content format
-            user_content = [{"type": "text", "text": question}]
+            user_content_list: List[Dict[str, Any]] = [{"type": "text", "text": enhanced_user_content}]
             for b64_img in images:
-                user_content.append({
+                user_content_list.append({
                     "type": "image_url",
                     "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}
                 })
+            user_content = user_content_list
 
         messages.append({"role": "user", "content": user_content})
 

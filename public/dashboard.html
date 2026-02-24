@@ -2497,7 +2497,9 @@
 
         function saveMessage(chatId, message) {
             const chats = loadChatsFromLocal();
-            const chat = chats.find(c => c.id === chatId);
+            // Use provided chatId or fallback to currentSessionId
+            const idToUse = chatId || currentSessionId;
+            let chat = chats.find(c => c.id === idToUse);
 
             if (chat) {
                 chat.messages.push(message);
@@ -2516,9 +2518,9 @@
             } else {
                 // New chat — store a stable _createdAt that never changes
                 const nowIso = new Date().toISOString();
-                chats.unshift({
-                    id: chatId,
-                    session_id: chatId,
+                chat = {
+                    id: idToUse,
+                    session_id: idToUse,
                     title: message.content.slice(0, 45) + (message.content.length > 45 ? '...' : ''),
                     created_at: nowIso,
                     _createdAt: nowIso,   // stable — never overwritten by server merge
@@ -2527,12 +2529,14 @@
                     message_count: 1,
                     preview: '',
                     _bucket: 'Today'
-                });
+                };
+                chats.unshift(chat);
             }
             saveChatsToLocal(chats);
             allSessions = chats;
             renderHistory(allSessions);
             updateSyncStatus();
+            return idToUse;
         }
 
         function updateLastMessage(chatId, content) {
@@ -2569,10 +2573,8 @@
         })();
         // Try to restore last active session
         // ALWAYS start fresh on page load - never restore last chat
-        let lastActive = null;
         let currentSessionId = uuid.v4();
         let activeSessionId = null;
-        localStorage.removeItem('mindx_active_chat');
 
         let currentChatMessages = []; // for export
         let abortController = null; // for stop generating
@@ -3290,7 +3292,8 @@
                     files: filesToAttach.map(f => ({ name: f.name, size: f.size, type: f.type, file_id: f.file_id }))
                 };
                 currentChatMessages.push(userMsg);
-                saveMessage(currentSessionId, userMsg);
+                // Ensure currentSessionId is updated if saveMessage generates/chooses one
+                currentSessionId = saveMessage(currentSessionId, userMsg);
                 setActiveChat(currentSessionId);
 
                 // Append User Message Bubble (optimistic)
