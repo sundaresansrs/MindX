@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timezone
+import uuid
 
 from app.database import get_db
 from app.routers.auth import get_current_user
@@ -103,9 +104,15 @@ def get_chat(
     """Load all messages for a specific chat session."""
     service = ChatHistoryService(db)
     
+    # ✅ SAFE UUID CONVERSION
+    try:
+        valid_session_id = str(uuid.UUID(session_id))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid session ID format")
+
     # ✅ STRICT OWNERSHIP CHECK
     from app.models.conversation import Conversation
-    conv = db.query(Conversation).filter(Conversation.id == session_id).first()
+    conv = db.query(Conversation).filter(Conversation.id == valid_session_id).first()
     
     if not conv:
         raise HTTPException(status_code=404, detail="Chat session not found")
@@ -113,7 +120,7 @@ def get_chat(
     if conv.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied to this chat session")
 
-    messages = service.get_by_session(user_id=current_user.id, session_id=session_id)
+    messages = service.get_by_session(user_id=current_user.id, session_id=valid_session_id)
 
     if not messages:
         # It's an empty conversation, still return title
@@ -157,9 +164,15 @@ def rename_chat(
 
     service = ChatHistoryService(db)
     
+    # ✅ SAFE UUID CONVERSION
+    try:
+        valid_session_id = str(uuid.UUID(session_id))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid session ID format")
+
     # ✅ STRICT OWNERSHIP CHECK
     from app.models.conversation import Conversation
-    conv = db.query(Conversation).filter(Conversation.id == session_id).first()
+    conv = db.query(Conversation).filter(Conversation.id == valid_session_id).first()
     
     if not conv:
         raise HTTPException(status_code=404, detail="Chat session not found")
@@ -169,7 +182,7 @@ def rename_chat(
 
     ok = service.rename_session(
         user_id=current_user.id,
-        session_id=session_id,
+        session_id=valid_session_id,
         new_title=body.title.strip(),
     )
     return {"ok": True, "title": body.title.strip()}
@@ -207,9 +220,15 @@ def delete_chat(
     """Delete a chat session and all its messages."""
     service = ChatHistoryService(db)
     
+    # ✅ SAFE UUID CONVERSION
+    try:
+        valid_session_id = str(uuid.UUID(session_id))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid session ID format")
+
     # ✅ STRICT OWNERSHIP CHECK
     from app.models.conversation import Conversation
-    conv = db.query(Conversation).filter(Conversation.id == session_id).first()
+    conv = db.query(Conversation).filter(Conversation.id == valid_session_id).first()
     
     if not conv:
         raise HTTPException(status_code=404, detail="Chat session not found")
@@ -219,11 +238,11 @@ def delete_chat(
 
     # This will also delete messages via ON DELETE CASCADE in future if we add it,
     # but currently service.delete_session handles both.
-    ok = service.delete_session(user_id=current_user.id, session_id=session_id)
+    ok = service.delete_session(user_id=current_user.id, session_id=valid_session_id)
     
     # Also ensure Conversation record is gone if not handled by cascades
     db.query(Conversation).filter(
-        Conversation.id == session_id,
+        Conversation.id == valid_session_id,
         Conversation.user_id == current_user.id
     ).delete()
     db.commit()

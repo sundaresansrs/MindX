@@ -20,58 +20,92 @@ class SearchRequest(BaseModel):
 
 from fastapi.responses import StreamingResponse
 import json
+import uuid
+import traceback
 
 @router.post("/search")
 async def search(request: SearchRequest, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    # ✅ STRICT OWNERSHIP CHECK
-    if request.session_id:
-        from app.models.conversation import Conversation
-        conv = db.query(Conversation).filter(
-            Conversation.id == request.session_id,
-            Conversation.user_id == current_user.id
-        ).first()
-        if not conv:
-             raise HTTPException(status_code=403, detail="Access denied to this chat session")
+    try:
+        # ✅ SAFE UUID CONVERSION
+        valid_session_id = None
+        if request.session_id:
+            try:
+                # Handle common JS 'null' or 'undefined' string literals
+                if str(request.session_id).lower() not in ["null", "undefined", "none", ""]:
+                    valid_session_id = str(uuid.UUID(str(request.session_id)))
+            except (ValueError, TypeError):
+                valid_session_id = None # Treat invalid UUID as no session (new chat)
 
-    # Factory expects (user, db)
-    pipeline = PipelineFactory.get_pipeline(current_user, db)
-    result = await pipeline.search(
-        query=request.query, 
-        session_id=request.session_id,  # type: ignore
-        use_search=request.use_search or True,  # type: ignore
-        max_sources=request.max_sources or 10,  # type: ignore
-        fast_mode=request.fast_mode or False,  # type: ignore
-        file_ids=request.file_ids
-    )
-    return result
+        # ✅ STRICT OWNERSHIP CHECK
+        if valid_session_id:
+            from app.models.conversation import Conversation
+            conv = db.query(Conversation).filter(
+                Conversation.id == valid_session_id,
+                Conversation.user_id == current_user.id
+            ).first()
+            if not conv:
+                 raise HTTPException(status_code=403, detail="Access denied to this chat session")
 
-@router.post("/stream")
-async def stream_search(request: SearchRequest, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    # ✅ STRICT OWNERSHIP CHECK
-    if request.session_id:
-        from app.models.conversation import Conversation
-        conv = db.query(Conversation).filter(
-            Conversation.id == request.session_id,
-            Conversation.user_id == current_user.id
-        ).first()
-        if not conv:
-             raise HTTPException(status_code=403, detail="Access denied to this chat session")
-
-    pipeline = PipelineFactory.get_pipeline(current_user, db)
-    
-    async def event_generator():
-        async for chunk in pipeline.stream(
-            query=request.query,
-            session_id=request.session_id,  # type: ignore
+        # Factory expects (user, db)
+        pipeline = PipelineFactory.get_pipeline(current_user, db)
+        result = await pipeline.search(
+            query=request.query, 
+            session_id=valid_session_id,  # type: ignore
             use_search=request.use_search or True,  # type: ignore
             max_sources=request.max_sources or 10,  # type: ignore
             fast_mode=request.fast_mode or False,  # type: ignore
             file_ids=request.file_ids
-        ):
-            yield f"data: {json.dumps(chunk)}\n\n"
-        yield "data: [DONE]\n\n"
+        )
+        return result
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=str(e))
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+@router.post("/stream")
+async def stream_search(request: SearchRequest, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    try:
+        # ✅ SAFE UUID CONVERSION
+        valid_session_id = None
+        if request.session_id:
+            try:
+                if str(request.session_id).lower() not in ["null", "undefined", "none", ""]:
+                    valid_session_id = str(uuid.UUID(str(request.session_id)))
+            except (ValueError, TypeError):
+                valid_session_id = None
+
+        # ✅ STRICT OWNERSHIP CHECK
+        if valid_session_id:
+            from app.models.conversation import Conversation
+            conv = db.query(Conversation).filter(
+                Conversation.id == valid_session_id,
+                Conversation.user_id == current_user.id
+            ).first()
+            if not conv:
+                 raise HTTPException(status_code=403, detail="Access denied to this chat session")
+
+        pipeline = PipelineFactory.get_pipeline(current_user, db)
+        
+        async def event_generator():
+            try:
+                async for chunk in pipeline.stream(
+                    query=request.query,
+                    session_id=valid_session_id,  # type: ignore
+                    use_search=request.use_search or True,  # type: ignore
+                    max_sources=request.max_sources or 10,  # type: ignore
+                    fast_mode=request.fast_mode or False,  # type: ignore
+                    file_ids=request.file_ids
+                ):
+                    yield f"data: {json.dumps(chunk)}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                print(f"ERROR IN event_generator: {e}")
+                traceback.print_exc()
+                yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
@@ -123,20 +157,29 @@ def get_history(
     from app.services.chat_history_service import ChatHistoryService
     service = ChatHistoryService(db)
     
+    # ✅ SAFE UUID CONVERSION
+    valid_session_id = None
     if session_id:
+        try:
+            if str(session_id).lower() not in ["null", "undefined", "none", ""]:
+                valid_session_id = str(uuid.UUID(str(session_id)))
+        except (ValueError, TypeError):
+             # For history retrieval, an invalid UUID should probably be a 404/403 or just return empty
+             # But here we'll treat it as session not found -> access denied if they specifically asked for it
+             raise HTTPException(status_code=400, detail="Invalid session format")
+             
+    if valid_session_id:
         # ✅ STRICT OWNERSHIP CHECK inside service.get_by_session
         from app.models.conversation import Conversation
         conv = db.query(Conversation).filter(
-            Conversation.id == session_id,
+            Conversation.id == valid_session_id,
             Conversation.user_id == current_user.id
         ).first()
         if not conv:
              raise HTTPException(status_code=403, detail="Access denied")
              
-        history = service.get_by_session(user_id=current_user.id, session_id=session_id)
+        history = service.get_by_session(user_id=current_user.id, session_id=valid_session_id)
     else:
         history = service.get_recent(user_id=current_user.id, limit=limit)
     
     return history
-
-

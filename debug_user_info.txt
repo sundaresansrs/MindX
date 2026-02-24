@@ -1,0 +1,5 @@
+Creating user debug_2c1ec5@example.com...
+User created successfully!
+EMAIL=debug_2c1ec5@example.com
+PASSWORD=DebugPassword123
+USER_ID=23

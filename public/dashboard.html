@@ -3414,7 +3414,7 @@
                     },
                     body: JSON.stringify({
                         query: query,
-                        session_id: currentSessionId,
+                        session_id: (currentSessionId && currentSessionId !== 'undefined' && currentSessionId !== 'null') ? currentSessionId : null,
                         use_search: true,
                         max_sources: parseInt(maxSources),
                         fast_mode: document.getElementById('fast-mode-toggle').checked,
@@ -3977,8 +3977,8 @@
         }
 
         async function loadSession(sid) {
-            activeSessionId = sid;
-            currentSessionId = (sid === 'legacy' || !sid) ? null : sid;
+            activeSessionId = (sid === 'undefined' || sid === 'null' || !sid) ? null : sid;
+            currentSessionId = (sid === 'legacy' || sid === 'undefined' || sid === 'null' || !sid) ? null : sid;
 
             // Highlight active in sidebar
             renderHistory(allSessions);
@@ -4210,7 +4210,8 @@
 
                 const formData = new FormData();
                 formData.append('file', file);
-                if (currentSessionId) formData.append('session_id', currentSessionId);
+                const safeSid = (currentSessionId && currentSessionId !== 'undefined' && currentSessionId !== 'null') ? currentSessionId : null;
+                if (safeSid) formData.append('session_id', safeSid);
 
                 try {
                     const resp = await fetch('/api/upload', {

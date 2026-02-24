@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="MindX API", version="1.0.0")
 
 
+
 # Catch-all error middleware for easier debugging on Vercel
 @app.middleware("http")
 async def catch_exceptions_middleware(request, call_next):
