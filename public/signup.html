@@ -378,10 +378,13 @@
 
                 localStorage.setItem('mindx_token', data.access_token);
                 localStorage.setItem('mindx_user', JSON.stringify({
+                    id: data.user_id,
+                    user_id: data.user_id,
                     email,
                     full_name: fullName,
                     account_type: accountType
                 }));
+                sessionStorage.clear();
 
                 window.location.href = '/dashboard.html';
             } catch (err) {

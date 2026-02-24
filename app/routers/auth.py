@@ -39,7 +39,11 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
 
     token = create_access_token({"sub": db_user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token, 
+        "token_type": "bearer",
+        "user_id": db_user.id
+    }
 
 
 @router.post("/login", response_model=Token)
@@ -59,6 +63,7 @@ def login(
     return {
         "access_token": token,
         "token_type": "bearer",
+        "user_id": user.id,
         "full_name": user.full_name
     }
 

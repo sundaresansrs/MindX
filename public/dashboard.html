@@ -2360,9 +2360,15 @@
 
         // ─── Auth Check ───
         const token = localStorage.getItem('mindx_token');
+        const userObj = JSON.parse(localStorage.getItem('mindx_user') || '{}');
+        const userId = userObj.user_id || userObj.id || 'anonymous';
+
         if (!token) {
             window.location.href = '/login.html';
         }
+
+        // ─── Storage Layer (Persistence) ───
+        const STORAGE_KEY = `mindx_chats_${userId}`;
 
         // Load user greeting
         try {
@@ -2423,6 +2429,9 @@
         function handleLogout() {
             localStorage.removeItem('mindx_token');
             localStorage.removeItem('mindx_user');
+            localStorage.removeItem('mindx_active_chat');
+            localStorage.removeItem('currentSessionId');
+            sessionStorage.clear();
             window.location.href = '/login.html';
         }
 
@@ -2482,7 +2491,6 @@
         }
 
         // ─── Storage Layer (Persistence) ───
-        const STORAGE_KEY = 'mindx_chats';
 
         function loadChatsFromLocal() {
             try {
